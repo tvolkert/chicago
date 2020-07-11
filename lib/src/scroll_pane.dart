@@ -31,7 +31,7 @@ class ScrollPaneTest extends StatelessWidget {
       child: ScrollPane(
         horizontalScrollBarPolicy: ScrollBarPolicy.auto,
         verticalScrollBarPolicy: ScrollBarPolicy.auto,
-        corner: Image.asset('assets/IMG_20200701_131732.jpg', fit: BoxFit.cover),
+        topLeftCorner: Image.asset('assets/IMG_20200701_131732.jpg', fit: BoxFit.cover),
         columnHeader: ColoredBox(
           color: Color(0xffff0000),
           child: Table(
@@ -256,9 +256,13 @@ class ScrollPane extends StatelessWidget {
     Key key,
     this.horizontalScrollBarPolicy = ScrollBarPolicy.auto,
     this.verticalScrollBarPolicy = ScrollBarPolicy.auto,
+    this.clipBehavior = Clip.hardEdge,
     this.rowHeader,
     this.columnHeader,
-    this.corner,
+    this.topLeftCorner = const _EmptyCorner(),
+    this.bottomLeftCorner = const _EmptyCorner(),
+    this.bottomRightCorner = const _EmptyCorner(),
+    this.topRightCorner = const _EmptyCorner(),
     @required this.view,
   })  : assert(horizontalScrollBarPolicy != null),
         assert(verticalScrollBarPolicy != null),
@@ -277,6 +281,17 @@ class ScrollPane extends StatelessWidget {
   /// Must be non-null. Defaults to [ScrollBarPolicy.auto].
   final ScrollBarPolicy verticalScrollBarPolicy;
 
+  /// The way in which [view], [rowHeader], and [columnHeader] will be clipped.
+  ///
+  /// A scroll pane's contents will always be clipped to the bounds of the
+  /// scroll pane itself. The clip behavior determines how the contents will
+  /// be clipped when they would otherwise overlap each other, the scroll bars,
+  /// or the corners.
+  ///
+  /// Must be non-null; defaults to [Clip.hardEdge], which means that the
+  /// contents of the scroll pane will never be painted over each other.
+  final Clip clipBehavior;
+
   /// Optional widget that will be laid out to the left of the view, vertically
   /// aligned with the top of the view.
   ///
@@ -293,13 +308,51 @@ class ScrollPane extends StatelessWidget {
   /// scrolled vertically.
   final Widget columnHeader;
 
-  /// Optional widget that will be laid out above the row header and to the
-  /// left of the column header.
+  /// Optional widget that will be laid out in the top left corner (above the
+  /// row header and to the left of the column header).
+  ///
+  /// If [rowHeader] and [columnHeader] are not both specified, then there is
+  /// no top left corner, and this widget will not be rendered.
   ///
   /// If this widget is not specified, and the row header and column header
   /// are non-null, then a default "empty" corner will be automatically
   /// created and laid out in this spot.
-  final Widget corner;
+  final Widget topLeftCorner;
+
+  /// Optional widget that will be laid out in the bottom left corner (below
+  /// the row header and to the left of the horizontal scroll bar).
+  ///
+  /// If [rowHeader] is not specified or the horizontal scroll bar is not
+  /// shown, then there is no bottom left corner, and this widget will not be
+  /// rendered.
+  ///
+  /// If this widget is not specified, and a bottom left corner exists, then a
+  /// default "empty" corner will be automatically created and laid out in this
+  /// spot.
+  final Widget bottomLeftCorner;
+
+  /// Optional widget that will be laid out in the bottom right corner (below
+  /// the vertical scroll bar and to the right of the horizontal scroll bar).
+  ///
+  /// If the scroll bars are not both shown, then there is no bottom right
+  /// corner, and this widget will not be rendered.
+  ///
+  /// If this widget is not specified, and a bottom right corner exists, then a
+  /// default "empty" corner will be automatically created and laid out in this
+  /// spot.
+  final Widget bottomRightCorner;
+
+  /// Optional widget that will be laid out in the top right corner (above the
+  /// vertical scroll bar and to the right of the column header).
+  ///
+  /// If [columnHeader] is not specified or the vertical scroll bar is not
+  /// shown, then there is no top right corner, and this widget will not be
+  /// rendered.
+  ///
+  /// If this widget is not specified, and a top right corner exists, then a
+  /// default "empty" corner will be automatically created and laid out in this
+  /// spot.
+  final Widget topRightCorner;
 
   /// The main scrollable widget to be shown in the viewport of this scroll
   /// pane.
@@ -311,13 +364,10 @@ class ScrollPane extends StatelessWidget {
       view: view,
       rowHeader: rowHeader,
       columnHeader: columnHeader,
-      corner: corner,
-      horizontalScrollBarPolicy: horizontalScrollBarPolicy,
-      verticalScrollBarPolicy: verticalScrollBarPolicy,
-      topLeftCorner: const _EmptyCorner(),
-      bottomLeftCorner: const _EmptyCorner(),
-      bottomRightCorner: const _EmptyCorner(),
-      topRightCorner: const _EmptyCorner(),
+      topLeftCorner: topLeftCorner,
+      bottomLeftCorner: bottomLeftCorner,
+      bottomRightCorner: bottomRightCorner,
+      topRightCorner: topRightCorner,
       horizontalScrollBar: ScrollBar(
         orientation: Axis.horizontal,
         unitIncrement: 10,
@@ -326,6 +376,9 @@ class ScrollPane extends StatelessWidget {
         orientation: Axis.vertical,
         unitIncrement: 10,
       ),
+      horizontalScrollBarPolicy: horizontalScrollBarPolicy,
+      verticalScrollBarPolicy: verticalScrollBarPolicy,
+      clipBehavior: clipBehavior,
     );
   }
 }
@@ -358,7 +411,6 @@ class _ScrollPane extends RenderObjectWidget {
     @required this.view,
     @required this.rowHeader,
     @required this.columnHeader,
-    @required this.corner,
     @required this.topLeftCorner,
     @required this.bottomLeftCorner,
     @required this.bottomRightCorner,
@@ -367,12 +419,12 @@ class _ScrollPane extends RenderObjectWidget {
     @required this.verticalScrollBar,
     @required this.horizontalScrollBarPolicy,
     @required this.verticalScrollBarPolicy,
+    @required this.clipBehavior,
   }) : super(key: key);
 
   final Widget view;
   final Widget rowHeader;
   final Widget columnHeader;
-  final Widget corner;
   final Widget topLeftCorner;
   final Widget bottomLeftCorner;
   final Widget bottomRightCorner;
@@ -381,6 +433,7 @@ class _ScrollPane extends RenderObjectWidget {
   final Widget verticalScrollBar;
   final ScrollBarPolicy horizontalScrollBarPolicy;
   final ScrollBarPolicy verticalScrollBarPolicy;
+  final Clip clipBehavior;
 
   @override
   RenderObjectElement createElement() => _ScrollPaneElement(this);
@@ -390,6 +443,7 @@ class _ScrollPane extends RenderObjectWidget {
     return RenderScrollPane(
       horizontalScrollBarPolicy: horizontalScrollBarPolicy,
       verticalScrollBarPolicy: verticalScrollBarPolicy,
+      clipBehavior: clipBehavior,
     );
   }
 
@@ -397,7 +451,8 @@ class _ScrollPane extends RenderObjectWidget {
   void updateRenderObject(BuildContext context, RenderScrollPane renderScrollPane) {
     renderScrollPane
       ..horizontalScrollBarPolicy = horizontalScrollBarPolicy
-      ..verticalScrollBarPolicy = verticalScrollBarPolicy;
+      ..verticalScrollBarPolicy = verticalScrollBarPolicy
+      ..clipBehavior = clipBehavior;
   }
 }
 
@@ -405,7 +460,6 @@ enum _ScrollPaneSlot {
   view,
   rowHeader,
   columnHeader,
-  corner,
   topLeftCorner,
   bottomLeftCorner,
   bottomRightCorner,
@@ -420,7 +474,6 @@ class _ScrollPaneElement extends RenderObjectElement {
   Element _view;
   Element _rowHeader;
   Element _columnHeader;
-  Element _corner;
   Element _topLeftCorner;
   Element _bottomLeftCorner;
   Element _bottomRightCorner;
@@ -446,7 +499,6 @@ class _ScrollPaneElement extends RenderObjectElement {
     if (widget.view != null) _view = inflateWidget(widget.view, _ScrollPaneSlot.view);
     if (widget.rowHeader != null) _rowHeader = inflateWidget(widget.rowHeader, _ScrollPaneSlot.rowHeader);
     if (widget.columnHeader != null) _columnHeader = inflateWidget(widget.columnHeader, _ScrollPaneSlot.columnHeader);
-    if (widget.corner != null) _corner = inflateWidget(widget.corner, _ScrollPaneSlot.corner);
     if (widget.topLeftCorner != null)
       _topLeftCorner = inflateWidget(widget.topLeftCorner, _ScrollPaneSlot.topLeftCorner);
     if (widget.bottomLeftCorner != null)
@@ -466,7 +518,6 @@ class _ScrollPaneElement extends RenderObjectElement {
     visitor(_view);
     if (_rowHeader != null) visitor(_rowHeader);
     if (_columnHeader != null) visitor(_columnHeader);
-    if (_corner != null) visitor(_corner);
     if (_topLeftCorner != null) visitor(_topLeftCorner);
     if (_bottomLeftCorner != null) visitor(_bottomLeftCorner);
     if (_bottomRightCorner != null) visitor(_bottomRightCorner);
@@ -486,9 +537,6 @@ class _ScrollPaneElement extends RenderObjectElement {
         break;
       case _ScrollPaneSlot.columnHeader:
         renderObject.columnHeader = child;
-        break;
-      case _ScrollPaneSlot.corner:
-        renderObject.corner = child;
         break;
       case _ScrollPaneSlot.topLeftCorner:
         renderObject.topLeftCorner = child;
@@ -711,14 +759,6 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
     if (_columnHeader != null) adoptChild(_columnHeader);
   }
 
-  RenderBox _corner;
-  RenderBox get corner => _corner;
-  set corner(RenderBox value) {
-    if (_corner != null) dropChild(_corner);
-    _corner = value;
-    if (_corner != null) adoptChild(_corner);
-  }
-
   RenderBox _topLeftCorner;
   RenderBox get topLeftCorner => _topLeftCorner;
   set topLeftCorner(RenderBox value) {
@@ -799,7 +839,6 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
     if (view != null) view.attach(owner);
     if (rowHeader != null) rowHeader.attach(owner);
     if (columnHeader != null) columnHeader.attach(owner);
-    if (corner != null) corner.attach(owner);
     if (topLeftCorner != null) topLeftCorner.attach(owner);
     if (bottomLeftCorner != null) bottomLeftCorner.attach(owner);
     if (bottomRightCorner != null) bottomRightCorner.attach(owner);
@@ -813,7 +852,6 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
     if (view != null) view.detach();
     if (rowHeader != null) rowHeader.detach();
     if (columnHeader != null) columnHeader.detach();
-    if (corner != null) corner.detach();
     if (topLeftCorner != null) topLeftCorner.detach();
     if (bottomLeftCorner != null) bottomLeftCorner.detach();
     if (bottomRightCorner != null) bottomRightCorner.detach();
@@ -828,7 +866,6 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
     if (view != null) visitor(view);
     if (rowHeader != null) visitor(rowHeader);
     if (columnHeader != null) visitor(columnHeader);
-    if (corner != null) visitor(corner);
     if (topLeftCorner != null) visitor(topLeftCorner);
     if (bottomLeftCorner != null) visitor(bottomLeftCorner);
     if (bottomRightCorner != null) visitor(bottomRightCorner);
@@ -846,7 +883,6 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
       bottomRightCorner,
       bottomLeftCorner,
       topLeftCorner,
-      corner,
       columnHeader,
       rowHeader,
       view,
@@ -1246,23 +1282,11 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
     // Handle corner components
 
     if (columnHeaderHeight > 0 && rowHeaderWidth > 0) {
-      if (corner != null) {
-        _ScrollPaneParentData cornerParentData = parentDataFor(corner);
-        cornerParentData.offset = Offset.zero;
-        cornerParentData.visible = true;
-        corner.layout(BoxConstraints.tightFor(width: rowHeaderWidth, height: columnHeaderHeight));
-        parentDataFor(topLeftCorner).visible = false;
-      } else {
-        _ScrollPaneParentData parentData = parentDataFor(topLeftCorner);
-        parentData.offset = Offset.zero;
-        parentData.visible = true;
-        topLeftCorner.layout(BoxConstraints.tightFor(width: rowHeaderWidth, height: columnHeaderHeight));
-      }
+      _ScrollPaneParentData parentData = parentDataFor(topLeftCorner);
+      parentData.offset = Offset.zero;
+      parentData.visible = true;
+      topLeftCorner.layout(BoxConstraints.tightFor(width: rowHeaderWidth, height: columnHeaderHeight));
     } else {
-      if (corner != null) {
-        parentDataFor(corner).visible = false;
-      }
-
       parentDataFor(topLeftCorner).visible = false;
     }
 
@@ -1416,10 +1440,6 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
       context.paintChild(verticalScrollBar, offset + verticalScrollBarParentData.offset);
     }
 
-    RenderBox topLeftCorner = corner;
-    if (topLeftCorner == null) {
-      topLeftCorner = this.topLeftCorner;
-    }
     _ScrollPaneParentData topLeftCornerParentData = parentDataFor(topLeftCorner);
     if (topLeftCornerParentData.visible) {
       context.paintChild(topLeftCorner, offset + topLeftCornerParentData.offset);
