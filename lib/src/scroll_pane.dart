@@ -914,6 +914,9 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
     return false;
   }
 
+  @override
+  bool hitTestSelf(Offset position) => true;
+
   _ScrollPaneParentData parentDataFor(RenderBox child) => child.parentData;
 
   @override
