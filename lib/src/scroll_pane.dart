@@ -524,14 +524,18 @@ class _ScrollPaneElement extends RenderObjectElement {
 }
 
 // TODO do we get any benefit to this implementing RenderAbstractViewport?
+// TODO It looks like RenderAbstractViewport would provide some benefit
 class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
   RenderScrollPane({
-    ScrollBarPolicy horizontalScrollBarPolicy,
-    ScrollBarPolicy verticalScrollBarPolicy,
+    ScrollBarPolicy horizontalScrollBarPolicy = ScrollBarPolicy.auto,
+    ScrollBarPolicy verticalScrollBarPolicy = ScrollBarPolicy.auto,
+    Clip clipBehavior = Clip.hardEdge,
   })  : assert(horizontalScrollBarPolicy != null),
         assert(verticalScrollBarPolicy != null),
+  assert(clipBehavior != null),
         _horizontalScrollBarPolicy = horizontalScrollBarPolicy,
-        _verticalScrollBarPolicy = verticalScrollBarPolicy;
+        _verticalScrollBarPolicy = verticalScrollBarPolicy,
+  _clipBehavior = clipBehavior;
 
   static const double _horizontalReveal = 30;
   static const double _verticalReveal = 30;
@@ -586,10 +590,10 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
   /// If the `verticalScrollBarWidth` argument is not specified, the value
   /// will be taken from [verticalScrollBar].
   Offset _boundsCheckScrollOffset(
-      Offset proposedScrollOffset, {
-        double horizontalScrollBarHeight,
-        double verticalScrollBarWidth,
-      }) {
+    Offset proposedScrollOffset, {
+    double horizontalScrollBarHeight,
+    double verticalScrollBarWidth,
+  }) {
     return Offset(
       math.min(math.max(proposedScrollOffset.dx, 0), getMaxScrollLeft(verticalScrollBarWidth: verticalScrollBarWidth)),
       math.min(
@@ -672,6 +676,15 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
     if (_verticalScrollBarPolicy == value) return;
     _verticalScrollBarPolicy = value;
     markNeedsLayout();
+  }
+
+  Clip _clipBehavior = Clip.hardEdge;
+  Clip get clipBehavior => _clipBehavior;
+  set clipBehavior(Clip value) {
+    assert(value != null);
+    if (_clipBehavior == value) return;
+    _clipBehavior = value;
+    markNeedsPaint();
   }
 
   RenderBox _view;
@@ -865,19 +878,202 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
     return false;
   }
 
+  _ScrollPaneParentData parentDataFor(RenderBox child) => child.parentData;
+
   @override
   void setupParentData(RenderBox child) {
     if (child.parentData is! _ScrollPaneParentData) child.parentData = _ScrollPaneParentData();
   }
 
-  _ScrollPaneParentData parentDataFor(RenderBox child) => child.parentData;
+  @override
+  double computeMinIntrinsicWidth(double height) {
+    double preferredWidth = 0;
+
+    if (view != null) {
+      double preferredRowHeaderWidth = 0;
+      if (rowHeader != null) {
+        preferredRowHeaderWidth = rowHeader.getMinIntrinsicWidth(double.infinity);
+      }
+
+      double preferredColumnHeaderHeight = 0;
+      if (columnHeader != null) {
+        preferredColumnHeaderHeight = columnHeader.getMinIntrinsicHeight(double.infinity);
+      }
+
+      ScrollBarPolicy verticalPolicy = verticalScrollBarPolicy;
+
+      if (verticalPolicy != ScrollBarPolicy.stretch) {
+        // Get the unconstrained preferred size of the view
+        double preferredViewWidth = view.getMinIntrinsicWidth(double.infinity);
+        double preferredViewHeight = view.getMinIntrinsicHeight(double.infinity);
+
+        // If the policy is `expand`, and the sum of the
+        // unconstrained preferred heights of the view and the column
+        // header is less than the height constraint, apply the `stretch`
+        // policy; otherwise, apply the `auto` policy
+
+        if (verticalPolicy == ScrollBarPolicy.expand) {
+          if (height < 0) {
+            verticalPolicy = ScrollBarPolicy.auto;
+          } else {
+            double preferredHeight = preferredViewHeight + preferredColumnHeaderHeight;
+
+            if (preferredHeight < height) {
+              verticalPolicy = ScrollBarPolicy.stretch;
+            } else {
+              verticalPolicy = ScrollBarPolicy.auto;
+            }
+          }
+        }
+
+        // If the policy is `always`, `never`, or `auto`, the preferred
+        // width is the sum of the unconstrained preferred widths of
+        // the view and row header, plus the width of the scroll
+        // bar if policy is `always` or if the view's preferred height is
+        // greater than the height constraint and the policy is `auto`
+
+        if (verticalPolicy == ScrollBarPolicy.always ||
+            verticalPolicy == ScrollBarPolicy.never ||
+            verticalPolicy == ScrollBarPolicy.auto) {
+          preferredWidth = preferredViewWidth + preferredRowHeaderWidth;
+
+          // If the sum of the preferred heights of the view and the
+          // column header is greater than the height constraint,
+          // include the preferred width of the scroll bar in the
+          // preferred width calculation
+          if (verticalPolicy == ScrollBarPolicy.always ||
+              (verticalPolicy == ScrollBarPolicy.auto &&
+                  height > 0 &&
+                  preferredViewHeight + preferredColumnHeaderHeight > height)) {
+            preferredWidth += verticalScrollBar.getMinIntrinsicWidth(double.infinity);
+          }
+        }
+      }
+
+      if (verticalPolicy == ScrollBarPolicy.stretch) {
+        // Preferred width is the sum of the constrained preferred
+        // width of the view and the unconstrained preferred width of
+        // the row header
+
+        if (height >= 0) {
+          // Subtract the unconstrained preferred height of the
+          // column header from the height constraint
+          height = math.max(height - preferredColumnHeaderHeight, 0);
+        }
+
+        preferredWidth = view.getMinIntrinsicWidth(height) + preferredRowHeaderWidth;
+      }
+    }
+
+    return preferredWidth;
+  }
+
+  @override
+  double computeMaxIntrinsicWidth(double height) => computeMinIntrinsicWidth(height);
+
+  @override
+  double computeMinIntrinsicHeight(double width) {
+    double preferredHeight = 0;
+
+    if (view != null) {
+      double preferredRowHeaderWidth = 0;
+      if (rowHeader != null) {
+        preferredRowHeaderWidth = rowHeader.getMinIntrinsicWidth(double.infinity);
+      }
+
+      double preferredColumnHeaderHeight = 0;
+      if (columnHeader != null) {
+        preferredColumnHeaderHeight = columnHeader.getMinIntrinsicHeight(double.infinity);
+      }
+
+      ScrollBarPolicy horizontalPolicy = horizontalScrollBarPolicy;
+
+      if (horizontalPolicy != ScrollBarPolicy.stretch) {
+        // Get the unconstrained preferred size of the view
+        double preferredViewWidth = view.getMinIntrinsicWidth(double.infinity);
+        double preferredViewHeight = view.getMinIntrinsicHeight(double.infinity);
+
+        // If the policy is `expand`, and the sum of the
+        // unconstrained preferred widths of the view and the row
+        // header is less than the width constraint, apply the `stretch`
+        // policy; otherwise, apply the `auto` policy
+
+        if (horizontalPolicy == ScrollBarPolicy.expand) {
+          if (width < 0) {
+            horizontalPolicy = ScrollBarPolicy.auto;
+          } else {
+            double preferredWidth = preferredViewWidth + preferredRowHeaderWidth;
+
+            if (preferredWidth < width) {
+              horizontalPolicy = ScrollBarPolicy.stretch;
+            } else {
+              horizontalPolicy = ScrollBarPolicy.auto;
+            }
+          }
+        }
+
+        // If the policy is `always`, `never`, or `auto`, the preferred
+        // height is the sum of the unconstrained preferred heights of
+        // the view and column header, plus the height of the scroll
+        // bar if policy is `always` or if the view's preferred width is
+        // greater than the width constraint and the policy is `auto`
+
+        if (horizontalPolicy == ScrollBarPolicy.always ||
+            horizontalPolicy == ScrollBarPolicy.never ||
+            horizontalPolicy == ScrollBarPolicy.auto) {
+          preferredHeight = preferredViewHeight + preferredColumnHeaderHeight;
+
+          // If the sum of the preferred widths of the view and the
+          // row header is greater than the width constraint, include
+          // the preferred height of the scroll bar in the preferred
+          // height calculation
+          if (horizontalPolicy == ScrollBarPolicy.always ||
+              (horizontalPolicy == ScrollBarPolicy.auto &&
+                  width > 0 &&
+                  preferredViewWidth + preferredRowHeaderWidth > width)) {
+            preferredHeight += horizontalScrollBar.getMinIntrinsicHeight(double.infinity);
+          }
+        }
+      }
+
+      if (horizontalPolicy == ScrollBarPolicy.stretch) {
+        // Preferred height is the sum of the constrained preferred height
+        // of the view and the unconstrained preferred height of the column
+        // header
+
+        if (width >= 0) {
+          // Subtract the unconstrained preferred width of the row header
+          // from the width constraint
+          width = math.max(width - preferredRowHeaderWidth, 0);
+        }
+
+        preferredHeight = view.getMinIntrinsicHeight(width) + preferredColumnHeaderHeight;
+      }
+    }
+
+    return preferredHeight;
+  }
+
+  @override
+  double computeMaxIntrinsicHeight(double width) => computeMinIntrinsicHeight(width);
 
   @override
   void performLayout() {
-    if (!constraints.hasBoundedHeight || !constraints.hasBoundedWidth) {
-      throw UnimplementedError();
+    if (constraints.hasBoundedWidth && constraints.hasBoundedHeight) {
+      size = constraints.biggest;
+    } else if (constraints.hasBoundedWidth) {
+      final double width = constraints.constrainWidth();
+      final double height = constraints.constrainHeight(getMinIntrinsicHeight(width));
+      size = Size(width, height);
+    } else if (constraints.hasBoundedHeight) {
+      final double height = constraints.constrainHeight();
+      final double width = constraints.constrainWidth(getMinIntrinsicWidth(height));
+      size = Size(width, height);
+    } else {
+      final double width = constraints.constrainWidth(getMinIntrinsicWidth(double.infinity));
+      final double height = constraints.constrainHeight(getMinIntrinsicHeight(double.infinity));
+      size = Size(width, height);
     }
-    size = constraints.biggest;
 
     bool expandWidth = false;
     bool expandHeight = false;
@@ -921,7 +1117,7 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
         double columnHeaderHeight = columnHeader != null ? columnHeader.size.height : 0;
 
         double horizontalScrollBarHeight =
-        parentDataFor(horizontalScrollBar).visible ? horizontalScrollBar.size.height : 0;
+            parentDataFor(horizontalScrollBar).visible ? horizontalScrollBar.size.height : 0;
         double minViewHeight = size.height - columnHeaderHeight - horizontalScrollBarHeight;
 
         if (view.size.height < minViewHeight) {
@@ -1161,66 +1357,63 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
 
   @override
   void paint(PaintingContext context, Offset offset) {
-    final _ScrollPaneParentData viewParentData = parentDataFor(view);
-    context.pushClipRect(
-      needsCompositing,
-      offset,
-      viewParentData.offset & view.size,
-          (PaintingContext context, Offset offset) {
+    context.pushClipRect(needsCompositing, offset, Offset.zero & size, _paintChildren);
+  }
+
+  void _paintChildren(PaintingContext context, Offset offset) {
+    double rowHeaderWidth = rowHeader?.size?.width ?? 0;
+    double columnHeaderHeight = columnHeader?.size?.height ?? 0;
+    double viewportWidth = size.width - rowHeaderWidth - verticalScrollBar.size.width;
+    double viewportHeight = size.height - columnHeaderHeight - horizontalScrollBar.size.height;
+
+    if (view != null) {
+      final _ScrollPaneParentData viewParentData = parentDataFor(view);
+      if (_clipBehavior == Clip.none) {
         context.paintChild(view, offset + viewParentData.offset);
-      },
-    );
+      } else {
+        Rect clipRect = Rect.fromLTWH(rowHeaderWidth, columnHeaderHeight, viewportWidth, viewportHeight).shift(offset);
+        context.clipRectAndPaint(clipRect, _clipBehavior, clipRect, () {
+          context.paintChild(view, offset + viewParentData.offset);
+        });
+      }
+    }
 
     if (rowHeader != null) {
       final _ScrollPaneParentData rowHeaderParentData = parentDataFor(rowHeader);
       if (rowHeaderParentData.visible) {
-        context.pushClipRect(
-          needsCompositing,
-          offset,
-          rowHeaderParentData.offset & rowHeader.size,
-              (PaintingContext context, Offset offset) {
+        if (_clipBehavior == Clip.none) {
+          context.paintChild(rowHeader, offset + rowHeaderParentData.offset);
+        } else {
+          Rect clipRect = Rect.fromLTWH(0, columnHeaderHeight, rowHeaderWidth, viewportHeight).shift(offset);
+          context.clipRectAndPaint(clipRect, _clipBehavior, clipRect, () {
             context.paintChild(rowHeader, offset + rowHeaderParentData.offset);
-          },
-        );
+          });
+        }
       }
     }
 
     if (columnHeader != null) {
       final _ScrollPaneParentData columnHeaderParentData = parentDataFor(columnHeader);
       if (columnHeaderParentData.visible) {
-        context.pushClipRect(
-          needsCompositing,
-          offset,
-          columnHeaderParentData.offset & columnHeader.size,
-              (PaintingContext context, Offset offset) {
+        if (_clipBehavior == Clip.none) {
+          context.paintChild(columnHeader, offset + columnHeaderParentData.offset);
+        } else {
+          Rect clipRect = Rect.fromLTWH(rowHeaderWidth, 0, viewportWidth, columnHeaderHeight).shift(offset);
+          context.clipRectAndPaint(clipRect, _clipBehavior, clipRect, () {
             context.paintChild(columnHeader, offset + columnHeaderParentData.offset);
-          },
-        );
+          });
+        }
       }
     }
 
     _ScrollPaneParentData horizontalScrollBarParentData = parentDataFor(horizontalScrollBar);
     if (horizontalScrollBarParentData.visible) {
-      context.pushClipRect(
-        needsCompositing,
-        offset,
-        horizontalScrollBarParentData.offset & horizontalScrollBar.size,
-            (PaintingContext context, Offset offset) {
-          context.paintChild(horizontalScrollBar, offset + horizontalScrollBarParentData.offset);
-        },
-      );
+      context.paintChild(horizontalScrollBar, offset + horizontalScrollBarParentData.offset);
     }
 
     _ScrollPaneParentData verticalScrollBarParentData = parentDataFor(verticalScrollBar);
     if (verticalScrollBarParentData.visible) {
-      context.pushClipRect(
-        needsCompositing,
-        offset,
-        verticalScrollBarParentData.offset & verticalScrollBar.size,
-            (PaintingContext context, Offset offset) {
-          context.paintChild(verticalScrollBar, offset + verticalScrollBarParentData.offset);
-        },
-      );
+      context.paintChild(verticalScrollBar, offset + verticalScrollBarParentData.offset);
     }
 
     RenderBox topLeftCorner = corner;
