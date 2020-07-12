@@ -368,11 +368,11 @@ class ScrollPane extends StatelessWidget {
       bottomLeftCorner: bottomLeftCorner,
       bottomRightCorner: bottomRightCorner,
       topRightCorner: topRightCorner,
-      horizontalScrollBar: ScrollBar(
+      horizontalScrollBar: const ScrollBar(
         orientation: Axis.horizontal,
         unitIncrement: 10,
       ),
-      verticalScrollBar: ScrollBar(
+      verticalScrollBar: const ScrollBar(
         orientation: Axis.vertical,
         unitIncrement: 10,
       ),
@@ -420,7 +420,17 @@ class _ScrollPane extends RenderObjectWidget {
     @required this.horizontalScrollBarPolicy,
     @required this.verticalScrollBarPolicy,
     @required this.clipBehavior,
-  }) : super(key: key);
+  })  : assert(view != null),
+        assert(topLeftCorner != null),
+        assert(bottomLeftCorner != null),
+        assert(bottomRightCorner != null),
+        assert(topRightCorner != null),
+        assert(horizontalScrollBar != null),
+        assert(verticalScrollBar != null),
+        assert(horizontalScrollBarPolicy != null),
+        assert(verticalScrollBarPolicy != null),
+        assert(clipBehavior != null),
+        super(key: key);
 
   final Widget view;
   final Widget rowHeader;
@@ -489,8 +499,17 @@ class _ScrollPaneElement extends RenderObjectElement {
 
   @override
   void update(_ScrollPane newWidget) {
-    // TODO: anything to do here?
     super.update(newWidget);
+    assert(widget == newWidget);
+    _view = updateChild(_view, widget.view, _ScrollPaneSlot.view);
+    _rowHeader = updateChild(_rowHeader, widget.rowHeader, _ScrollPaneSlot.rowHeader);
+    _columnHeader = updateChild(_columnHeader, widget.columnHeader, _ScrollPaneSlot.columnHeader);
+    _topLeftCorner = updateChild(_topLeftCorner, widget.topLeftCorner, _ScrollPaneSlot.topLeftCorner);
+    _bottomLeftCorner = updateChild(_bottomLeftCorner, widget.bottomLeftCorner, _ScrollPaneSlot.bottomLeftCorner);
+    _bottomRightCorner = updateChild(_bottomRightCorner, widget.bottomRightCorner, _ScrollPaneSlot.bottomRightCorner);
+    _topRightCorner = updateChild(_topRightCorner, widget.topRightCorner, _ScrollPaneSlot.topRightCorner);
+    _horizontalScrollBar = updateChild(_horizontalScrollBar, widget.horizontalScrollBar, _ScrollPaneSlot.horizontalScrollBar);
+    _verticalScrollBar = updateChild(_verticalScrollBar, widget.verticalScrollBar, _ScrollPaneSlot.verticalScrollBar);
   }
 
   @override
@@ -580,10 +599,10 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
     Clip clipBehavior = Clip.hardEdge,
   })  : assert(horizontalScrollBarPolicy != null),
         assert(verticalScrollBarPolicy != null),
-  assert(clipBehavior != null),
+        assert(clipBehavior != null),
         _horizontalScrollBarPolicy = horizontalScrollBarPolicy,
         _verticalScrollBarPolicy = verticalScrollBarPolicy,
-  _clipBehavior = clipBehavior;
+        _clipBehavior = clipBehavior;
 
   static const double _horizontalReveal = 30;
   static const double _verticalReveal = 30;
