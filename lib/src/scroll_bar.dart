@@ -151,7 +151,9 @@ class RenderScrollBar extends RenderBox
     _enabled = value;
     _upButton.enabled = value;
     _downButton.enabled = value;
-    markNeedsLayout();
+    if (!_aboutToLayout) {
+      markNeedsLayout();
+    }
   }
 
   double _start;
@@ -160,7 +162,9 @@ class RenderScrollBar extends RenderBox
     assert(value != null);
     if (_start == value) return;
     _start = value;
-    markNeedsLayout();
+    if (!_aboutToLayout) {
+      markNeedsLayout();
+    }
   }
 
   double _end;
@@ -169,7 +173,9 @@ class RenderScrollBar extends RenderBox
     assert(value != null);
     if (_end == value) return;
     _end = value;
-    markNeedsLayout();
+    if (!_aboutToLayout) {
+      markNeedsLayout();
+    }
   }
 
   double _extent;
@@ -178,33 +184,9 @@ class RenderScrollBar extends RenderBox
     assert(value != null);
     if (_extent == value) return;
     _extent = value;
-    markNeedsLayout();
-  }
-
-  /// Updates the scope of the scrollbar without marking it as needing layout.
-  ///
-  /// This is intended to only be used by the parent of the scroll bar during
-  /// layout (prior to calling [layout] on the scroll bar).
-  void updateValuesPriorToLayout({
-    @required Object token,
-    @required double value,
-    @required double start,
-    @required double end,
-    @required double extent,
-  }) {
-    assert(identical(parent, token));
-    assert(owner.debugDoingLayout);
-    assert(value != null);
-    assert(start != null);
-    assert(end != null);
-    assert(extent != null);
-    assert(start < end);
-    assert(value >= start);
-    assert(value + extent <= end);
-    _value = value;
-    _start = start;
-    _end = end;
-    _extent = extent;
+    if (!_aboutToLayout) {
+      markNeedsLayout();
+    }
   }
 
   double _value;
@@ -216,16 +198,18 @@ class RenderScrollBar extends RenderBox
     _value = value;
     _scrollBarValueListeners.valueChanged(this, previousValue);
 
-    // markNeedsLayout() would yield the correct behavior but would do more
-    // work than needed. If all that has changed is the value, we can just
-    // update the handle's location and save the work of a full layout.
-    if (parentDataFor(_handle).visible) {
-      if (orientation == Axis.horizontal) {
-        double handleX = (value * _pixelValueRatio) + _upButton.size.width - 1;
-        parentDataFor(_handle).offset = Offset(handleX, 1);
-      } else {
-        double handleY = (value * _pixelValueRatio) + _upButton.size.height - 1;
-        parentDataFor(_handle).offset = Offset(1, handleY);
+    if (!_aboutToLayout) {
+      // markNeedsLayout() would yield the correct behavior but would do more
+      // work than needed. If all that has changed is the value, we can just
+      // update the handle's location and save the work of a full layout.
+      if (parentDataFor(_handle).visible) {
+        if (orientation == Axis.horizontal) {
+          double handleX = (value * _pixelValueRatio) + _upButton.size.width - 1;
+          parentDataFor(_handle).offset = Offset(handleX, 1);
+        } else {
+          double handleY = (value * _pixelValueRatio) + _upButton.size.height - 1;
+          parentDataFor(_handle).offset = Offset(1, handleY);
+        }
       }
     }
 
@@ -364,6 +348,56 @@ class RenderScrollBar extends RenderBox
     } else {
       return math.max(_upButton.getMinIntrinsicWidth(height), _downButton.getMinIntrinsicWidth(height));
     }
+  }
+
+  bool _aboutToLayout = false;
+
+  /// Updates the scroll bar's values and lays the scroll bar out.
+  ///
+  /// This is
+  void layoutWithValues({
+    @required Constraints constraints,
+    bool parentUsesSize = false,
+    bool enabled,
+    double value,
+    double start,
+    double end,
+    double extent,
+  }) {
+    enabled ??= this.enabled;
+    value ??= this.value;
+    start ??= this.start;
+    end ??= this.end;
+    extent ??= this.extent;
+    assert(start < end);
+    assert(value >= start);
+    assert(value + extent <= end);
+    assert(owner.debugDoingLayout);
+    assert(() {
+      if (parent is RenderBox) {
+        RenderBox parent = this.parent;
+        if (!parent.debugDoingThisLayout) {
+          throw FlutterError.fromParts(<DiagnosticsNode>[
+            ErrorSummary('layoutWithValues can only be called from parent.'),
+            ErrorDescription('An object other than the parent of '
+                'RenderScrollBar called layoutWithValues() This method is '
+                'intended to be called only by the parent render object.'),
+          ]);
+        }
+      }
+      return true;
+    }());
+    _aboutToLayout = true;
+    try {
+      this.value = value;
+      this.enabled = enabled;
+      this.start = start;
+      this.end = end;
+      this.extent = extent;
+    } finally {
+      _aboutToLayout = false;
+    }
+    layout(constraints, parentUsesSize: parentUsesSize);
   }
 
   @override
@@ -605,13 +639,17 @@ class _ScrollBarValueListenerList extends ListenerList<ScrollBarValueListener> i
   }
 }
 
-class _RenderScrollBarButton extends RenderBox with RenderObjectWithChildMixin<RenderBox>, RenderBoxWithChildDefaultsMixin {
+class _RenderScrollBarButton extends RenderBox
+    with RenderObjectWithChildMixin<RenderBox>, RenderBoxWithChildDefaultsMixin {
   _RenderScrollBarButton({
     this.orientation = Axis.vertical,
     this.direction = 1,
   }) {
-    // Set this here to trigger the side-effects of `enabled=`
-    enabled = true;
+    child = RenderMouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: _onEnter,
+      onExit: _onExit,
+    );
   }
 
   final Axis orientation;
@@ -619,7 +657,7 @@ class _RenderScrollBarButton extends RenderBox with RenderObjectWithChildMixin<R
 
   static const double _length = 15;
 
-  bool _enabled;
+  bool _enabled = true;
   bool get enabled => _enabled;
   set enabled(bool value) {
     assert(value != null);
@@ -627,13 +665,9 @@ class _RenderScrollBarButton extends RenderBox with RenderObjectWithChildMixin<R
     parent?.automaticScroller?.stop();
     _enabled = value;
     if (_enabled) {
-      child = RenderMouseRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: _onEnter,
-        onExit: _onExit,
-      );
+      child.cursor = SystemMouseCursors.click;
     } else {
-      child = null;
+      child.cursor = MouseCursor.defer;
     }
     markNeedsPaint();
   }
@@ -687,6 +721,9 @@ class _RenderScrollBarButton extends RenderBox with RenderObjectWithChildMixin<R
   RenderScrollBar get parent => super.parent;
 
   @override
+  RenderMouseRegion get child => super.child;
+
+  @override
   void handleEvent(PointerEvent event, BoxHitTestEntry entry) {
     assert(debugHandleEvent(event, entry));
     if (!enabled) return;
@@ -737,7 +774,8 @@ class _RenderScrollBarButton extends RenderBox with RenderObjectWithChildMixin<R
   }
 }
 
-class _RenderScrollBarHandle extends RenderBox with RenderObjectWithChildMixin<RenderBox>, RenderBoxWithChildDefaultsMixin {
+class _RenderScrollBarHandle extends RenderBox
+    with RenderObjectWithChildMixin<RenderBox>, RenderBoxWithChildDefaultsMixin {
   _RenderScrollBarHandle({@required this.orientation}) : assert(orientation != null) {
     child = RenderMouseRegion(
       onEnter: _onEnter,
@@ -843,7 +881,7 @@ class _RenderScrollBarHandle extends RenderBox with RenderObjectWithChildMixin<R
 }
 
 mixin RenderBoxWithChildDefaultsMixin on RenderObjectWithChildMixin<RenderBox> {
-  bool defaultHitTestChild(BoxHitTestResult result, { Offset position }) {
+  bool defaultHitTestChild(BoxHitTestResult result, {Offset position}) {
     if (child == null) {
       return false;
     }
@@ -895,7 +933,7 @@ class _ScrollButtonPainter extends CustomPainter {
         backgroundColor = const Color(0xffdddcd5);
       }
     } else {
-      backgroundColor = const Color(0xffaaaaaa); // TODO: get the right value here
+      backgroundColor = const Color(0xffcccccc);
     }
 
     Color brightBackgroundColor = colorUtils.brighten(backgroundColor);
@@ -907,9 +945,15 @@ class _ScrollButtonPainter extends CustomPainter {
 
     Paint bgPaint = Paint()..style = PaintingStyle.fill;
     if (orientation == Axis.horizontal) {
-      bgPaint.shader = ui.Gradient.linear(Offset(0, 1.5), Offset(0, size.height - 1.5), colors);
+      if (enabled)
+        bgPaint.shader = ui.Gradient.linear(Offset(0, 1.5), Offset(0, size.height - 1.5), colors);
+      else
+        bgPaint.color = backgroundColor;
     } else {
-      bgPaint.shader = ui.Gradient.linear(Offset(1.5, 0), Offset(size.width - 1.5, 0), colors);
+      if (enabled)
+        bgPaint.shader = ui.Gradient.linear(Offset(1.5, 0), Offset(size.width - 1.5, 0), colors);
+      else
+        bgPaint.color = backgroundColor;
     }
 
     canvas.drawRect(Offset(1, 1) & Size(size.width - 2, size.height - 2), bgPaint);
