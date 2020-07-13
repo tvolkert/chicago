@@ -868,6 +868,7 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
 
   @override
   void detach() {
+    super.detach();
     if (view != null) view.detach();
     if (rowHeader != null) rowHeader.detach();
     if (columnHeader != null) columnHeader.detach();
@@ -877,7 +878,6 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
     if (topRightCorner != null) topRightCorner.detach();
     if (horizontalScrollBar != null) horizontalScrollBar.detach();
     if (verticalScrollBar != null) verticalScrollBar.detach();
-    super.detach();
   }
 
   @override
