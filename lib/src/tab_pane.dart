@@ -156,7 +156,12 @@ class _TabPaneState extends State<TabPane> {
             child: IndexedStack(
               index: selectedIndex,
               sizing: StackFit.passthrough,
-              children: widget.tabs.map<Widget>((Tab tab) => tab.child).toList(),
+              children: List<Widget>.generate(widget.tabs.length, (int index) {
+                return ExcludeFocus(
+                  excluding: index != selectedIndex,
+                  child: widget.tabs[index].child,
+                );
+              }),
             ),
           ),
         ),
