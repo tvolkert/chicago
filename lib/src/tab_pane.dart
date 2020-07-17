@@ -157,9 +157,12 @@ class _TabPaneState extends State<TabPane> {
               index: selectedIndex,
               sizing: StackFit.passthrough,
               children: List<Widget>.generate(widget.tabs.length, (int index) {
-                return ExcludeFocus(
-                  excluding: index != selectedIndex,
-                  child: widget.tabs[index].child,
+                return TickerMode(
+                  enabled: index == selectedIndex,
+                  child: ExcludeFocus(
+                    excluding: index != selectedIndex,
+                    child: widget.tabs[index].child,
+                  ),
                 );
               }),
             ),
