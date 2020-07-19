@@ -15,6 +15,8 @@
 
 import 'package:flutter/material.dart';
 
+import 'push_button.dart';
+
 enum MessageType {
   error,
   warning,
@@ -32,14 +34,27 @@ class Sheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: const Color(0xebf6f4ed),
-        border: Border.all(width: 1, color: const Color(0xff999999)),
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(9),
-        child: content,
+    return Material(
+      elevation: 4,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: const Color(0xebf6f4ed),
+          border: Border.all(color: const Color(0xff999999)),
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(1),
+          child: DecoratedBox(
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(
+                color: Color(0xffdedcd5),
+              )),
+            ),
+            child: Padding(
+              padding: EdgeInsets.all(8),
+              child: content,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -94,6 +109,7 @@ class Prompt extends StatelessWidget {
     return Sheet(
       content: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           DecoratedBox(
             decoration: BoxDecoration(
@@ -102,17 +118,17 @@ class Prompt extends StatelessWidget {
                 color: const Color(0xff999999),
               ),
             ),
-            child: Material(
-              type: MaterialType.transparency,
-              child: Padding(
-                padding: EdgeInsets.all(12),
-                child: SizedBox(
-                  width: 280,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Image.asset('assets/${_messageTypeToAsset(messageType)}'),
-                      Expanded(
+            child: Padding(
+              padding: EdgeInsets.all(13),
+              child: SizedBox(
+                width: 280,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Image.asset('assets/${_messageTypeToAsset(messageType)}'),
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(left: 12),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -120,26 +136,40 @@ class Prompt extends StatelessWidget {
                               message,
                               style: Theme.of(context).textTheme.bodyText2.copyWith(fontWeight: FontWeight.bold),
                             ),
-                            body,
+                            Padding(
+                              padding: EdgeInsets.only(top: 11),
+                              child: body,
+                            ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            mainAxisSize: MainAxisSize.min,
-            children: List<Widget>.generate(options.length, (int index) {
-              // TODO: switch to Terra styled button.
-              return OutlineButton(
-                onPressed: () => _setSelectedOption(context, index),
-                child: Text(options[index]),
-              );
-            }),
+          Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: List<Widget>.generate(options.length, (int index) {
+                return Padding(
+                  padding: EdgeInsets.only(left: 4),
+                  child: PushButton(
+                    color: Colors.white,
+                    backgroundColor: const Color(0xff3c77b2),
+                    borderColor: const Color(0xff2b5580),
+                    padding: EdgeInsets.fromLTRB(3, 4, 4, 5),
+                    showTooltip: false,
+                    minimumAspectRatio: 3,
+                    onPressed: () => _setSelectedOption(context, index),
+                    label: options[index],
+                  ),
+                );
+              }),
+            ),
           ),
         ],
       ),
@@ -181,6 +211,7 @@ Future<T> _openDialog<T>({
     context: context,
     barrierDismissible: barrierDismissible,
     barrierLabel: barrierLabel,
+    barrierColor: const Color(0x80000000),
     pageBuilder: (
       BuildContext context,
       Animation<double> animation,
