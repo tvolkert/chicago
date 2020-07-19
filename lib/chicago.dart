@@ -15,7 +15,9 @@
 
 export 'src/colors.dart';
 export 'src/listener_list.dart';
+export 'src/push_button.dart';
 export 'src/scroll_bar.dart';
 export 'src/scroll_pane.dart';
 export 'src/sheet.dart';
+export 'src/sorting.dart';
 export 'src/tab_pane.dart';
