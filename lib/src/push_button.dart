@@ -23,7 +23,7 @@ import 'package:flutter/rendering.dart';
 import 'colors.dart';
 import 'sorting.dart';
 
-class PushButton extends StatefulWidget {
+class PushButton<T> extends StatefulWidget {
   const PushButton({
     Key key,
     this.icon,
@@ -32,6 +32,7 @@ class PushButton extends StatefulWidget {
     this.isToolbar = false,
     this.onPressed,
     this.menuItems,
+    this.onMenuItemSelected,
     this.minimumAspectRatio,
     this.color = const Color(0xff000000),
     this.backgroundColor = const Color(0xffdddcd5),
@@ -45,7 +46,8 @@ class PushButton extends StatefulWidget {
   final Axis axis;
   final bool isToolbar;
   final VoidCallback onPressed;
-  final List<PopupMenuEntry> menuItems;
+  final List<PopupMenuEntry<T>> menuItems;
+  final PopupMenuItemSelected<T> onMenuItemSelected;
   final double minimumAspectRatio;
   final Color color;
   final Color backgroundColor;
@@ -54,12 +56,13 @@ class PushButton extends StatefulWidget {
   final bool showTooltip;
 
   @override
-  _PushButtonState createState() => _PushButtonState();
+  _PushButtonState<T> createState() => _PushButtonState<T>();
 }
 
-class _PushButtonState extends State<PushButton> {
+class _PushButtonState<T> extends State<PushButton<T>> {
   bool hover;
   bool pressed;
+  bool menuActive;
 
   LinearGradient get highlightGradient {
     return LinearGradient(
@@ -82,6 +85,7 @@ class _PushButtonState extends State<PushButton> {
     super.initState();
     hover = false;
     pressed = false;
+    menuActive = false;
   }
 
   @override
@@ -140,10 +144,10 @@ class _PushButtonState extends State<PushButton> {
       );
     }
 
-    if (hover || !widget.isToolbar) {
+    if (menuActive || hover || !widget.isToolbar) {
       final Border border = Border.fromBorderSide(BorderSide(color: widget.borderColor));
       Decoration decoration;
-      if (enabled && pressed) {
+      if (enabled && (pressed || menuActive)) {
         decoration = BoxDecoration(border: border, gradient: pressedGradient);
       } else if (enabled) {
         decoration = BoxDecoration(border: border, gradient: highlightGradient);
@@ -160,8 +164,7 @@ class _PushButtonState extends State<PushButton> {
           widget.onPressed();
         }
         setState(() {
-          hover = true;
-          pressed = true;
+          menuActive = true;
         });
         final RenderBox button = context.findRenderObject() as RenderBox;
         final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
@@ -172,26 +175,16 @@ class _PushButtonState extends State<PushButton> {
           ),
           Offset.zero & overlay.size,
         );
-        showMenu<String>(
+        showMenu<T>(
           context: context,
           position: position,
           items: widget.menuItems,
-        ).then((String value) {
+        ).then((T value) {
           setState(() {
-            hover = false;
-            pressed = false;
+            menuActive = false;
           });
-          switch (value) {
-            case 'about':
-              showAboutDialog(
-                context: context,
-                applicationName: 'Payouts',
-                applicationVersion: '2.0.0',
-                applicationIcon: Image.asset('assets/logo-large.png'),
-                applicationLegalese:
-                    '\u00A9 2001-2020 Satellite Consulting, Inc. All Rights Reserved. SCI Payouts and the Satellite Consulting, Inc. logo are trademarks of Satellite Consulting, Inc. All rights reserved.',
-              );
-              break;
+          if (widget.onMenuItemSelected != null) {
+            widget.onMenuItemSelected(value);
           }
         });
       };
@@ -324,5 +317,32 @@ class _RenderMinimumAspectRatio extends RenderProxyBox {
     } else {
       performResize();
     }
+  }
+}
+
+class CommandPushButton<T> extends StatelessWidget {
+  const CommandPushButton({
+    Key key,
+    @required this.label,
+    @required this.onPressed,
+  })  : assert(label != null),
+        assert(onPressed != null),
+        super(key: key);
+
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return PushButton<T>(
+      color: Colors.white,
+      backgroundColor: const Color(0xff3c77b2),
+      borderColor: const Color(0xff2b5580),
+      padding: EdgeInsets.fromLTRB(3, 4, 4, 5),
+      showTooltip: false,
+      minimumAspectRatio: 3,
+      onPressed: onPressed,
+      label: label,
+    );
   }
 }
