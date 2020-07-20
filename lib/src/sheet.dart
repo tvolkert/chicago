@@ -28,29 +28,31 @@ class Sheet extends StatelessWidget {
   const Sheet({
     Key key,
     @required this.content,
+    this.padding = const EdgeInsets.all(8),
   }) : super(key: key);
 
   final Widget content;
+  final EdgeInsetsGeometry padding;
 
   @override
   Widget build(BuildContext context) {
     return Material(
       elevation: 4,
       child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: const Color(0xebf6f4ed),
-          border: Border.all(color: const Color(0xff999999)),
+        decoration: const BoxDecoration(
+          color: Color(0xebf6f4ed),
+          border: Border.fromBorderSide(BorderSide(color: Color(0xff999999))),
         ),
         child: Padding(
-          padding: EdgeInsets.all(1),
+          padding: const EdgeInsets.all(1),
           child: DecoratedBox(
             decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(
-                color: Color(0xffdedcd5),
-              )),
+              border: Border(
+                bottom: BorderSide(color: Color(0xffdedcd5)),
+              ),
             ),
             child: Padding(
-              padding: EdgeInsets.all(8),
+              padding: padding,
               child: content,
             ),
           ),
@@ -59,10 +61,17 @@ class Sheet extends StatelessWidget {
     );
   }
 
-  static Future<T> open<T>({BuildContext context, Widget content}) {
+  static Future<T> open<T>({
+    BuildContext context,
+    Widget content,
+    EdgeInsetsGeometry padding = const EdgeInsets.all(8),
+    bool barrierDismissible = false,
+  }) {
     return _openDialog<T>(
       context: context,
+      barrierDismissible: barrierDismissible,
       child: Sheet(
+        padding: padding,
         content: content,
       ),
     );
@@ -157,13 +166,7 @@ class Prompt extends StatelessWidget {
               children: List<Widget>.generate(options.length, (int index) {
                 return Padding(
                   padding: EdgeInsets.only(left: 4),
-                  child: PushButton(
-                    color: Colors.white,
-                    backgroundColor: const Color(0xff3c77b2),
-                    borderColor: const Color(0xff2b5580),
-                    padding: EdgeInsets.fromLTRB(3, 4, 4, 5),
-                    showTooltip: false,
-                    minimumAspectRatio: 3,
+                  child: CommandPushButton(
                     onPressed: () => _setSelectedOption(context, index),
                     label: options[index],
                   ),
