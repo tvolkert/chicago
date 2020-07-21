@@ -178,6 +178,7 @@ class _PushButtonState<T> extends State<PushButton<T>> {
         showMenu<T>(
           context: context,
           position: position,
+          elevation: 4,
           items: widget.menuItems,
         ).then((T value) {
           setState(() {
