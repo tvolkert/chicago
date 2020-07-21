@@ -23,22 +23,30 @@ import 'package:flutter/rendering.dart';
 import 'colors.dart';
 import 'sorting.dart';
 
+const Axis _defaultAxis = Axis.horizontal;
+const Color _defaultColor = Color(0xff000000);
+const Color _defaultBackgroundColor = Color(0xffdddcd5);
+const Color _defaultBorderColor = Color(0xff999999);
+const EdgeInsetsGeometry _defaultPadding = EdgeInsets.symmetric(horizontal: 4, vertical: 4);
+const bool _defaultIsToolbar = false;
+const bool _defaultShowTooltip = true;
+
 class PushButton<T> extends StatefulWidget {
   const PushButton({
     Key key,
     this.icon,
     this.label,
-    this.axis = Axis.horizontal,
-    this.isToolbar = false,
+    this.axis = _defaultAxis,
+    this.isToolbar = _defaultIsToolbar,
     this.onPressed,
     this.menuItems,
     this.onMenuItemSelected,
     this.minimumAspectRatio,
-    this.color = const Color(0xff000000),
-    this.backgroundColor = const Color(0xffdddcd5),
-    this.borderColor = const Color(0xff999999),
-    this.padding = const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-    this.showTooltip = true,
+    this.color = _defaultColor,
+    this.backgroundColor = _defaultBackgroundColor,
+    this.borderColor = _defaultBorderColor,
+    this.padding = _defaultPadding,
+    this.showTooltip = _defaultShowTooltip,
   }) : super(key: key);
 
   final String icon;
@@ -344,6 +352,99 @@ class CommandPushButton<T> extends StatelessWidget {
       minimumAspectRatio: 3,
       onPressed: onPressed,
       label: label,
+    );
+  }
+}
+
+class ActionPushButton<T extends Intent> extends StatefulWidget {
+  const ActionPushButton({
+    Key key,
+    @required this.intent,
+    this.icon,
+    this.label,
+    this.axis = _defaultAxis,
+    this.isToolbar = _defaultIsToolbar,
+    this.minimumAspectRatio,
+    this.color = _defaultColor,
+    this.backgroundColor = _defaultBackgroundColor,
+    this.borderColor = _defaultBorderColor,
+    this.padding = _defaultPadding,
+    this.showTooltip = _defaultShowTooltip,
+  })  : assert(intent != null),
+        super(key: key);
+
+  final T intent;
+  final String icon;
+  final String label;
+  final Axis axis;
+  final bool isToolbar;
+  final double minimumAspectRatio;
+  final Color color;
+  final Color backgroundColor;
+  final Color borderColor;
+  final EdgeInsets padding;
+  final bool showTooltip;
+
+  @override
+  _ActionPushButtonState<T> createState() => _ActionPushButtonState<T>();
+}
+
+class _ActionPushButtonState<T extends Intent> extends State<ActionPushButton<T>> {
+  Action<T> action;
+  bool enabled;
+
+  void _attachToAction() {
+    setState(() {
+      action = Actions.find<T>(context);
+      enabled = action.isEnabled(widget.intent);
+    });
+    action.addActionListener(_actionUpdated);
+  }
+
+  void _detachFromAction() {
+    if (action != null) {
+      action.removeActionListener(_actionUpdated);
+      setState(() {
+        action = null;
+        enabled = false;
+      });
+    }
+  }
+
+  void _actionUpdated(Action<T> action) {
+    setState(() {
+      enabled = action.isEnabled(widget.intent);
+    });
+  }
+
+  void _handlePress() {
+    assert(action != null);
+    assert(enabled);
+    assert(action.isEnabled(widget.intent));
+    Actions.of(context).invokeAction(action, widget.intent, context);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _detachFromAction();
+    _attachToAction();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PushButton(
+      icon: widget.icon,
+      label: widget.label,
+      axis: widget.axis,
+      isToolbar: widget.isToolbar,
+      onPressed: enabled ? _handlePress : null,
+      minimumAspectRatio: widget.minimumAspectRatio,
+      color: widget.color,
+      backgroundColor: widget.backgroundColor,
+      borderColor: widget.borderColor,
+      padding: widget.padding,
+      showTooltip: widget.showTooltip,
     );
   }
 }
