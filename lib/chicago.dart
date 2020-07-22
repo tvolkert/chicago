@@ -14,6 +14,7 @@
 // limitations under the License.
 
 export 'src/activity_indicator.dart';
+export 'src/border.dart';
 export 'src/colors.dart';
 export 'src/link_button.dart';
 export 'src/listener_list.dart';
