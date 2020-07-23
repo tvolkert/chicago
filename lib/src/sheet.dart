@@ -37,11 +37,12 @@ class Sheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
+      type: MaterialType.canvas,
+      color: const Color(0xebf6f4ed),
       elevation: 4,
       child: DecoratedBox(
         decoration: const BoxDecoration(
-          color: Color(0xebf6f4ed),
-          border: Border.fromBorderSide(BorderSide(color: Color(0xff999999))),
+          border: Border.fromBorderSide(BorderSide(color: const Color(0xff999999))),
         ),
         child: Padding(
           padding: const EdgeInsets.all(1),
