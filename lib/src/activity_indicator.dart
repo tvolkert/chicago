@@ -65,14 +65,11 @@ class _ActivityIndicatorState extends State<ActivityIndicator> with SingleTicker
       builder: (BuildContext context, Widget child) {
         return Semantics(
           label: 'Loading',
-          child: LimitedBox(
-            maxWidth: _defaultSize,
-            maxHeight: _defaultSize,
-            child: CustomPaint(
-              painter: _ActivityIndicatorPainter(
-                baseColor: widget.color,
-                rotationValue: _rotationTween.evaluate(_controller),
-              ),
+          child: CustomPaint(
+            size: Size.square(_defaultSize),
+            painter: _ActivityIndicatorPainter(
+              baseColor: widget.color,
+              rotationValue: _rotationTween.evaluate(_controller),
             ),
           ),
         );
