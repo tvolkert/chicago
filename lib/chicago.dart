@@ -14,6 +14,7 @@
 // limitations under the License.
 
 export 'src/activity_indicator.dart';
+export 'src/basic_table_view.dart';
 export 'src/border.dart';
 export 'src/colors.dart';
 export 'src/link_button.dart';
