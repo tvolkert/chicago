@@ -22,6 +22,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 import 'scroll_bar.dart';
+import 'segment.dart';
 
 class ScrollPaneTest extends StatelessWidget {
   @override
@@ -248,6 +249,7 @@ enum ScrollBarPolicy {
   ///
   /// This policy can necessitate two layout passes of the view and is the most
   /// expensive policy in terms of layout performance.
+  // TODO: Causes double layout passes when scrolling a RenderSegment, even when constraints haven't changed.
   expand,
 }
 
@@ -508,7 +510,8 @@ class _ScrollPaneElement extends RenderObjectElement {
     _bottomLeftCorner = updateChild(_bottomLeftCorner, widget.bottomLeftCorner, _ScrollPaneSlot.bottomLeftCorner);
     _bottomRightCorner = updateChild(_bottomRightCorner, widget.bottomRightCorner, _ScrollPaneSlot.bottomRightCorner);
     _topRightCorner = updateChild(_topRightCorner, widget.topRightCorner, _ScrollPaneSlot.topRightCorner);
-    _horizontalScrollBar = updateChild(_horizontalScrollBar, widget.horizontalScrollBar, _ScrollPaneSlot.horizontalScrollBar);
+    _horizontalScrollBar =
+        updateChild(_horizontalScrollBar, widget.horizontalScrollBar, _ScrollPaneSlot.horizontalScrollBar);
     _verticalScrollBar = updateChild(_verticalScrollBar, widget.verticalScrollBar, _ScrollPaneSlot.verticalScrollBar);
   }
 
@@ -606,6 +609,7 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
 
   static const double _horizontalReveal = 30;
   static const double _verticalReveal = 30;
+  static const int _maxLayoutPasses = 4;
 
   /// Positions the row header, column header, and view based on the given
   /// scroll offset, row header width, and column header height.
@@ -718,13 +722,18 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
     if (_scrollOffset == value) return;
     _scrollOffset = value;
 
-    // We don't call `markNeedsLayout()` here because we need only reposition
-    // the view, row header, and column header. Invalidating our layout would
-    // yield the correct behavior, but it would do much more work than needed.
-    _positionMovableChildren(scrollOffset: value);
     horizontalScrollBar.value = value.dx;
     verticalScrollBar.value = value.dy;
-    markNeedsPaint();
+
+    if (view is RenderSegment || rowHeader is RenderSegment || columnHeader is RenderSegment) {
+      markNeedsLayout();
+    } else {
+      // We don't call `markNeedsLayout()` here because we need only reposition
+      // the view, row header, and column header. Invalidating our layout would
+      // yield the correct behavior, but it would do much more work than needed.
+      _positionMovableChildren(scrollOffset: value);
+      markNeedsPaint();
+    }
   }
 
   ScrollBarPolicy _horizontalScrollBarPolicy;
@@ -1152,7 +1161,7 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
       expandHeight = true;
     }
 
-    layoutHelper(horizontalPolicy, verticalPolicy);
+    _attemptLayout(horizontalPolicy, verticalPolicy);
 
     if (view != null && (expandWidth || expandHeight)) {
       // We assumed `auto`. Now we check our assumption to see if we
@@ -1185,7 +1194,7 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
       }
 
       if (adjustWidth || adjustHeight) {
-        layoutHelper(horizontalPolicy, verticalPolicy);
+        _attemptLayout(horizontalPolicy, verticalPolicy);
       }
     }
 
@@ -1196,7 +1205,7 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
   double _cachedHorizontalScrollBarHeight = 0;
   double _cachedVerticalScrollBarWidth = 0;
 
-  void layoutHelper(ScrollBarPolicy horizontalPolicy, ScrollBarPolicy verticalPolicy) {
+  void _attemptLayout(ScrollBarPolicy horizontalPolicy, ScrollBarPolicy verticalPolicy) {
     double width = size.width;
     double height = size.height;
 
@@ -1205,17 +1214,16 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
 
     double rowHeaderWidth = 0;
     if (rowHeader != null) {
-      rowHeaderWidth = rowHeader.getMinIntrinsicWidth(double.infinity);
+      rowHeaderWidth = rowHeader.getMaxIntrinsicWidth(double.infinity);
     }
 
     double columnHeaderHeight = 0;
     if (columnHeader != null) {
-      columnHeaderHeight = columnHeader.getMinIntrinsicHeight(double.infinity);
+      columnHeaderHeight = columnHeader.getMaxIntrinsicHeight(double.infinity);
     }
 
-    double previousViewWidth;
+    BoxConstraints viewConstraints;
     double viewWidth = 0;
-    double previousViewHeight;
     double viewHeight = 0;
     double previousHorizontalScrollBarHeight;
     double horizontalScrollBarHeight = _cachedHorizontalScrollBarHeight;
@@ -1223,9 +1231,15 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
     double verticalScrollBarWidth = _cachedVerticalScrollBarWidth;
     int i = 0;
 
+    bool scrollBarSizesChanged() {
+      return horizontalScrollBarHeight != previousHorizontalScrollBarHeight ||
+          verticalScrollBarWidth != previousVerticalScrollBarWidth;
+    }
+
+    const ScrollBarPolicy always = ScrollBarPolicy.always;
+    const ScrollBarPolicy auto = ScrollBarPolicy.auto;
+
     do {
-      previousViewWidth = viewWidth;
-      previousViewHeight = viewHeight;
       previousHorizontalScrollBarHeight = horizontalScrollBarHeight;
       previousVerticalScrollBarWidth = verticalScrollBarWidth;
 
@@ -1233,56 +1247,82 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
         if (constrainWidth && constrainHeight) {
           viewWidth = math.max(width - rowHeaderWidth - verticalScrollBarWidth, 0);
           viewHeight = math.max(height - columnHeaderHeight - horizontalScrollBarHeight, 0);
-          view.layout(BoxConstraints.tightFor(width: viewWidth, height: viewHeight), parentUsesSize: true);
+          viewConstraints = BoxConstraints.tightFor(width: viewWidth, height: viewHeight);
         } else if (constrainWidth) {
           viewWidth = math.max(width - rowHeaderWidth - verticalScrollBarWidth, 0);
-          view.layout(BoxConstraints.tightFor(width: viewWidth), parentUsesSize: true);
-          viewHeight = view.size.height;
+          viewHeight = view.getMaxIntrinsicHeight(viewWidth);
+          viewConstraints = BoxConstraints.tightFor(width: viewWidth);
         } else if (constrainHeight) {
           viewHeight = math.max(height - columnHeaderHeight - horizontalScrollBarHeight, 0);
-          view.layout(BoxConstraints.tightFor(height: viewHeight), parentUsesSize: true);
-          viewWidth = view.size.width;
+          viewWidth = view.getMaxIntrinsicWidth(viewHeight);
+          viewConstraints = BoxConstraints.tightFor(height: viewHeight);
         } else {
-          view.layout(const BoxConstraints(), parentUsesSize: true);
-          viewWidth = view.size.width;
-          viewHeight = view.size.height;
+          viewWidth = view.getMaxIntrinsicWidth(double.infinity);
+          viewHeight = view.getMaxIntrinsicHeight(double.infinity);
+          viewConstraints = BoxConstraints.tightFor(width: viewWidth, height: viewHeight);
         }
       }
 
-      if (horizontalPolicy == ScrollBarPolicy.always ||
-          (horizontalPolicy == ScrollBarPolicy.auto && viewWidth > width - rowHeaderWidth - verticalScrollBarWidth)) {
+      if (horizontalPolicy == always ||
+          (horizontalPolicy == auto && viewWidth > width - rowHeaderWidth - verticalScrollBarWidth)) {
         horizontalScrollBarHeight = horizontalScrollBar.getMinIntrinsicHeight(double.infinity);
       } else {
         horizontalScrollBarHeight = 0;
       }
 
-      if (verticalPolicy == ScrollBarPolicy.always ||
-          (verticalPolicy == ScrollBarPolicy.auto &&
-              viewHeight > height - columnHeaderHeight - horizontalScrollBarHeight)) {
+      if (verticalPolicy == always ||
+          (verticalPolicy == auto && viewHeight > height - columnHeaderHeight - horizontalScrollBarHeight)) {
         verticalScrollBarWidth = verticalScrollBar.getMinIntrinsicWidth(double.infinity);
       } else {
         verticalScrollBarWidth = 0;
       }
+    } while (++i <= _maxLayoutPasses && scrollBarSizesChanged());
 
-      if (++i > 4) {
-        // Infinite loop protection
-        assert(() {
-          print("Breaking out of potential infinite loop");
-          FlutterError.reportError(FlutterErrorDetails());
-        }());
-        break;
-      }
-    } while (viewWidth != previousViewWidth ||
-        viewHeight != previousViewHeight ||
-        horizontalScrollBarHeight != previousHorizontalScrollBarHeight ||
-        verticalScrollBarWidth != previousVerticalScrollBarWidth);
+    if (i > _maxLayoutPasses) {
+      assert(() {
+        throw FlutterError('A RenderScrollPane exceeded its maximum number of layout cycles.\n'
+            'RenderScrollPane render objects, during layout, can retry if the introduction '
+            'of scrollbars changes the constraints for one of its children.\n'
+            'In the case of this RenderScrollPane object, however, this happened $_maxLayoutPasses '
+            'times and still there was no consensus on the constraints. This usually '
+            'indicates a bug.');
+      }());
+    }
+
+    if (view != null) {
+      assert(viewConstraints != null);
+      final Offset segmentOffset = scrollOffset + Offset(rowHeaderWidth, columnHeaderHeight);
+      final Size segmentSize = size - Offset(verticalScrollBarWidth, horizontalScrollBarHeight);
+      final Rect viewport = segmentOffset & segmentSize;
+      final SegmentConstraints constraints = SegmentConstraints.fromBoxConstraints(
+        boxConstraints: viewConstraints,
+        viewport: viewport,
+      );
+      view.layout(constraints, parentUsesSize: true);
+    }
 
     if (columnHeader != null) {
-      columnHeader.layout(BoxConstraints.tightFor(width: viewWidth, height: columnHeaderHeight), parentUsesSize: true);
+      final BoxConstraints boxConstraints = BoxConstraints.tightFor(width: viewWidth, height: columnHeaderHeight);
+      final Offset segmentOffset = Offset(scrollOffset.dx, 0);
+      final Size segmentSize = Size(viewWidth, columnHeaderHeight);
+      final Rect viewport = segmentOffset & segmentSize;
+      final SegmentConstraints constraints = SegmentConstraints.fromBoxConstraints(
+        boxConstraints: boxConstraints,
+        viewport: viewport,
+      );
+      columnHeader.layout(constraints, parentUsesSize: true);
     }
 
     if (rowHeader != null) {
-      rowHeader.layout(BoxConstraints.tightFor(width: rowHeaderWidth, height: viewHeight), parentUsesSize: true);
+      final BoxConstraints boxConstraints = BoxConstraints.tightFor(width: rowHeaderWidth, height: viewHeight);
+      final Offset segmentOffset = Offset(0, scrollOffset.dy);
+      final Size segmentSize = Size(rowHeaderWidth, viewHeight);
+      final Rect viewport = segmentOffset & segmentSize;
+      final SegmentConstraints constraints = SegmentConstraints.fromBoxConstraints(
+        boxConstraints: boxConstraints,
+        viewport: viewport,
+      );
+      rowHeader.layout(constraints, parentUsesSize: true);
     }
 
     _ScrollPaneParentData horizontalScrollBarParentData = parentDataFor(horizontalScrollBar);
@@ -1393,6 +1433,9 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
       verticalScrollBar.layout(BoxConstraints.tight(Size.zero), parentUsesSize: true);
     }
   }
+
+  @override
+  bool get isRepaintBoundary => true;
 
   @override
   void paint(PaintingContext context, Offset offset) {
