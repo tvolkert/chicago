@@ -369,15 +369,13 @@ class RenderBorderLayout extends RenderBox {
     if (child != null) {
       final BoxParentData childParentData = child.parentData;
       if (title != null) {
-        Canvas canvas = context.canvas;
-        canvas.save();
+        context.canvas.save();
         try {
           final BoxParentData titleParentData = title.parentData;
-          canvas.clipRect((offset + titleParentData.offset) & title.size, clipOp: ClipOp.difference);
+          context.canvas.clipRect((offset + titleParentData.offset) & title.size, clipOp: ClipOp.difference);
           context.paintChild(child, offset + childParentData.offset);
         } finally {
-          assert(identical(canvas, context.canvas));
-          canvas.restore();
+          context.canvas.restore();
         }
       } else {
         context.paintChild(child, offset + childParentData.offset);
