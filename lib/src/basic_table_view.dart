@@ -127,10 +127,13 @@ class FlexTableColumnWidth extends TableColumnWidth {
 class BasicTableView<T> extends RenderObjectWidget {
   const BasicTableView({
     Key key,
-    this.data,
-    this.columns,
-    this.rowHeight,
-  }) : super(key: key);
+    @required this.data,
+    @required this.columns,
+    @required this.rowHeight,
+  })  : assert(data != null),
+        assert(columns != null),
+        assert(rowHeight != null),
+        super(key: key);
 
   // TODO: Support observable data
   final List<T> data;
