@@ -19,17 +19,13 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
-import 'package:payouts/src/pivot.dart';
 
 import 'segment.dart';
 
 const double _kDoublePrecisionTolerance = 0.001;
 
-typedef TableCellRenderer<T> = Widget Function({
+typedef TableCellRenderer = Widget Function({
   BuildContext context,
-  BasicTableView<T> tableView,
-  T row,
-  String columnName,
   int rowIndex,
   int columnIndex,
 });
@@ -46,45 +42,20 @@ typedef TableViewLayoutCallback = void Function({
 });
 
 @immutable
-class BasicTableColumn<T> with Diagnosticable {
+class BasicTableColumn with Diagnosticable {
   BasicTableColumn({
-    @required this.name,
     this.width = const FlexTableColumnWidth(),
-    TableCellRenderer<T> cellRenderer,
-  }) : _cellRenderer = cellRenderer;
+    @required this.cellRenderer,
+  });
 
-  final String name;
   final TableColumnWidth width;
-
-  final TableCellRenderer<T> _cellRenderer;
-  TableCellRenderer<T> get cellRenderer => _cellRenderer ?? _defaultRenderCell;
-
-  Widget _defaultRenderCell({
-    BuildContext context,
-    T row,
-    int rowIndex,
-    int columnIndex,
-    BasicTableView<T> tableView,
-    String columnName,
-  }) {
-    Widget result = Container();
-    if (row is Map<dynamic, dynamic>) {
-      final dynamic cellData = row[columnName];
-      if (cellData != null) {
-        result = Padding(
-          padding: EdgeInsets.all(2),
-          child: Text('$cellData', textAlign: TextAlign.left),
-        );
-      }
-    }
-    return result;
-  }
+  final TableCellRenderer cellRenderer;
 
   @override
   @protected
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(StringProperty('name', name));
+    properties.add(DiagnosticsProperty<Diagnosticable>('width', width));
   }
 }
 
@@ -122,36 +93,35 @@ class FlexTableColumnWidth extends TableColumnWidth {
   bool get isFlex => true;
 }
 
-class BasicTableView<T> extends RenderObjectWidget {
+class BasicTableView extends RenderObjectWidget {
   const BasicTableView({
     Key key,
-    @required this.data,
+    @required this.length,
     @required this.columns,
     @required this.rowHeight,
-  })  : assert(data != null),
+  })  : assert(length != null),
         assert(columns != null),
         assert(rowHeight != null),
+        assert(length >= 0),
         super(key: key);
 
-  // TODO: Support observable data
-  final List<T> data;
-  final List<BasicTableColumn<T>> columns;
-  // TODO: Support richer row height
+  final int length;
+  final List<BasicTableColumn> columns;
   final double rowHeight;
 
   @override
-  BasicTableViewElement<T> createElement() => BasicTableViewElement<T>(this);
+  BasicTableViewElement createElement() => BasicTableViewElement(this);
 
   @override
-  RenderBasicTableView<T> createRenderObject(BuildContext context) {
-    return RenderBasicTableView<T>(rowHeight: rowHeight, data: data, columns: columns);
+  RenderBasicTableView createRenderObject(BuildContext context) {
+    return RenderBasicTableView(rowHeight: rowHeight, length: length, columns: columns);
   }
 
   @override
-  void updateRenderObject(BuildContext context, RenderBasicTableView<T> renderObject) {
+  void updateRenderObject(BuildContext context, RenderBasicTableView renderObject) {
     renderObject
       ..rowHeight = rowHeight
-      ..data = data
+      ..length = length
       ..columns = columns;
   }
 }
@@ -309,14 +279,14 @@ class Pair<T> with Diagnosticable {
   }
 }
 
-class BasicTableViewElement<T> extends RenderObjectElement {
-  BasicTableViewElement(BasicTableView<T> tableView) : super(tableView);
+class BasicTableViewElement extends RenderObjectElement {
+  BasicTableViewElement(BasicTableView tableView) : super(tableView);
 
   @override
-  BasicTableView<T> get widget => super.widget as BasicTableView<T>;
+  BasicTableView get widget => super.widget as BasicTableView;
 
   @override
-  RenderBasicTableView<T> get renderObject => super.renderObject as RenderBasicTableView<T>;
+  RenderBasicTableView get renderObject => super.renderObject as RenderBasicTableView;
 
   Map<int, Map<int, Element>> _children;
   // We keep a set of forgotten children to avoid O(n^2) work walking _children
@@ -324,7 +294,7 @@ class BasicTableViewElement<T> extends RenderObjectElement {
   final Set<Element> _forgottenChildren = HashSet<Element>();
 
   @override
-  void update(BasicTableView<T> newTable) {
+  void update(BasicTableView newTable) {
     assert(widget != newTable);
     super.update(newTable);
     assert(widget == newTable);
@@ -356,15 +326,12 @@ class BasicTableViewElement<T> extends RenderObjectElement {
       });
       visitChildrenToBuild((int rowIndex, int columnIndex) {
         assert(_children != null);
-        final BasicTableColumn<T> column = widget.columns[columnIndex];
-        final TableCellRenderer<T> cellRenderer = column.cellRenderer;
+        final BasicTableColumn column = widget.columns[columnIndex];
+        final TableCellRenderer cellRenderer = column.cellRenderer;
         Widget built;
         try {
           built = cellRenderer(
             context: this,
-            tableView: widget,
-            row: widget.data[rowIndex],
-            columnName: column.name,
             rowIndex: rowIndex,
             columnIndex: columnIndex,
           );
@@ -487,13 +454,13 @@ class BasicTableViewElement<T> extends RenderObjectElement {
   }
 }
 
-class RenderBasicTableView<T> extends RenderSegment {
+class RenderBasicTableView extends RenderSegment {
   RenderBasicTableView({
     double rowHeight,
-    List<T> data,
-    List<BasicTableColumn<T>> columns,
+    int length,
+    List<BasicTableColumn> columns,
   })  : _rowHeight = rowHeight,
-        _data = data,
+        _length = length,
         _columns = columns;
 
   double _rowHeight;
@@ -505,18 +472,19 @@ class RenderBasicTableView<T> extends RenderSegment {
     markNeedsLayout();
   }
 
-  List<T> _data;
-  List<T> get data => _data;
-  set data(List<T> value) {
-    assert(value != null);
-    if (_data == value) return;
-    _data = value;
+  int _length;
+  int get length => _length;
+  set length(int value) {
+    assert(length != null);
+    assert(length >= 0);
+    if (_length == value) return;
+    _length = value;
     markNeedsBuild();
   }
 
-  List<BasicTableColumn<T>> _columns;
-  List<BasicTableColumn<T>> get columns => _columns;
-  set columns(List<BasicTableColumn<T>> value) {
+  List<BasicTableColumn> _columns;
+  List<BasicTableColumn> get columns => _columns;
+  set columns(List<BasicTableColumn> value) {
     assert(value != null);
     if (_columns == value) return;
     _columns = value;
@@ -655,7 +623,7 @@ class RenderBasicTableView<T> extends RenderSegment {
   @override
   double computeMinIntrinsicWidth(double height) {
     return columns
-        .map<TableColumnWidth>((BasicTableColumn<T> column) => column.width)
+        .map<TableColumnWidth>((BasicTableColumn column) => column.width)
         .where((TableColumnWidth width) => !width.isFlex)
         .fold<double>(0, (double previous, TableColumnWidth width) => previous + width.width);
   }
@@ -665,7 +633,7 @@ class RenderBasicTableView<T> extends RenderSegment {
 
   @override
   double computeMinIntrinsicHeight(double width) {
-    return data.length * rowHeight;
+    return length * rowHeight;
   }
 
   @override
@@ -682,7 +650,7 @@ class RenderBasicTableView<T> extends RenderSegment {
     }
 
     rebuildIfNecessary();
-    size = constraints.constrainDimensions(_metrics.totalWidth, data.length * rowHeight);
+    size = constraints.constrainDimensions(_metrics.totalWidth, length * rowHeight);
 
     visitTableCells((RenderBox child, int rowIndex, int columnIndex) {
       final double columnWidth = _metrics.columnWidth[columnIndex];
@@ -827,7 +795,7 @@ class _TableViewParentData extends BoxParentData {
 /// The returned list is guaranteed to be the same length as [columns] and
 /// contain only non-negative finite values.
 @visibleForTesting
-class TableViewMetrics<T> {
+class TableViewMetrics {
   const TableViewMetrics._(
     this.columns,
     this.constraints,
@@ -843,7 +811,7 @@ class TableViewMetrics<T> {
   /// Each column's [BasicTableColumn.width] specification is the source (when
   /// combined with [constraints]) of the resolved column widths in
   /// [columnWidth].
-  final List<BasicTableColumn<T>> columns;
+  final List<BasicTableColumn> columns;
 
   /// The [BoxConstraints] against which the width specifications of the
   /// [columns] was resolved.
@@ -870,17 +838,17 @@ class TableViewMetrics<T> {
   /// The total column width of the table view.
   final double totalWidth;
 
-  static TableViewMetrics of<T>(List<BasicTableColumn<T>> columns, double rowHeight, BoxConstraints constraints) {
+  static TableViewMetrics of(List<BasicTableColumn> columns, double rowHeight, BoxConstraints constraints) {
     assert(constraints.runtimeType == BoxConstraints);
     double totalFlexWidth = 0;
     double totalFixedWidth = 0;
     double totalWidth = 0;
     final List<double> resolvedWidths = List<double>.filled(columns.length, 0);
-    final Map<int, BasicTableColumn<T>> flexColumns = <int, BasicTableColumn<T>>{};
+    final Map<int, BasicTableColumn> flexColumns = <int, BasicTableColumn>{};
 
     // Reserve space for the fixed-width columns first.
     for (int i = 0; i < columns.length; i++) {
-      final BasicTableColumn<T> column = columns[i];
+      final BasicTableColumn column = columns[i];
       if (column.width.isFlex) {
         final FlexTableColumnWidth widthSpecification = column.width;
         totalFlexWidth += widthSpecification.width;
@@ -928,7 +896,7 @@ class TableViewMetrics<T> {
       }
       totalWidth = totalFixedWidth + flexAllocation;
       if (flexAllocation > 0) {
-        for (MapEntry<int, BasicTableColumn<T>> flexColumn in flexColumns.entries) {
+        for (MapEntry<int, BasicTableColumn> flexColumn in flexColumns.entries) {
           final FlexTableColumnWidth widthSpecification = flexColumn.value.width;
           final double allocationPercentage = widthSpecification.width / totalFlexWidth;
           resolvedWidths[flexColumn.key] = flexAllocation * allocationPercentage;
