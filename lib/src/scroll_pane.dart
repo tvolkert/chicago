@@ -724,16 +724,7 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
 
     horizontalScrollBar.value = value.dx;
     verticalScrollBar.value = value.dy;
-
-    if (view is RenderSegment || rowHeader is RenderSegment || columnHeader is RenderSegment) {
-      markNeedsLayout();
-    } else {
-      // We don't call `markNeedsLayout()` here because we need only reposition
-      // the view, row header, and column header. Invalidating our layout would
-      // yield the correct behavior, but it would do much more work than needed.
-      _positionMovableChildren(scrollOffset: value);
-      markNeedsPaint();
-    }
+    markNeedsLayout();
   }
 
   ScrollBarPolicy _horizontalScrollBarPolicy;
