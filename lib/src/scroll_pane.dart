@@ -1340,6 +1340,7 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
       parentData.visible = true;
       topLeftCorner.layout(BoxConstraints.tightFor(width: rowHeaderWidth, height: columnHeaderHeight));
     } else {
+      topLeftCorner.layout(BoxConstraints.tight(Size.zero));
       parentDataFor(topLeftCorner).visible = false;
     }
 
@@ -1349,6 +1350,7 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
       parentData.visible = true;
       bottomLeftCorner.layout(BoxConstraints.tightFor(width: rowHeaderWidth, height: horizontalScrollBarHeight));
     } else {
+      bottomLeftCorner.layout(BoxConstraints.tight(Size.zero));
       parentDataFor(bottomLeftCorner).visible = false;
     }
 
@@ -1359,6 +1361,7 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
       bottomRightCorner
           .layout(BoxConstraints.tightFor(width: verticalScrollBarWidth, height: horizontalScrollBarHeight));
     } else {
+      bottomRightCorner.layout(BoxConstraints.tight(Size.zero));
       parentDataFor(bottomRightCorner).visible = false;
     }
 
@@ -1368,6 +1371,7 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
       parentData.visible = true;
       topRightCorner.layout(BoxConstraints.tightFor(width: verticalScrollBarWidth, height: columnHeaderHeight));
     } else {
+      topRightCorner.layout(BoxConstraints.tight(Size.zero));
       parentDataFor(topRightCorner).visible = false;
     }
 
@@ -1508,6 +1512,25 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
     if (topRightCornerParentData.visible) {
       context.paintChild(topRightCorner, offset + topRightCornerParentData.offset);
     }
+  }
+
+  @override
+  List<DiagnosticsNode> debugDescribeChildren() {
+    final List<DiagnosticsNode> result = <DiagnosticsNode>[];
+    void add(RenderBox child, String name) {
+      if (child != null) result.add(child.toDiagnosticsNode(name: name));
+    }
+
+    add(view, 'view');
+    add(rowHeader, 'rowHeader');
+    add(columnHeader, 'columnHeader');
+    add(topLeftCorner, 'topLeftCorner');
+    add(bottomLeftCorner, 'bottomLeftCorner');
+    add(bottomRightCorner, 'bottomRightCorner');
+    add(topRightCorner, 'topRightCorner');
+    add(horizontalScrollBar, 'horizontalScrollBar');
+    add(verticalScrollBar, 'verticalScrollBar');
+    return result;
   }
 
   // ScrollBarValueListener methods

@@ -115,6 +115,13 @@ class RenderScrollBar extends RenderBox
     _handle = _RenderScrollBarHandle(
       orientation: orientation,
     );
+    assert(() {
+      // TODO: Just set these children at the widget layer with matching elements.
+      _upButton.debugCreator = this;
+      _downButton.debugCreator = this;
+      _handle.debugCreator = this;
+      return true;
+    }());
     super.insert(_handle);
     super.insert(_upButton);
     super.insert(_downButton);

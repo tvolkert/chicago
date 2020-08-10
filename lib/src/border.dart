@@ -387,4 +387,16 @@ class RenderBorderLayout extends RenderBox {
       context.paintChild(title, offset + titleParentData.offset);
     }
   }
+
+  @override
+  List<DiagnosticsNode> debugDescribeChildren() {
+    final List<DiagnosticsNode> result = <DiagnosticsNode>[];
+    void add(RenderBox child, String name) {
+      if (child != null) result.add(child.toDiagnosticsNode(name: name));
+    }
+
+    add(title, 'title');
+    add(child, 'child');
+    return result;
+  }
 }

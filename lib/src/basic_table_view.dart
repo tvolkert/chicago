@@ -760,6 +760,17 @@ class RenderBasicTableView extends RenderSegment {
       context.paintChild(child, offset + parentData.offset);
     });
   }
+
+  @override
+  List<DiagnosticsNode> debugDescribeChildren() {
+    final List<DiagnosticsNode> result = <DiagnosticsNode>[];
+    visitTableCells((child, rowIndex, columnIndex) {
+      if (child != null) {
+        result.add(child.toDiagnosticsNode(name: 'child $rowIndex,$columnIndex'));
+      }
+    });
+    return result;
+  }
 }
 
 class _TableViewParentData extends BoxParentData {
