@@ -762,9 +762,16 @@ class RenderBasicTableView extends RenderSegment {
   }
 
   @override
+  void redepthChildren() {
+    visitChildren((RenderObject child) {
+      redepthChild(child);
+    });
+  }
+
+  @override
   List<DiagnosticsNode> debugDescribeChildren() {
     final List<DiagnosticsNode> result = <DiagnosticsNode>[];
-    visitTableCells((child, rowIndex, columnIndex) {
+    visitTableCells((RenderBox child, int rowIndex, int columnIndex) {
       if (child != null) {
         result.add(child.toDiagnosticsNode(name: 'child $rowIndex,$columnIndex'));
       }

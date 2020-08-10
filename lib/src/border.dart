@@ -389,6 +389,12 @@ class RenderBorderLayout extends RenderBox {
   }
 
   @override
+  void redepthChildren() {
+    if (title != null) redepthChild(title);
+    if (child != null) redepthChild(child);
+  }
+
+  @override
   List<DiagnosticsNode> debugDescribeChildren() {
     final List<DiagnosticsNode> result = <DiagnosticsNode>[];
     void add(RenderBox child, String name) {

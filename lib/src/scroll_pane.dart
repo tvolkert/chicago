@@ -1515,6 +1515,19 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
   }
 
   @override
+  void redepthChildren() {
+    if (view != null) redepthChild(view);
+    if (rowHeader != null) redepthChild(rowHeader);
+    if (columnHeader != null) redepthChild(columnHeader);
+    if (topLeftCorner != null) redepthChild(topLeftCorner);
+    if (bottomLeftCorner != null) redepthChild(bottomLeftCorner);
+    if (bottomRightCorner != null) redepthChild(bottomRightCorner);
+    if (topRightCorner != null) redepthChild(topRightCorner);
+    if (horizontalScrollBar != null) redepthChild(horizontalScrollBar);
+    if (verticalScrollBar != null) redepthChild(verticalScrollBar);
+  }
+
+  @override
   List<DiagnosticsNode> debugDescribeChildren() {
     final List<DiagnosticsNode> result = <DiagnosticsNode>[];
     void add(RenderBox child, String name) {
