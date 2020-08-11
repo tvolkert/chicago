@@ -50,9 +50,7 @@ class SegmentConstraints extends BoxConstraints {
   bool operator ==(Object other) {
     if (identical(this, other))
       return true;
-    if (!(super == (other)))
-      return false;
-    return other is SegmentConstraints && other.viewport == viewport;
+    return other is SegmentConstraints && super == other && other.viewport == viewport;
   }
 
   @override

@@ -718,8 +718,8 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
   Offset get scrollOffset => _scrollOffset;
   set scrollOffset(Offset value) {
     assert(value != null);
-    value = _boundsCheckScrollOffset(value);
     if (_scrollOffset == value) return;
+    value = _boundsCheckScrollOffset(value);
     _scrollOffset = value;
 
     horizontalScrollBar.value = value.dx;
@@ -1250,7 +1250,7 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
         } else {
           viewWidth = view.getMaxIntrinsicWidth(double.infinity);
           viewHeight = view.getMaxIntrinsicHeight(double.infinity);
-          viewConstraints = BoxConstraints.tightFor(width: viewWidth, height: viewHeight);
+          viewConstraints = BoxConstraints();
         }
       }
 
@@ -1282,9 +1282,9 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
 
     if (view != null) {
       assert(viewConstraints != null);
-      final Offset segmentOffset = scrollOffset + Offset(rowHeaderWidth, columnHeaderHeight);
-      final Size segmentSize = size - Offset(verticalScrollBarWidth, horizontalScrollBarHeight);
-      final Rect viewport = segmentOffset & segmentSize;
+      Size segmentSize = size - Offset(verticalScrollBarWidth, horizontalScrollBarHeight);
+      segmentSize -= Offset(rowHeaderWidth, columnHeaderHeight);
+      final Rect viewport = scrollOffset & segmentSize;
       final SegmentConstraints constraints = SegmentConstraints.fromBoxConstraints(
         boxConstraints: viewConstraints,
         viewport: viewport,
@@ -1393,39 +1393,63 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
     // try to set structure values that are out of bounds.
 
     if (viewWidth > 0 && horizontalScrollBarHeight > 0) {
-      double viewportWidth = math.max(width - rowHeaderWidth - verticalScrollBarWidth, 0);
+      final double viewportWidth = math.max(width - rowHeaderWidth - verticalScrollBarWidth, 0);
+      final double horizontalScrollBarWidth = math.max(width - rowHeaderWidth - verticalScrollBarWidth, 0);
+      final double extent = math.min(viewWidth, viewportWidth);
       horizontalScrollBar.blockIncrement = math.max(1, viewportWidth - _horizontalReveal);
-      double horizontalScrollBarWidth = math.max(width - rowHeaderWidth - verticalScrollBarWidth, 0);
-      double extent = math.min(viewWidth, viewportWidth);
-      horizontalScrollBar.layoutWithValues(
-        constraints: BoxConstraints.tightFor(width: horizontalScrollBarWidth, height: horizontalScrollBarHeight),
-        enabled: !(scrollOffset.dx == 0 && extent == viewWidth),
-        value: scrollOffset.dx,
-        start: 0,
-        end: viewWidth,
-        extent: extent,
+      horizontalScrollBar.layout(
+        ScrollBarConstraints.fromBoxConstraints(
+          boxConstraints: BoxConstraints.tightFor(width: horizontalScrollBarWidth, height: horizontalScrollBarHeight),
+          enabled: !(scrollOffset.dx == 0 && extent == viewWidth),
+          start: 0,
+          end: viewWidth,
+          value: scrollOffset.dx,
+          extent: extent,
+        ),
         parentUsesSize: true,
       );
     } else {
-      horizontalScrollBar.layout(BoxConstraints.tight(Size.zero), parentUsesSize: true);
+      horizontalScrollBar.layout(
+        ScrollBarConstraints.fromBoxConstraints(
+          boxConstraints: BoxConstraints.tight(Size.zero),
+          enabled: horizontalScrollBar.enabled,
+          start: horizontalScrollBar.start,
+          end: horizontalScrollBar.end,
+          value: horizontalScrollBar.value,
+          extent: horizontalScrollBar.extent,
+        ),
+        parentUsesSize: true,
+      );
     }
 
     if (viewHeight > 0 && verticalScrollBarWidth > 0) {
-      double viewportHeight = math.max(height - columnHeaderHeight - horizontalScrollBarHeight, 0);
+      final double viewportHeight = math.max(height - columnHeaderHeight - horizontalScrollBarHeight, 0);
+      final double verticalScrollBarHeight = math.max(height - columnHeaderHeight - horizontalScrollBarHeight, 0);
+      final double extent = math.min(viewHeight, viewportHeight);
       verticalScrollBar.blockIncrement = math.max(1, viewportHeight - _verticalReveal);
-      double verticalScrollBarHeight = math.max(height - columnHeaderHeight - horizontalScrollBarHeight, 0);
-      double extent = math.min(viewHeight, viewportHeight);
-      verticalScrollBar.layoutWithValues(
-        constraints: BoxConstraints.tightFor(width: verticalScrollBarWidth, height: verticalScrollBarHeight),
-        enabled: !(scrollOffset.dy == 0 && extent == viewHeight),
-        value: scrollOffset.dy,
-        start: 0,
-        end: viewHeight,
-        extent: extent,
+      verticalScrollBar.layout(
+        ScrollBarConstraints.fromBoxConstraints(
+          boxConstraints: BoxConstraints.tightFor(width: verticalScrollBarWidth, height: verticalScrollBarHeight),
+          enabled: !(scrollOffset.dy == 0 && extent == viewHeight),
+          start: 0,
+          end: viewHeight,
+          value: scrollOffset.dy,
+          extent: extent,
+        ),
         parentUsesSize: true,
       );
     } else {
-      verticalScrollBar.layout(BoxConstraints.tight(Size.zero), parentUsesSize: true);
+      verticalScrollBar.layout(
+        ScrollBarConstraints.fromBoxConstraints(
+          boxConstraints: BoxConstraints.tight(Size.zero),
+          enabled: verticalScrollBar.enabled,
+          start: verticalScrollBar.start,
+          end: verticalScrollBar.end,
+          value: verticalScrollBar.value,
+          extent: verticalScrollBar.extent,
+        ),
+        parentUsesSize: true,
+      );
     }
   }
 

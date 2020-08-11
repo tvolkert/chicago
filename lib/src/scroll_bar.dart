@@ -30,35 +30,20 @@ class ScrollBar extends LeafRenderObjectWidget {
   const ScrollBar({
     Key key,
     this.orientation = Axis.vertical,
-    this.start = 0,
-    this.end = 100,
-    this.extent = 1,
-    this.value = 0,
     this.unitIncrement = 1,
     this.blockIncrement = 1,
-    this.enabled = true,
   }) : super(key: key);
 
   final Axis orientation;
-  final double start;
-  final double end;
-  final double extent;
-  final double value;
   final double unitIncrement;
   final double blockIncrement;
-  final bool enabled;
 
   @override
   RenderObject createRenderObject(BuildContext context) {
     return RenderScrollBar(
       orientation: orientation,
-      start: start,
-      end: end,
-      extent: extent,
-      value: value,
       unitIncrement: unitIncrement,
       blockIncrement: blockIncrement,
-      enabled: enabled,
     );
   }
 
@@ -66,12 +51,96 @@ class ScrollBar extends LeafRenderObjectWidget {
   void updateRenderObject(BuildContext context, RenderScrollBar renderObject) {
     renderObject
       ..orientation = orientation
-      ..start = start
-      ..end = end
-      ..extent = extent
-      ..value = value
       ..unitIncrement = unitIncrement
       ..blockIncrement = blockIncrement;
+  }
+}
+
+class ScrollBarConstraints extends BoxConstraints {
+  const ScrollBarConstraints({
+    double minWidth = 0,
+    double maxWidth = double.infinity,
+    double minHeight = 0,
+    double maxHeight = double.infinity,
+    this.enabled = true,
+    @required this.start,
+    @required this.end,
+    @required this.value,
+    @required this.extent,
+  })  : assert(enabled != null),
+        assert(start != null),
+        assert(end != null),
+        assert(value != null),
+        assert(extent != null),
+        super(minWidth: minWidth, maxWidth: maxWidth, minHeight: minHeight, maxHeight: maxHeight);
+
+  ScrollBarConstraints.fromBoxConstraints({
+    @required BoxConstraints boxConstraints,
+    this.enabled = true,
+    @required this.start,
+    @required this.end,
+    @required this.value,
+    @required this.extent,
+  })  : assert(enabled != null),
+        assert(start != null),
+        assert(end != null),
+        assert(value != null),
+        assert(extent != null),
+        super(
+          minWidth: boxConstraints.minWidth,
+          maxWidth: boxConstraints.maxWidth,
+          minHeight: boxConstraints.minHeight,
+          maxHeight: boxConstraints.maxHeight,
+        );
+
+  final bool enabled;
+  final double start;
+  final double end;
+  final double value;
+  final double extent;
+
+  @override
+  bool get isNormalized {
+    return super.isNormalized && start < end && value >= start && value + extent <= end;
+  }
+
+  @override
+  ScrollBarConstraints normalize() {
+    if (isNormalized) {
+      return this;
+    }
+    final double end = start < this.end ? this.end : start + 1;
+    final double value = this.value >= start && this.value < end ? this.value : start;
+    return ScrollBarConstraints.fromBoxConstraints(
+      boxConstraints: super.normalize(),
+      start: start,
+      end: end,
+      value: value,
+      extent: extent <= end - value ? extent : end - value,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ScrollBarConstraints &&
+        super == other &&
+        other.enabled == enabled &&
+        other.start == start &&
+        other.end == end &&
+        other.value == value &&
+        other.extent == extent;
+  }
+
+  @override
+  int get hashCode {
+    assert(debugAssertIsValid());
+    return hashValues(super.hashCode, enabled, start, end, value, extent);
+  }
+
+  @override
+  String toString() {
+    return 'SegmentConstraints(base=${super.toString()}, enabled=$enabled, start=$start, 3nd=$end, value=$value, extent=$extent)';
   }
 }
 
@@ -81,13 +150,13 @@ class RenderScrollBar extends RenderBox
         RenderBoxContainerDefaultsMixin<RenderBox, _ScrollBarParentData> {
   RenderScrollBar({
     Axis orientation = Axis.vertical,
+    double unitIncrement = 1,
+    double blockIncrement = 1,
+    bool enabled = true,
     double start = 0,
     double end = 100,
     double extent = 1,
     double value = 0,
-    double unitIncrement = 1,
-    double blockIncrement = 1,
-    bool enabled = true,
   })  : assert(orientation != null),
         assert(unitIncrement != null),
         assert(blockIncrement != null),
@@ -97,13 +166,13 @@ class RenderScrollBar extends RenderBox
         assert(value != null),
         assert(enabled != null),
         _orientation = orientation,
+        _unitIncrement = unitIncrement,
+        _blockIncrement = blockIncrement,
+        _enabled = enabled,
         _start = start,
         _end = end,
         _extent = extent,
-        _value = value,
-        _unitIncrement = unitIncrement,
-        _blockIncrement = blockIncrement,
-        _enabled = enabled {
+        _value = value {
     _upButton = _RenderScrollBarButton(
       orientation: orientation,
       direction: -1,
@@ -152,75 +221,49 @@ class RenderScrollBar extends RenderBox
 
   bool _enabled;
   bool get enabled => _enabled;
-  set enabled(bool value) {
-    assert(value != null);
-    if (_enabled == value) return;
-    _enabled = value;
-    _upButton.enabled = value;
-    _downButton.enabled = value;
-    if (!_aboutToLayout) {
-      markNeedsLayout();
-    }
-  }
 
   double _start;
   double get start => _start;
-  set start(double value) {
-    assert(value != null);
-    if (_start == value) return;
-    _start = value;
-    if (!_aboutToLayout) {
-      markNeedsLayout();
-    }
-  }
 
   double _end;
   double get end => _end;
-  set end(double value) {
-    assert(value != null);
-    if (_end == value) return;
-    _end = value;
-    if (!_aboutToLayout) {
-      markNeedsLayout();
-    }
-  }
 
   double _extent;
   double get extent => _extent;
-  set extent(double value) {
-    assert(value != null);
-    if (_extent == value) return;
-    _extent = value;
-    if (!_aboutToLayout) {
-      markNeedsLayout();
-    }
-  }
 
   double _value;
   double get value => _value;
   set value(double value) {
-    assert(value != null);
-    if (_value == value) return;
-    double previousValue = _value;
-    _value = value;
-    _scrollBarValueListeners.valueChanged(this, previousValue);
+    if (!_updateValue(value)) return;
 
-    if (!_aboutToLayout) {
-      // markNeedsLayout() would yield the correct behavior but would do more
-      // work than needed. If all that has changed is the value, we can just
-      // update the handle's location and save the work of a full layout.
-      if (parentDataFor(_handle).visible) {
-        if (orientation == Axis.horizontal) {
-          double handleX = (value * _pixelValueRatio) + _upButton.size.width - 1;
-          parentDataFor(_handle).offset = Offset(handleX, 1);
-        } else {
-          double handleY = (value * _pixelValueRatio) + _upButton.size.height - 1;
-          parentDataFor(_handle).offset = Offset(1, handleY);
-        }
+    // markNeedsLayout() would yield the correct behavior but would do more
+    // work than needed. If all that has changed is the value, we can just
+    // update the handle's location and save the work of a full layout.
+    if (parentDataFor(_handle).visible) {
+      if (orientation == Axis.horizontal) {
+        double handleX = (value * _pixelValueRatio) + _upButton.size.width - 1;
+        parentDataFor(_handle).offset = Offset(handleX, 1);
+      } else {
+        double handleY = (value * _pixelValueRatio) + _upButton.size.height - 1;
+        parentDataFor(_handle).offset = Offset(1, handleY);
       }
     }
 
     markNeedsPaint();
+  }
+
+  /// Updates the value of [RenderScrollBar.value].
+  ///
+  /// If and only if the value was updated, this will notify listeners.
+  ///
+  /// Returns true if the value was updated, or false if the value didn't change.
+  bool _updateValue(double value) {
+    assert(value != null);
+    if (_value == value) return false;
+    double previousValue = _value;
+    _value = value;
+    _scrollBarValueListeners.valueChanged(this, previousValue);
+    return true;
   }
 
   double _unitIncrement;
@@ -262,6 +305,9 @@ class RenderScrollBar extends RenderBox
   }
 
   _ScrollBarParentData parentDataFor(RenderBox child) => child.parentData;
+
+  @override
+  ScrollBarConstraints get constraints => super.constraints as ScrollBarConstraints;
 
   @override
   void insert(RenderBox child, {RenderBox after}) => throw UnsupportedError('Unsupported operation');
@@ -357,60 +403,17 @@ class RenderScrollBar extends RenderBox
     }
   }
 
-  bool _aboutToLayout = false;
-
-  /// Updates the scroll bar's values and lays the scroll bar out.
-  ///
-  /// This is
-  void layoutWithValues({
-    @required Constraints constraints,
-    bool parentUsesSize = false,
-    bool enabled,
-    double value,
-    double start,
-    double end,
-    double extent,
-  }) {
-    enabled ??= this.enabled;
-    value ??= this.value;
-    start ??= this.start;
-    end ??= this.end;
-    extent ??= this.extent;
-    assert(start < end);
-    assert(value >= start);
-    assert(value + extent <= end);
-    assert(owner.debugDoingLayout);
-    assert(() {
-      if (parent is RenderBox) {
-        RenderBox parent = this.parent;
-        if (!parent.debugDoingThisLayout) {
-          throw FlutterError.fromParts(<DiagnosticsNode>[
-            ErrorSummary('layoutWithValues can only be called from parent.'),
-            ErrorDescription('An object other than the parent of '
-                'RenderScrollBar called layoutWithValues() This method is '
-                'intended to be called only by the parent render object.'),
-          ]);
-        }
-      }
-      return true;
-    }());
-    _aboutToLayout = true;
-    try {
-      this.value = value;
-      this.enabled = enabled;
-      this.start = start;
-      this.end = end;
-      this.extent = extent;
-    } finally {
-      _aboutToLayout = false;
-    }
-    layout(constraints, parentUsesSize: parentUsesSize);
-  }
-
   @override
   void performLayout() {
     assert(constraints.isTight);
     size = constraints.smallest;
+    _enabled = constraints.enabled;
+    _upButton.enabled = constraints.enabled;
+    _downButton.enabled = constraints.enabled;
+    _start = constraints.start;
+    _end = constraints.end;
+    _updateValue(constraints.value); // notifies listeners
+    _extent = constraints.extent;
 
     double maxLegalRealValue = end - extent;
     double numLegalRealValues = maxLegalRealValue - start + 1;
