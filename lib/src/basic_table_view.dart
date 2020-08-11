@@ -61,7 +61,7 @@ class BasicTableColumn with Diagnosticable {
 
 @immutable
 abstract class TableColumnWidth with Diagnosticable {
-  const TableColumnWidth(this.width);
+  const TableColumnWidth(this.width) : assert(width != null);
 
   final double width;
 
@@ -682,6 +682,16 @@ class RenderBasicTableView extends RenderSegment {
       });
     }
 
+    TableCellRange skipOutOfBounds(TableCellRange range) {
+      return ProxyTableCellRange((TableCellVisitor visitor) {
+        range.visitCells((int rowIndex, int columnIndex) {
+          if (rowIndex < length && columnIndex < columns.length) {
+            visitor(rowIndex, columnIndex);
+          }
+        });
+      });
+    }
+
     if (_needsBuild) {
       _needsBuild = false;
       final Rect viewport = constraints.viewport;
@@ -747,8 +757,8 @@ class RenderBasicTableView extends RenderSegment {
     _viewport = constraints.viewport;
     invokeLayoutCallback<SegmentConstraints>((SegmentConstraints _) {
       _layoutCallback(
-        visitChildrenToRemove: removeCells.visitCells,
-        visitChildrenToBuild: buildCells.visitCells,
+        visitChildrenToRemove: skipOutOfBounds(removeCells).visitCells,
+        visitChildrenToBuild: skipOutOfBounds(buildCells).visitCells,
       );
     });
   }
