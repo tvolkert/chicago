@@ -43,7 +43,7 @@ typedef TableViewLayoutCallback = void Function({
 
 @immutable
 class BasicTableColumn with Diagnosticable {
-  BasicTableColumn({
+  const BasicTableColumn({
     this.width = const FlexTableColumnWidth(),
     @required this.cellRenderer,
   });
