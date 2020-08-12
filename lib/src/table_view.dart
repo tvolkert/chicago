@@ -106,12 +106,14 @@ class TableViewHeader extends StatelessWidget {
     this.rowHeight,
     this.columns,
     this.headerRenderers,
+    this.roundColumnWidthsToWholePixel,
     this.handleColumnResize,
   }) : super(key: key);
 
   final double rowHeight;
   final List<BasicTableColumn> columns;
   final List<TableHeaderRenderer> headerRenderers;
+  final bool roundColumnWidthsToWholePixel;
   final TableColumnResizeCallback handleColumnResize;
 
   Widget _renderHeader({
@@ -176,6 +178,7 @@ class TableViewHeader extends StatelessWidget {
     return BasicTableView(
       rowHeight: rowHeight,
       length: 1,
+      roundColumnWidthsToWholePixel: roundColumnWidthsToWholePixel,
       columns: List<BasicTableColumn>.generate(columns.length, (int index) {
         return BasicTableColumn(
           width: columns[index].width,
@@ -192,11 +195,13 @@ class ScrollableTableView extends StatefulWidget {
     this.rowHeight,
     this.length,
     this.columns,
+    this.roundColumnWidthsToWholePixel = false,
   }) : super(key: key);
 
   final double rowHeight;
   final int length;
   final List<TableColumnController> columns;
+  final bool roundColumnWidthsToWholePixel;
 
   @override
   _ScrollableTableViewState createState() => _ScrollableTableViewState();
@@ -258,6 +263,7 @@ class _ScrollableTableViewState extends State<ScrollableTableView> {
         rowHeight: widget.rowHeight,
         columns: columns,
         headerRenderers: headerRenderers,
+        roundColumnWidthsToWholePixel: widget.roundColumnWidthsToWholePixel,
         handleColumnResize: (int columnIndex, double delta) {
           final TableColumnController column = widget.columns[columnIndex];
           assert(column.width is ConstrainedTableColumnWidth);
@@ -269,6 +275,7 @@ class _ScrollableTableViewState extends State<ScrollableTableView> {
         length: widget.length,
         rowHeight: widget.rowHeight,
         columns: columns,
+        roundColumnWidthsToWholePixel: widget.roundColumnWidthsToWholePixel,
       ),
     );
   }
