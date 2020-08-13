@@ -1213,13 +1213,12 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
       columnHeaderHeight = columnHeader.getMaxIntrinsicHeight(double.infinity);
     }
 
-    BoxConstraints viewConstraints;
     double viewWidth = 0;
     double viewHeight = 0;
     double previousHorizontalScrollBarHeight;
-    double horizontalScrollBarHeight = _cachedHorizontalScrollBarHeight;
+    double horizontalScrollBarHeight = constrainWidth ? 0 : _cachedHorizontalScrollBarHeight;
     double previousVerticalScrollBarWidth;
-    double verticalScrollBarWidth = _cachedVerticalScrollBarWidth;
+    double verticalScrollBarWidth = constrainHeight ? 0 : _cachedVerticalScrollBarWidth;
     int i = 0;
 
     bool scrollBarSizesChanged() {
@@ -1235,23 +1234,31 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
       previousVerticalScrollBarWidth = verticalScrollBarWidth;
 
       if (view != null) {
+        BoxConstraints viewConstraints;
         if (constrainWidth && constrainHeight) {
           viewWidth = math.max(width - rowHeaderWidth - verticalScrollBarWidth, 0);
           viewHeight = math.max(height - columnHeaderHeight - horizontalScrollBarHeight, 0);
           viewConstraints = BoxConstraints.tightFor(width: viewWidth, height: viewHeight);
         } else if (constrainWidth) {
           viewWidth = math.max(width - rowHeaderWidth - verticalScrollBarWidth, 0);
-          viewHeight = view.getMaxIntrinsicHeight(viewWidth);
           viewConstraints = BoxConstraints.tightFor(width: viewWidth);
         } else if (constrainHeight) {
           viewHeight = math.max(height - columnHeaderHeight - horizontalScrollBarHeight, 0);
-          viewWidth = view.getMaxIntrinsicWidth(viewHeight);
           viewConstraints = BoxConstraints.tightFor(height: viewHeight);
         } else {
-          viewWidth = view.getMaxIntrinsicWidth(double.infinity);
-          viewHeight = view.getMaxIntrinsicHeight(double.infinity);
           viewConstraints = BoxConstraints();
         }
+
+        Size segmentSize = size - Offset(verticalScrollBarWidth, horizontalScrollBarHeight);
+        segmentSize -= Offset(rowHeaderWidth, columnHeaderHeight);
+        final Rect viewport = scrollOffset & segmentSize;
+        final SegmentConstraints constraints = SegmentConstraints.fromBoxConstraints(
+          boxConstraints: viewConstraints,
+          viewport: viewport,
+        );
+        view.layout(constraints, parentUsesSize: true);
+        viewWidth = view.size.width;
+        viewHeight = view.size.height;
       }
 
       if (horizontalPolicy == always ||
@@ -1278,18 +1285,6 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
             'times and still there was no consensus on the constraints. This usually '
             'indicates a bug.');
       }());
-    }
-
-    if (view != null) {
-      assert(viewConstraints != null);
-      Size segmentSize = size - Offset(verticalScrollBarWidth, horizontalScrollBarHeight);
-      segmentSize -= Offset(rowHeaderWidth, columnHeaderHeight);
-      final Rect viewport = scrollOffset & segmentSize;
-      final SegmentConstraints constraints = SegmentConstraints.fromBoxConstraints(
-        boxConstraints: viewConstraints,
-        viewport: viewport,
-      );
-      view.layout(constraints, parentUsesSize: true);
     }
 
     if (columnHeader != null) {
