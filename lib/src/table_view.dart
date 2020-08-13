@@ -122,6 +122,18 @@ class TableColumnController extends BasicTableColumn with ChangeNotifier {
     _sortDirection = value;
     notifyListeners();
   }
+
+  @override
+  int get hashCode => hashValues(super.hashCode, headerRenderer, sortDirection);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return super == other &&
+        other is TableColumnController &&
+        headerRenderer == other.headerRenderer &&
+        sortDirection == other.sortDirection;
+  }
 }
 
 enum SelectMode {
@@ -301,6 +313,18 @@ class ConstrainedTableColumnWidth extends TableColumnWidth {
     super.debugFillProperties(properties);
     properties.add(DoubleProperty('minWidth', minWidth));
     properties.add(DoubleProperty('maxWidth', maxWidth));
+  }
+
+  @override
+  int get hashCode => hashValues(super.hashCode, minWidth, maxWidth);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return super == other &&
+        other is ConstrainedTableColumnWidth &&
+        minWidth == other.minWidth &&
+        maxWidth == other.maxWidth;
   }
 }
 

@@ -63,6 +63,16 @@ class BasicTableColumn with Diagnosticable {
     super.debugFillProperties(properties);
     properties.add(DiagnosticsProperty<Diagnosticable>('width', width));
   }
+
+  @override
+  int get hashCode => hashValues(width, cellRenderer);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (runtimeType != other.runtimeType) return false;
+    return other is BasicTableColumn && width == other.width && cellRenderer == other.cellRenderer;
+  }
 }
 
 @immutable
@@ -79,6 +89,16 @@ abstract class TableColumnWidth with Diagnosticable {
     super.debugFillProperties(properties);
     properties.add(DoubleProperty('width', width));
     properties.add(DiagnosticsProperty<bool>('isFlex', isFlex));
+  }
+
+  @override
+  int get hashCode => hashValues(width, isFlex);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (runtimeType != other.runtimeType) return false;
+    return other is TableColumnWidth && width == other.width && isFlex == other.isFlex;
   }
 }
 
