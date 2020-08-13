@@ -690,7 +690,8 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
     horizontalScrollBarHeight ??= 0;
 
     if (columnHeader != null) columnHeaderHeight = columnHeader.size.height;
-    return math.max(viewHeight + columnHeaderHeight + horizontalScrollBarHeight - height, 0);
+    final double viewportHeight = height - columnHeaderHeight - horizontalScrollBarHeight;
+    return math.max(viewHeight - viewportHeight, 0);
   }
 
   /// Returns the maximum legal horizontal scroll offset defined by this scroll
@@ -711,7 +712,8 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
     verticalScrollBarWidth ??= 0;
 
     if (rowHeader != null) rowHeaderWidth = rowHeader.size.width;
-    return math.max(viewWidth + rowHeaderWidth + verticalScrollBarWidth - width, 0);
+    final double viewportWidth = width - rowHeaderWidth - verticalScrollBarWidth;
+    return math.max(viewWidth - viewportWidth, 0);
   }
 
   Offset _scrollOffset = Offset.zero;
