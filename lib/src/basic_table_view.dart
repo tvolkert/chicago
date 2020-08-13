@@ -483,14 +483,13 @@ class RenderBasicTableView extends RenderSegment {
     int length,
     List<BasicTableColumn> columns,
     bool roundColumnWidthsToWholePixel = false,
-  })  : assert(rowHeight != null),
-        assert(length != null),
-        assert(columns != null),
-        assert(roundColumnWidthsToWholePixel != null),
-        _rowHeight = rowHeight,
-        _length = length,
-        _columns = columns,
-        _roundColumnWidthsToWholePixel = roundColumnWidthsToWholePixel;
+  }) {
+    // Set in constructor body instead of initializers to trigger setters.
+    this.rowHeight = rowHeight;
+    this.length = length;
+    this.columns = columns;
+    this.roundColumnWidthsToWholePixel = roundColumnWidthsToWholePixel;
+  }
 
   double _rowHeight;
   double get rowHeight => _rowHeight;
@@ -511,13 +510,13 @@ class RenderBasicTableView extends RenderSegment {
     markNeedsBuild();
   }
 
-  List<BasicTableColumn> _columns;
+  List<BasicTableColumn> _columns = <BasicTableColumn>[];
   List<BasicTableColumn> get columns => _columns;
-  set columns(List<BasicTableColumn> value) {
+  set columns(covariant List<BasicTableColumn> value) {
     assert(value != null);
     if (_columns == value) return;
     _columns = value;
-    _metrics = null;
+    markNeedsMetricsCalculation();
     markNeedsBuild();
   }
 
@@ -527,7 +526,7 @@ class RenderBasicTableView extends RenderSegment {
     assert(value != null);
     if (_roundColumnWidthsToWholePixel == value) return;
     _roundColumnWidthsToWholePixel = value;
-    _metrics = null;
+    markNeedsMetricsCalculation();
     // The fact that the cell constraints may change could affect the built
     // output (e.g. if the cell builder uses LayoutBuilder).
     markNeedsBuild();
@@ -631,7 +630,8 @@ class RenderBasicTableView extends RenderSegment {
   @override
   bool hitTestChildren(BoxHitTestResult result, {Offset position}) {
     assert(position != null);
-    final TableCellOffset cellOffset = _metrics.hitTest(position);
+    assert(metrics != null);
+    final TableCellOffset cellOffset = metrics.hitTest(position);
     if (cellOffset == null ||
         !_children.containsKey(cellOffset.rowIndex) ||
         !_children[cellOffset.rowIndex].containsKey(cellOffset.columnIndex)) {
@@ -677,29 +677,42 @@ class RenderBasicTableView extends RenderSegment {
   @override
   double computeMaxIntrinsicHeight(double width) => computeMinIntrinsicHeight(width);
 
+  bool _needsMetricsCalculation = true;
   TableViewMetrics _metrics;
   Rect _viewport;
 
   @protected
   TableViewMetrics get metrics => _metrics;
 
-  @override
-  void performLayout() {
+  @protected
+  void markNeedsMetricsCalculation() {
+    _needsMetricsCalculation = true;
+    markNeedsLayout();
+  }
+
+  @protected
+  void calculateMetricsIfNecessary() {
+    assert(debugDoingThisLayout);
     final BoxConstraints boxConstraints = constraints.asBoxConstraints();
-    if (_metrics == null || _metrics.constraints != boxConstraints || _metrics.rowHeight != rowHeight) {
+    if (_needsMetricsCalculation || _metrics.constraints != boxConstraints || _metrics.rowHeight != rowHeight) {
       _metrics = TableViewMetrics.of(
         columns,
         rowHeight,
         boxConstraints,
         roundWidths: roundColumnWidthsToWholePixel,
       );
+      _needsMetricsCalculation = false;
     }
+  }
 
+  @override
+  void performLayout() {
+    calculateMetricsIfNecessary();
     rebuildIfNecessary();
-    size = constraints.constrainDimensions(_metrics.totalWidth, length * rowHeight);
+    size = constraints.constrainDimensions(metrics.totalWidth, length * rowHeight);
 
     visitTableCells((RenderBox child, int rowIndex, int columnIndex) {
-      final Range columnBounds = _metrics.columnBounds[columnIndex];
+      final Range columnBounds = metrics.columnBounds[columnIndex];
       final double rowY = rowIndex * rowHeight;
       child.layout(BoxConstraints.tightFor(width: columnBounds.extent, height: rowHeight));
       final BoxParentData parentData = child.parentData as BoxParentData;
@@ -754,19 +767,19 @@ class RenderBasicTableView extends RenderSegment {
       if (_viewport != null) {
         if (viewport.overlaps(_viewport)) {
           final Rect overlap = viewport.intersect(_viewport);
-          removeCells.add(_metrics.intersect(
+          removeCells.add(metrics.intersect(
             Rect.fromLTRB(_viewport.left, _viewport.top, overlap.left, _viewport.bottom),
             deflate: const TableCellRect.fromLTRB(0, 0, 1, 0),
           ));
-          removeCells.add(_metrics.intersect(
+          removeCells.add(metrics.intersect(
             Rect.fromLTRB(overlap.left, _viewport.top, overlap.right, overlap.top),
             deflate: const TableCellRect.fromLTRB(0, 0, 0, 1),
           ));
-          removeCells.add(_metrics.intersect(
+          removeCells.add(metrics.intersect(
             Rect.fromLTRB(overlap.left, overlap.bottom, overlap.right, _viewport.bottom),
             deflate: const TableCellRect.fromLTRB(0, 1, 0, 0),
           ));
-          removeCells.add(_metrics.intersect(
+          removeCells.add(metrics.intersect(
             Rect.fromLTRB(overlap.right, _viewport.top, _viewport.right, _viewport.bottom),
             deflate: const TableCellRect.fromLTRB(1, 0, 0, 0),
           ));
@@ -774,25 +787,25 @@ class RenderBasicTableView extends RenderSegment {
           removeCells.add(allCells);
         }
       }
-      buildCells.add(_metrics.intersect(viewport));
+      buildCells.add(metrics.intersect(viewport));
     } else {
       assert(_viewport != null);
       final Rect viewport = constraints.viewport;
       if (viewport.overlaps(_viewport)) {
         final Rect overlap = viewport.intersect(_viewport);
-        removeCells.add(_metrics.intersect(
+        removeCells.add(metrics.intersect(
           Rect.fromLTRB(_viewport.left, _viewport.top, overlap.left, _viewport.bottom),
           deflate: const TableCellRect.fromLTRB(0, 0, 1, 0),
         ));
-        removeCells.add(_metrics.intersect(
+        removeCells.add(metrics.intersect(
           Rect.fromLTRB(overlap.left, _viewport.top, overlap.right, overlap.top),
           deflate: const TableCellRect.fromLTRB(0, 0, 0, 1),
         ));
-        removeCells.add(_metrics.intersect(
+        removeCells.add(metrics.intersect(
           Rect.fromLTRB(overlap.left, overlap.bottom, overlap.right, _viewport.bottom),
           deflate: const TableCellRect.fromLTRB(0, 1, 0, 0),
         ));
-        removeCells.add(_metrics.intersect(
+        removeCells.add(metrics.intersect(
           Rect.fromLTRB(overlap.right, _viewport.top, _viewport.right, _viewport.bottom),
           deflate: const TableCellRect.fromLTRB(1, 0, 0, 0),
         ));
@@ -802,11 +815,11 @@ class RenderBasicTableView extends RenderSegment {
           Rect.fromLTRB(overlap.left, overlap.bottom, overlap.right, viewport.bottom),
           Rect.fromLTRB(overlap.right, viewport.top, viewport.right, viewport.bottom),
         ]) {
-          buildCells.add(skipAlreadyBuilt(_metrics.intersect(rect)));
+          buildCells.add(skipAlreadyBuilt(metrics.intersect(rect)));
         }
       } else {
         removeCells.add(allCells);
-        buildCells.add(_metrics.intersect(viewport));
+        buildCells.add(metrics.intersect(viewport));
       }
     }
 
