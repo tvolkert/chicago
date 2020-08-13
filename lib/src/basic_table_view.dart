@@ -663,7 +663,9 @@ class RenderBasicTableView extends RenderSegment {
     return columns
         .map<TableColumnWidth>((BasicTableColumn column) => column.width)
         .where((TableColumnWidth width) => !width.isFlex)
-        .fold<double>(0, (double previous, TableColumnWidth width) => previous + width.width);
+        .map<double>((TableColumnWidth width) => width.width)
+        .map<double>((double width) => roundColumnWidthsToWholePixel ? width.roundToDouble() : width)
+        .fold<double>(0, (double previous, double width) => previous + width);
   }
 
   @override
