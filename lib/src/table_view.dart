@@ -67,9 +67,6 @@ typedef TableCellRenderer = Widget Function({
 ///
 /// Mutable properties such as [width] and [sortDirection] will notify
 /// listeners when changed.
-///
-/// See also:
-///  * [BasicTableColumn]
 class TableColumnController extends BasicTableColumn with ChangeNotifier {
   TableColumnController({
     @required this.name,
@@ -307,98 +304,7 @@ class ConstrainedTableColumnWidth extends TableColumnWidth {
   }
 }
 
-typedef TableColumnResizeCallback = void Function(int columnIndex, double delta);
-
-class TableViewHeader extends StatelessWidget {
-  const TableViewHeader({
-    Key key,
-    this.rowHeight,
-    this.columns,
-    this.headerRenderers,
-    this.roundColumnWidthsToWholePixel,
-    this.handleColumnResize,
-  }) : super(key: key);
-
-  final double rowHeight;
-  final List<BasicTableColumn> columns;
-  final List<TableHeaderRenderer> headerRenderers;
-  final bool roundColumnWidthsToWholePixel;
-  final TableColumnResizeCallback handleColumnResize;
-
-  Widget _renderHeader({
-    BuildContext context,
-    int rowIndex,
-    int columnIndex,
-  }) {
-    final BasicTableColumn column = columns[columnIndex];
-    final bool isColumnResizable = column.width is ConstrainedTableColumnWidth;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.bottomCenter,
-          end: Alignment.topCenter,
-          colors: <Color>[
-            const Color(0xffdfded7),
-            const Color(0xfff6f4ed),
-          ],
-        ),
-        border: Border(
-          bottom: const BorderSide(color: const Color(0xff999999)),
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(left: 3),
-              child: headerRenderers[columnIndex](context: context, columnIndex: columnIndex),
-            ),
-          ),
-          if (handleColumnResize != null && isColumnResizable)
-            SizedBox(
-              width: 10,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  border: Border(
-                    right: const BorderSide(color: const Color(0xff999999)),
-                  ),
-                ),
-                child: MouseRegion(
-                  cursor: SystemMouseCursors.resizeLeftRight,
-                  child: GestureDetector(
-                    key: Key('$this dividerKey $columnIndex'),
-                    behavior: HitTestBehavior.translucent,
-                    dragStartBehavior: DragStartBehavior.down,
-                    onHorizontalDragUpdate: (DragUpdateDetails details) {
-                      handleColumnResize(columnIndex, details.primaryDelta);
-                    },
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return BasicTableView(
-      rowHeight: rowHeight,
-      length: 1,
-      roundColumnWidthsToWholePixel: roundColumnWidthsToWholePixel,
-      columns: List<BasicTableColumn>.generate(columns.length, (int index) {
-        return BasicTableColumn(
-          width: columns[index].width,
-          cellRenderer: _renderHeader,
-        );
-      }),
-    );
-  }
-}
-
-class ScrollableTableView extends StatefulWidget {
+class ScrollableTableView extends StatelessWidget {
   const ScrollableTableView({
     Key key,
     @required this.rowHeight,
@@ -419,72 +325,21 @@ class ScrollableTableView extends StatefulWidget {
   final bool roundColumnWidthsToWholePixel;
 
   @override
-  _ScrollableTableViewState createState() => _ScrollableTableViewState();
-}
-
-class _ScrollableTableViewState extends State<ScrollableTableView> {
-  List<TableHeaderRenderer> _headerRenderers;
-
-  void _updateColumns() {
-    setState(() {
-      _headerRenderers = List<TableHeaderRenderer>.generate(widget.columns.length, (int index) {
-        return widget.columns[index].headerRenderer;
-      });
-    });
-  }
-
-  void _addColumnListener(TableColumnController column) {
-    column.addListener(_updateColumns);
-  }
-
-  void _removeColumnListener(TableColumnController column) {
-    column.removeListener(_updateColumns);
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _updateColumns();
-    widget.columns.forEach(_addColumnListener);
-  }
-
-  @override
-  void didUpdateWidget(ScrollableTableView oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    _updateColumns();
-    oldWidget.columns.forEach(_removeColumnListener);
-    widget.columns.forEach(_addColumnListener);
-  }
-
-  @override
-  void dispose() {
-    widget.columns.forEach(_removeColumnListener);
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return ScrollPane(
       horizontalScrollBarPolicy: ScrollBarPolicy.expand,
       verticalScrollBarPolicy: ScrollBarPolicy.auto,
       columnHeader: TableViewHeader(
-        rowHeight: widget.rowHeight,
-        columns: widget.columns,
-        headerRenderers: _headerRenderers,
-        roundColumnWidthsToWholePixel: widget.roundColumnWidthsToWholePixel,
-        handleColumnResize: (int columnIndex, double delta) {
-          final TableColumnController column = widget.columns[columnIndex];
-          assert(column.width is ConstrainedTableColumnWidth);
-          final ConstrainedTableColumnWidth width = column.width;
-          column.width = width.copyWith(width: width.width + delta);
-        },
+        rowHeight: rowHeight,
+        columns: columns,
+        roundColumnWidthsToWholePixel: roundColumnWidthsToWholePixel,
       ),
       view: TableView(
-        length: widget.length,
-        rowHeight: widget.rowHeight,
-        columns: widget.columns,
-        roundColumnWidthsToWholePixel: widget.roundColumnWidthsToWholePixel,
-        selectionController: widget.selectionController,
+        length: length,
+        rowHeight: rowHeight,
+        columns: columns,
+        roundColumnWidthsToWholePixel: roundColumnWidthsToWholePixel,
+        selectionController: selectionController,
       ),
     );
   }
@@ -531,7 +386,7 @@ class _TableViewState extends State<TableView> {
 
   @override
   Widget build(BuildContext context) {
-    Widget result = _RawTableView(
+    Widget result = RawTableView(
       rowHeight: widget.rowHeight,
       length: widget.length,
       columns: widget.columns,
@@ -553,8 +408,9 @@ class _TableViewState extends State<TableView> {
   }
 }
 
-class _RawTableView extends BasicTableView {
-  const _RawTableView({
+@visibleForTesting
+class RawTableView extends BasicTableView {
+  const RawTableView({
     Key key,
     @required double rowHeight,
     @required int length,
@@ -600,11 +456,12 @@ class _RawTableView extends BasicTableView {
   }
 }
 
+@visibleForTesting
 class TableViewElement extends BasicTableViewElement {
-  TableViewElement(_RawTableView tableView) : super(tableView);
+  TableViewElement(RawTableView tableView) : super(tableView);
 
   @override
-  _RawTableView get widget => super.widget as _RawTableView;
+  RawTableView get widget => super.widget as RawTableView;
 
   @override
   RenderTableView get renderObject => super.renderObject as RenderTableView;
@@ -621,7 +478,8 @@ class TableViewElement extends BasicTableViewElement {
   }
 }
 
-class RenderTableView extends RenderBasicTableView {
+@visibleForTesting
+class RenderTableView extends RenderBasicTableView with TableViewColumnListenerMixin {
   RenderTableView({
     double rowHeight,
     int length,
@@ -629,16 +487,13 @@ class RenderTableView extends RenderBasicTableView {
     bool roundColumnWidthsToWholePixel = false,
     TableViewSelectionController selectionController,
     Stream<PointerEvent> pointerEvents,
-  })  : assert(selectionController != null),
-        assert(pointerEvents != null),
-        _selectionController = selectionController,
-        super(
+  }) : super(
           rowHeight: rowHeight,
           length: length,
           columns: columns,
           roundColumnWidthsToWholePixel: roundColumnWidthsToWholePixel,
         ) {
-    // Set this here to ensure that we listen to the stream.
+    this.selectionController = selectionController;
     this.pointerEvents = pointerEvents;
   }
 
@@ -736,5 +591,155 @@ class RenderTableView extends RenderBasicTableView {
       context.canvas.drawRect(rowBounds.shift(offset), paint);
     }
     super.paint(context, offset);
+  }
+}
+
+class TableViewHeader extends BasicTableView {
+  const TableViewHeader({
+    Key key,
+    @required double rowHeight,
+    @required List<TableColumnController> columns,
+    bool roundColumnWidthsToWholePixel = false,
+  }) : super(
+          key: key,
+          rowHeight: rowHeight,
+          length: 1,
+          columns: columns,
+          roundColumnWidthsToWholePixel: roundColumnWidthsToWholePixel,
+        );
+
+  @override
+  List<TableColumnController> get columns => super.columns as List<TableColumnController>;
+
+  @override
+  TableViewHeaderElement createElement() => TableViewHeaderElement(this);
+
+  @override
+  RenderBasicTableView createRenderObject(BuildContext context) {
+    return RenderTableViewHeader(
+      rowHeight: rowHeight,
+      length: length,
+      columns: columns,
+      roundColumnWidthsToWholePixel: roundColumnWidthsToWholePixel,
+    );
+  }
+
+  @protected
+  Widget renderHeaderEnvelope({BuildContext context, int columnIndex}) {
+    final TableColumnController column = columns[columnIndex];
+    final bool isColumnResizable = column.width is ConstrainedTableColumnWidth;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.bottomCenter,
+          end: Alignment.topCenter,
+          colors: <Color>[
+            const Color(0xffdfded7),
+            const Color(0xfff6f4ed),
+          ],
+        ),
+        border: Border(
+          bottom: const BorderSide(color: const Color(0xff999999)),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(left: 3),
+              child: column.headerRenderer(context: context, columnIndex: columnIndex),
+            ),
+          ),
+          if (isColumnResizable)
+            SizedBox(
+              width: 10,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border(
+                    right: const BorderSide(color: const Color(0xff999999)),
+                  ),
+                ),
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.resizeLeftRight,
+                  child: GestureDetector(
+                    key: Key('$this dividerKey $columnIndex'),
+                    behavior: HitTestBehavior.translucent,
+                    dragStartBehavior: DragStartBehavior.down,
+                    onHorizontalDragUpdate: (DragUpdateDetails details) {
+                      assert(column.width is ConstrainedTableColumnWidth);
+                      final ConstrainedTableColumnWidth width = column.width;
+                      column.width = width.copyWith(width: width.width + details.primaryDelta);
+                    },
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+@visibleForTesting
+class TableViewHeaderElement extends BasicTableViewElement {
+  TableViewHeaderElement(TableViewHeader tableView) : super(tableView);
+
+  @override
+  TableViewHeader get widget => super.widget as TableViewHeader;
+
+  @override
+  RenderTableViewHeader get renderObject => super.renderObject as RenderTableViewHeader;
+
+  @override
+  @protected
+  Widget renderCell(covariant TableColumnController column, int rowIndex, int columnIndex) {
+    return widget.renderHeaderEnvelope(context: this, columnIndex: columnIndex);
+  }
+}
+
+class RenderTableViewHeader extends RenderBasicTableView with TableViewColumnListenerMixin {
+  RenderTableViewHeader({
+    double rowHeight,
+    int length,
+    List<TableColumnController> columns,
+    bool roundColumnWidthsToWholePixel = false,
+  }) : super(
+    rowHeight: rowHeight,
+    length: length,
+    columns: columns,
+    roundColumnWidthsToWholePixel: roundColumnWidthsToWholePixel,
+  );
+}
+
+mixin TableViewColumnListenerMixin on RenderBasicTableView {
+  @override
+  List<TableColumnController> get columns => super.columns as List<TableColumnController>;
+
+  @override
+  set columns(List<TableColumnController> value) {
+    final List<BasicTableColumn> oldColumns = super.columns;
+    super.columns = value;
+    if (oldColumns != columns) {
+      if (oldColumns is List<TableColumnController>) {
+        // Initializer value is List<BasicTableColumn>
+        oldColumns.forEach(_removeColumnListener);
+      }
+      columns.forEach(_addColumnListener);
+    }
+  }
+
+  void _addColumnListener(TableColumnController column) {
+    column.addListener(_handleColumnUpdated);
+  }
+
+  void _removeColumnListener(TableColumnController column) {
+    column.removeListener(_handleColumnUpdated);
+  }
+
+  void _handleColumnUpdated() {
+    // TODO: Only need to mark columns >= updated column as needing a build
+    markNeedsBuild();
+    markNeedsMetricsCalculation();
   }
 }
