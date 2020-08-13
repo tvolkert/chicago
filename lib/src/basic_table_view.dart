@@ -24,7 +24,11 @@ import 'segment.dart';
 
 const double _kDoublePrecisionTolerance = 0.001;
 
-typedef TableCellRenderer = Widget Function({
+/// Signature for a function that renders cells in a [BasicTableView].
+///
+/// Cell renderers are properties of the [BasicTableColumn], so each column
+/// specifies the cell renderer for cells in that column.
+typedef BasicTableCellRenderer = Widget Function({
   BuildContext context,
   int rowIndex,
   int columnIndex,
@@ -41,15 +45,17 @@ typedef TableViewLayoutCallback = void Function({
   TableCellHost visitChildrenToBuild,
 });
 
-@immutable
 class BasicTableColumn with Diagnosticable {
   const BasicTableColumn({
     this.width = const FlexTableColumnWidth(),
     @required this.cellRenderer,
   });
 
+  /// The width specification for this column.
   final TableColumnWidth width;
-  final TableCellRenderer cellRenderer;
+
+  /// The renderer responsible for the look & feel of cells in this column.
+  final BasicTableCellRenderer cellRenderer;
 
   @override
   @protected
@@ -115,6 +121,7 @@ class BasicTableView extends RenderObjectWidget {
   BasicTableViewElement createElement() => BasicTableViewElement(this);
 
   @override
+  @protected
   RenderBasicTableView createRenderObject(BuildContext context) {
     return RenderBasicTableView(
       rowHeight: rowHeight,
@@ -125,7 +132,8 @@ class BasicTableView extends RenderObjectWidget {
   }
 
   @override
-  void updateRenderObject(BuildContext context, RenderBasicTableView renderObject) {
+  @protected
+  void updateRenderObject(BuildContext context, covariant RenderBasicTableView renderObject) {
     renderObject
       ..rowHeight = rowHeight
       ..length = length
@@ -243,10 +251,10 @@ class UnionTableCellRange extends TableCellRange {
 
   @override
   void visitCells(TableCellVisitor visitor) {
-    Set<Pair<int>> pairs = <Pair<int>>{};
+    final Set<TableCellOffset> cellOffsets = <TableCellOffset>{};
     for (TableCellRange range in _ranges) {
       range.visitCells((int rowIndex, int columnIndex) {
-        if (pairs.add(Pair<int>(rowIndex, columnIndex))) {
+        if (cellOffsets.add(TableCellOffset(rowIndex, columnIndex))) {
           visitor(rowIndex, columnIndex);
         }
       });
@@ -262,30 +270,30 @@ class UnionTableCellRange extends TableCellRange {
 }
 
 @immutable
-class Pair<T> with Diagnosticable {
-  const Pair(this.first, this.last)
-      : assert(first != null),
-        assert(last != null);
+class TableCellOffset with Diagnosticable {
+  const TableCellOffset(this.rowIndex, this.columnIndex)
+      : assert(rowIndex != null),
+        assert(columnIndex != null);
 
-  final T first;
-  final T last;
+  final int rowIndex;
+  final int columnIndex;
 
   @override
-  int get hashCode => hashValues(first, last);
+  int get hashCode => hashValues(rowIndex, columnIndex);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (runtimeType != other.runtimeType) return false;
-    return other is Pair<T> && other.first == first && other.last == last;
+    return other is TableCellOffset && other.rowIndex == rowIndex && other.columnIndex == columnIndex;
   }
 
   @override
   @protected
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<T>('first', first));
-    properties.add(DiagnosticsProperty<T>('last', last));
+    properties.add(IntProperty('rowIndex', rowIndex));
+    properties.add(IntProperty('columnIndex', columnIndex));
   }
 }
 
@@ -315,6 +323,15 @@ class BasicTableViewElement extends RenderObjectElement {
     renderObject.markNeedsBuild();
   }
 
+  @protected
+  Widget renderCell(covariant BasicTableColumn column, int rowIndex, int columnIndex) {
+    return column.cellRenderer(
+      context: this,
+      rowIndex: rowIndex,
+      columnIndex: columnIndex,
+    );
+  }
+
   void _layout({
     TableCellHost visitChildrenToRemove,
     TableCellHost visitChildrenToBuild,
@@ -324,9 +341,6 @@ class BasicTableViewElement extends RenderObjectElement {
         assert(_children != null);
         assert(_children.containsKey(rowIndex));
         final Map<int, Element> row = _children[rowIndex];
-        if (!row.containsKey(columnIndex)) {
-          print(1);
-        }
         assert(row.containsKey(columnIndex));
         final Element child = row[columnIndex];
         assert(child != null);
@@ -340,14 +354,10 @@ class BasicTableViewElement extends RenderObjectElement {
       visitChildrenToBuild((int rowIndex, int columnIndex) {
         assert(_children != null);
         final BasicTableColumn column = widget.columns[columnIndex];
-        final TableCellRenderer cellRenderer = column.cellRenderer;
+        final BasicTableCellRenderer cellRenderer = column.cellRenderer;
         Widget built;
         try {
-          built = cellRenderer(
-            context: this,
-            rowIndex: rowIndex,
-            columnIndex: columnIndex,
-          );
+          built = renderCell(column, rowIndex, columnIndex);
           debugWidgetBuilderValue(widget, built);
         } catch (e, stack) {
           built = ErrorWidget.builder(
@@ -473,7 +483,11 @@ class RenderBasicTableView extends RenderSegment {
     int length,
     List<BasicTableColumn> columns,
     bool roundColumnWidthsToWholePixel = false,
-  })  : _rowHeight = rowHeight,
+  })  : assert(rowHeight != null),
+        assert(length != null),
+        assert(columns != null),
+        assert(roundColumnWidthsToWholePixel != null),
+        _rowHeight = rowHeight,
         _length = length,
         _columns = columns,
         _roundColumnWidthsToWholePixel = roundColumnWidthsToWholePixel;
@@ -616,27 +630,24 @@ class RenderBasicTableView extends RenderSegment {
 
   @override
   bool hitTestChildren(BoxHitTestResult result, {Offset position}) {
-    visitChildren((RenderObject child) {
-      RenderBox childBox = child;
-      final BoxParentData parentData = child.parentData;
-      final bool isHit = result.addWithPaintOffset(
-        offset: parentData.offset,
-        position: position,
-        hitTest: (BoxHitTestResult result, Offset transformed) {
-          assert(transformed == position - parentData.offset);
-          return childBox.hitTest(result, position: transformed);
-        },
-      );
-
-      // We know that RenderBasicTableView doesn't overlap its children, so if
-      // one child had a hit, it precludes other children from having had a
-      // hit. Thus we can stop looking for hits after one child reports a hit.
-      if (isHit) {
-        return true;
-      }
-    });
-
-    return false;
+    assert(position != null);
+    final TableCellOffset cellOffset = _metrics.hitTest(position);
+    if (cellOffset == null ||
+        !_children.containsKey(cellOffset.rowIndex) ||
+        !_children[cellOffset.rowIndex].containsKey(cellOffset.columnIndex)) {
+      // No table cell at the given position.
+      return false;
+    }
+    final RenderBox child = _children[cellOffset.rowIndex][cellOffset.columnIndex];
+    final BoxParentData parentData = child.parentData;
+    return result.addWithPaintOffset(
+      offset: parentData.offset,
+      position: position,
+      hitTest: (BoxHitTestResult result, Offset transformed) {
+        assert(transformed == position - parentData.offset);
+        return child.hitTest(result, position: transformed);
+      },
+    );
   }
 
   @override
@@ -669,6 +680,9 @@ class RenderBasicTableView extends RenderSegment {
   TableViewMetrics _metrics;
   Rect _viewport;
 
+  @protected
+  TableViewMetrics get metrics => _metrics;
+
   @override
   void performLayout() {
     final BoxConstraints boxConstraints = constraints.asBoxConstraints();
@@ -685,12 +699,11 @@ class RenderBasicTableView extends RenderSegment {
     size = constraints.constrainDimensions(_metrics.totalWidth, length * rowHeight);
 
     visitTableCells((RenderBox child, int rowIndex, int columnIndex) {
-      final double columnWidth = _metrics.columnWidth[columnIndex];
-      final double columnX = _metrics.columnLeft[columnIndex];
+      final Range columnBounds = _metrics.columnBounds[columnIndex];
       final double rowY = rowIndex * rowHeight;
-      child.layout(BoxConstraints.tightFor(width: columnWidth, height: rowHeight));
+      child.layout(BoxConstraints.tightFor(width: columnBounds.extent, height: rowHeight));
       final BoxParentData parentData = child.parentData as BoxParentData;
-      parentData.offset = Offset(columnX, rowY);
+      parentData.offset = Offset(columnBounds.start, rowY);
     });
   }
 
@@ -724,6 +737,7 @@ class RenderBasicTableView extends RenderSegment {
     });
   }
 
+  @protected
   void rebuildIfNecessary() {
     assert(_layoutCallback != null);
     final UnionTableCellRange buildCells = UnionTableCellRange();
@@ -870,10 +884,7 @@ class TableViewMetrics {
     this.columns,
     this.constraints,
     this.rowHeight,
-    this.columnWidth,
-    this.columnLeft,
-    this.columnRight,
-    this.totalWidth,
+    this.columnBounds,
   );
 
   /// The columns of the table view.
@@ -884,29 +895,16 @@ class TableViewMetrics {
   final List<BasicTableColumn> columns;
 
   /// The [BoxConstraints] against which the width specifications of the
-  /// [columns] was resolved.
+  /// [columns] were resolved.
   final BoxConstraints constraints;
 
   /// The fixed row height of each row in the table view.
   final double rowHeight;
 
-  /// The widths of the columns in the table view.
+  /// The offsets & widths of the columns in the table view.
   ///
-  /// The width values in this list correspond to the [columns] list.
-  final List<double> columnWidth;
-
-  /// The left-side x-values of the columns in the table view.
-  ///
-  /// The values in this list correspond to the [columns] list.
-  final List<double> columnLeft;
-
-  /// The right-side x-values of the columns in the table view.
-  ///
-  /// The values in this list correspond to the [columns] list.
-  final List<double> columnRight;
-
-  /// The total column width of the table view.
-  final double totalWidth;
+  /// The values in this list correspond to the columns in the [columns] list.
+  final List<Range> columnBounds;
 
   static TableViewMetrics of(
     List<BasicTableColumn> columns,
@@ -917,7 +915,6 @@ class TableViewMetrics {
     assert(constraints.runtimeType == BoxConstraints);
     double totalFlexWidth = 0;
     double totalFixedWidth = 0;
-    double totalWidth = 0;
     final List<double> resolvedWidths = List<double>.filled(columns.length, 0);
     final Map<int, BasicTableColumn> flexColumns = <int, BasicTableColumn>{};
 
@@ -942,7 +939,6 @@ class TableViewMetrics {
     if (maxWidthDelta.isNegative) {
       // The fixed-width columns have already exceeded the maxWidth constraint;
       // truncate trailing column widths until we meet the constraint.
-      totalWidth = constraints.maxWidth;
       for (int i = resolvedWidths.length - 1; i >= 0; i--) {
         final double width = resolvedWidths[i];
         if (width > 0) {
@@ -972,7 +968,6 @@ class TableViewMetrics {
       } else if (totalFixedWidth < constraints.minWidth) {
         flexAllocation = constraints.minWidth - totalFixedWidth;
       }
-      totalWidth = totalFixedWidth + flexAllocation;
       if (flexAllocation > 0) {
         for (MapEntry<int, BasicTableColumn> flexColumn in flexColumns.entries) {
           final FlexTableColumnWidth widthSpecification = flexColumn.value.width;
@@ -986,25 +981,27 @@ class TableViewMetrics {
       }
     }
 
-    final List<double> leftBounds = List<double>.filled(columns.length, 0);
-    final List<double> rightBounds = List<double>.filled(columns.length, 0);
     double left = 0;
-    for (int i = 0; i < columns.length; i++) {
-      final double width = resolvedWidths[i];
-      leftBounds[i] = left;
-      rightBounds[i] = left + width;
-      left += width;
-    }
+    final List<Range> resolvedColumnBounds = List<Range>.generate(columns.length, (int index) {
+      final double right = left + resolvedWidths[index];
+      final Range result = Range(left, right);
+      left = right;
+      return result;
+    });
 
     return TableViewMetrics._(
       columns,
       constraints,
       rowHeight,
-      resolvedWidths,
-      leftBounds,
-      rightBounds,
-      totalWidth,
+      resolvedColumnBounds,
     );
+  }
+
+  /// The total column width of the table view.
+  double get totalWidth => columnBounds.last.end;
+
+  Rect getRowBounds(int rowIndex) {
+    return Rect.fromLTWH(0, rowIndex * rowHeight, totalWidth, rowHeight);
   }
 
   TableCellRange intersect(
@@ -1016,8 +1013,8 @@ class TableViewMetrics {
     if (rect.isEmpty) {
       return EmptyTableCellRange();
     }
-    int leftIndex = columnRight.indexWhere((double right) => right > rect.left);
-    int rightIndex = columnLeft.lastIndexWhere((double left) => left < rect.right);
+    int leftIndex = columnBounds.indexWhere((Range bounds) => bounds.end > rect.left);
+    int rightIndex = columnBounds.lastIndexWhere((Range bounds) => bounds.start < rect.right);
     if (leftIndex == -1 || rightIndex == -1) {
       return EmptyTableCellRange();
     } else {
@@ -1033,5 +1030,42 @@ class TableViewMetrics {
       );
       return intersection.deflate(deflate);
     }
+  }
+
+  TableCellOffset hitTest(Offset position) {
+    assert(position != null);
+    assert(position.isFinite);
+    if (position.dy.isNegative) {
+      return null;
+    }
+    int columnIndex = columnBounds.indexWhere((Range range) => range.start <= position.dx);
+    if (columnIndex >= 0) {
+      columnIndex = columnBounds.indexWhere((Range range) => range.end > position.dx, columnIndex);
+    }
+    if (columnIndex == -1) {
+      return null;
+    }
+    return TableCellOffset(position.dy ~/ rowHeight, columnIndex);
+  }
+}
+
+class Range {
+  const Range(this.start, this.end)
+      : assert(start != null),
+        assert(end != null),
+        assert(start <= end);
+
+  final double start;
+  final double end;
+
+  double get extent => end - start;
+
+  @override
+  int get hashCode => hashValues(start, end);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Range && other.start == start && other.end == end;
   }
 }
