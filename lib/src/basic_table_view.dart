@@ -494,7 +494,7 @@ class RenderBasicTableView extends RenderSegment {
   double _rowHeight;
   double get rowHeight => _rowHeight;
   set rowHeight(double value) {
-    assert(rowHeight != null);
+    assert(value != null);
     if (_rowHeight == value) return;
     _rowHeight = value;
     markNeedsLayout();
@@ -503,8 +503,8 @@ class RenderBasicTableView extends RenderSegment {
   int _length;
   int get length => _length;
   set length(int value) {
-    assert(length != null);
-    assert(length >= 0);
+    assert(value != null);
+    assert(value >= 0);
     if (_length == value) return;
     _length = value;
     markNeedsBuild();
