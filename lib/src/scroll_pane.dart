@@ -1135,61 +1135,7 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
       size = Size(width, height);
     }
 
-    bool expandWidth = false;
-    bool expandHeight = false;
-
-    ScrollBarPolicy horizontalPolicy = horizontalScrollBarPolicy;
-    ScrollBarPolicy verticalPolicy = verticalScrollBarPolicy;
-
-    // The `expand` policy means that we try to use `auto`, and only
-    // if it ends up not being wide or tall enough do we use `stretch`
-
-    if (horizontalPolicy == ScrollBarPolicy.expand) {
-      horizontalPolicy = ScrollBarPolicy.auto;
-      expandWidth = true;
-    }
-
-    if (verticalPolicy == ScrollBarPolicy.expand) {
-      verticalPolicy = ScrollBarPolicy.auto;
-      expandHeight = true;
-    }
-
-    _attemptLayout(horizontalPolicy, verticalPolicy);
-
-    if (view != null && (expandWidth || expandHeight)) {
-      // We assumed `auto`. Now we check our assumption to see if we
-      // need to adjust it to use `stretch`
-      bool adjustWidth = false, adjustHeight = false;
-
-      if (expandWidth) {
-        double rowHeaderWidth = rowHeader != null ? rowHeader.size.width : 0;
-
-        double verticalScrollBarWidth = parentDataFor(verticalScrollBar).visible ? verticalScrollBar.size.width : 0;
-        double minViewWidth = size.width - rowHeaderWidth - verticalScrollBarWidth;
-
-        if (view.size.width < minViewWidth) {
-          horizontalPolicy = ScrollBarPolicy.stretch;
-          adjustWidth = true;
-        }
-      }
-
-      if (expandHeight) {
-        double columnHeaderHeight = columnHeader != null ? columnHeader.size.height : 0;
-
-        double horizontalScrollBarHeight =
-            parentDataFor(horizontalScrollBar).visible ? horizontalScrollBar.size.height : 0;
-        double minViewHeight = size.height - columnHeaderHeight - horizontalScrollBarHeight;
-
-        if (view.size.height < minViewHeight) {
-          verticalPolicy = ScrollBarPolicy.stretch;
-          adjustHeight = true;
-        }
-      }
-
-      if (adjustWidth || adjustHeight) {
-        _attemptLayout(horizontalPolicy, verticalPolicy);
-      }
-    }
+    _attemptLayout();
 
     _cachedHorizontalScrollBarHeight = horizontalScrollBar.size.height;
     _cachedVerticalScrollBarWidth = verticalScrollBar.size.width;
@@ -1198,12 +1144,9 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
   double _cachedHorizontalScrollBarHeight = 0;
   double _cachedVerticalScrollBarWidth = 0;
 
-  void _attemptLayout(ScrollBarPolicy horizontalPolicy, ScrollBarPolicy verticalPolicy) {
-    double width = size.width;
-    double height = size.height;
-
-    bool constrainWidth = (horizontalPolicy == ScrollBarPolicy.stretch);
-    bool constrainHeight = (verticalPolicy == ScrollBarPolicy.stretch);
+  void _attemptLayout() {
+    final double width = size.width;
+    final double height = size.height;
 
     double rowHeaderWidth = 0;
     if (rowHeader != null) {
@@ -1218,9 +1161,9 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
     double viewWidth = 0;
     double viewHeight = 0;
     double previousHorizontalScrollBarHeight;
-    double horizontalScrollBarHeight = constrainWidth ? 0 : _cachedHorizontalScrollBarHeight;
+    double horizontalScrollBarHeight = _cachedHorizontalScrollBarHeight;
     double previousVerticalScrollBarWidth;
-    double verticalScrollBarWidth = constrainHeight ? 0 : _cachedVerticalScrollBarWidth;
+    double verticalScrollBarWidth = _cachedVerticalScrollBarWidth;
     int i = 0;
 
     bool scrollBarSizesChanged() {
@@ -1228,50 +1171,70 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
           verticalScrollBarWidth != previousVerticalScrollBarWidth;
     }
 
-    const ScrollBarPolicy always = ScrollBarPolicy.always;
-    const ScrollBarPolicy auto = ScrollBarPolicy.auto;
-
     do {
       previousHorizontalScrollBarHeight = horizontalScrollBarHeight;
       previousVerticalScrollBarWidth = verticalScrollBarWidth;
+      final double viewportWidth = math.max(width - rowHeaderWidth - verticalScrollBarWidth, 0);
+      final double viewportHeight = math.max(height - columnHeaderHeight - horizontalScrollBarHeight, 0);
 
       if (view != null) {
-        BoxConstraints viewConstraints;
-        if (constrainWidth && constrainHeight) {
-          viewWidth = math.max(width - rowHeaderWidth - verticalScrollBarWidth, 0);
-          viewHeight = math.max(height - columnHeaderHeight - horizontalScrollBarHeight, 0);
-          viewConstraints = BoxConstraints.tightFor(width: viewWidth, height: viewHeight);
-        } else if (constrainWidth) {
-          viewWidth = math.max(width - rowHeaderWidth - verticalScrollBarWidth, 0);
-          viewConstraints = BoxConstraints.tightFor(width: viewWidth);
-        } else if (constrainHeight) {
-          viewHeight = math.max(height - columnHeaderHeight - horizontalScrollBarHeight, 0);
-          viewConstraints = BoxConstraints.tightFor(height: viewHeight);
-        } else {
-          viewConstraints = BoxConstraints();
+        double minWidth = 0;
+        double maxWidth = double.infinity;
+        double minHeight = 0;
+        double maxHeight = double.infinity;
+
+        switch (horizontalScrollBarPolicy) {
+          case ScrollBarPolicy.stretch:
+            minWidth = maxWidth = viewportWidth;
+            break;
+          case ScrollBarPolicy.expand:
+            minWidth = viewportWidth;
+            break;
+          case ScrollBarPolicy.always:
+          case ScrollBarPolicy.auto:
+          case ScrollBarPolicy.never:
+          // Unbounded width constraints
         }
 
-        Size segmentSize = size - Offset(verticalScrollBarWidth, horizontalScrollBarHeight);
-        segmentSize -= Offset(rowHeaderWidth, columnHeaderHeight);
-        final Rect viewport = scrollOffset & segmentSize;
-        final SegmentConstraints constraints = SegmentConstraints.fromBoxConstraints(
-          boxConstraints: viewConstraints,
+        switch (verticalScrollBarPolicy) {
+          case ScrollBarPolicy.stretch:
+            minHeight = maxHeight = viewportHeight;
+            break;
+          case ScrollBarPolicy.expand:
+            minHeight = viewportHeight;
+            break;
+          case ScrollBarPolicy.always:
+          case ScrollBarPolicy.auto:
+          case ScrollBarPolicy.never:
+          // Unbounded height constraints
+        }
+
+        final Rect viewport = scrollOffset & Size(viewportWidth, viewportHeight);
+        final SegmentConstraints viewConstraints = SegmentConstraints.fromBoxConstraints(
           viewport: viewport,
+          boxConstraints: BoxConstraints(
+            minWidth: minWidth,
+            maxWidth: maxWidth,
+            minHeight: minHeight,
+            maxHeight: maxHeight,
+          ),
         );
-        view.layout(constraints, parentUsesSize: true);
+        view.layout(viewConstraints, parentUsesSize: true);
         viewWidth = view.size.width;
         viewHeight = view.size.height;
       }
 
-      if (horizontalPolicy == always ||
-          (horizontalPolicy == auto && viewWidth > width - rowHeaderWidth - verticalScrollBarWidth)) {
+      if (horizontalScrollBarPolicy == ScrollBarPolicy.always ||
+          (horizontalScrollBarPolicy == ScrollBarPolicy.auto && viewWidth > viewportWidth) ||
+          (horizontalScrollBarPolicy == ScrollBarPolicy.expand && viewWidth > viewportWidth)) {
         horizontalScrollBarHeight = horizontalScrollBar.getMinIntrinsicHeight(double.infinity);
       } else {
         horizontalScrollBarHeight = 0;
       }
 
-      if (verticalPolicy == always ||
-          (verticalPolicy == auto && viewHeight > height - columnHeaderHeight - horizontalScrollBarHeight)) {
+      if (verticalScrollBarPolicy == ScrollBarPolicy.always ||
+          (verticalScrollBarPolicy == ScrollBarPolicy.auto && viewHeight > viewportHeight) ||
+          (verticalScrollBarPolicy == ScrollBarPolicy.expand && viewHeight > viewportHeight)) {
         verticalScrollBarWidth = verticalScrollBar.getMinIntrinsicWidth(double.infinity);
       } else {
         verticalScrollBarWidth = 0;
