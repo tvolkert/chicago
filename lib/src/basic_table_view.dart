@@ -193,6 +193,26 @@ abstract class TableCellRange with Diagnosticable {
   const TableCellRange();
 
   void visitCells(TableCellVisitor visitor);
+
+  TableCellRange subtract(TableCellRect rect) {
+    return ProxyTableCellRange((TableCellVisitor visitor) {
+      visitCells((int rowIndex, int columnIndex) {
+        if (rowIndex < rect.top || rowIndex > rect.bottom || columnIndex < rect.left || columnIndex > rect.right) {
+          visitor(rowIndex, columnIndex);
+        }
+      });
+    });
+  }
+
+  TableCellRange intersect(TableCellRect rect) {
+    return ProxyTableCellRange((TableCellVisitor visitor) {
+      visitCells((int rowIndex, int columnIndex) {
+        if (rowIndex >= rect.top && rowIndex <= rect.bottom && columnIndex >= rect.left && columnIndex <= rect.right) {
+          visitor(rowIndex, columnIndex);
+        }
+      });
+    });
+  }
 }
 
 class TableCellRect extends TableCellRange {
@@ -203,16 +223,15 @@ class TableCellRect extends TableCellRange {
   final int right;
   final int bottom;
 
-  static const TableCellRect zero = TableCellRect.fromLTRB(0, 0, 0, 0);
+  static const TableCellRect empty = TableCellRect.fromLTRB(0, 0, -1, -1);
 
-  TableCellRange deflate(TableCellRect rect) {
-    return TableCellRect.fromLTRB(
-      left + rect.left,
-      top + rect.top,
-      right - rect.right,
-      bottom - rect.bottom,
-    );
-  }
+  bool get isNormalized => left >= 0 && top >= 0 && left <= right && top <= bottom;
+
+  /// True if [visitCells] will not visit anything.
+  ///
+  /// An empty [TableCellRect] is guaranteed to have an [isNormalized] value of
+  /// false.
+  bool get isEmpty => left > right || top > bottom;
 
   @override
   void visitCells(TableCellVisitor visitor) {
@@ -374,7 +393,6 @@ class BasicTableViewElement extends RenderObjectElement {
       visitChildrenToBuild((int rowIndex, int columnIndex) {
         assert(_children != null);
         final BasicTableColumn column = widget.columns[columnIndex];
-        final BasicTableCellRenderer cellRenderer = column.cellRenderer;
         Widget built;
         try {
           built = renderCell(column, rowIndex, columnIndex);
@@ -772,76 +790,37 @@ class RenderBasicTableView extends RenderSegment {
     });
   }
 
-  @protected
-  void rebuildIfNecessary() {
-    assert(_layoutCallback != null);
-    final UnionTableCellRange buildCells = UnionTableCellRange();
-    final UnionTableCellRange removeCells = UnionTableCellRange();
-    final TableCellRange allCells = ProxyTableCellRange((TableCellVisitor visitor) {
+  TableCellRange allCells() {
+    return ProxyTableCellRange((TableCellVisitor visitor) {
       visitTableCells((RenderBox child, int rowIndex, int columnIndex) {
         visitor(rowIndex, columnIndex);
       }, allowMutations: true);
     });
+  }
+
+  @protected
+  void rebuildIfNecessary() {
+    assert(_layoutCallback != null);
+    assert(debugDoingThisLayout);
+    final UnionTableCellRange buildCells = UnionTableCellRange();
+    final UnionTableCellRange removeCells = UnionTableCellRange();
+    final TableCellRect viewportCellRect = metrics.intersect(constraints.viewport);
 
     if (_needsBuild) {
       _needsBuild = false;
-      final Rect viewport = constraints.viewport;
-      if (_viewport != null) {
-        if (viewport.overlaps(_viewport)) {
-          final Rect overlap = viewport.intersect(_viewport);
-          removeCells.add(metrics.intersect(
-            Rect.fromLTRB(_viewport.left, _viewport.top, overlap.left, _viewport.bottom),
-            deflate: const TableCellRect.fromLTRB(0, 0, 1, 0),
-          ));
-          removeCells.add(metrics.intersect(
-            Rect.fromLTRB(overlap.left, _viewport.top, overlap.right, overlap.top),
-            deflate: const TableCellRect.fromLTRB(0, 0, 0, 1),
-          ));
-          removeCells.add(metrics.intersect(
-            Rect.fromLTRB(overlap.left, overlap.bottom, overlap.right, _viewport.bottom),
-            deflate: const TableCellRect.fromLTRB(0, 1, 0, 0),
-          ));
-          removeCells.add(metrics.intersect(
-            Rect.fromLTRB(overlap.right, _viewport.top, _viewport.right, _viewport.bottom),
-            deflate: const TableCellRect.fromLTRB(1, 0, 0, 0),
-          ));
-        } else {
-          removeCells.add(allCells);
-        }
-      }
-      buildCells.add(metrics.intersect(viewport));
+      removeCells.add(allCells().subtract(viewportCellRect));
+      buildCells.add(viewportCellRect);
     } else {
       assert(_viewport != null);
-      final Rect viewport = constraints.viewport;
-      if (viewport.overlaps(_viewport)) {
-        final Rect overlap = viewport.intersect(_viewport);
-        removeCells.add(metrics.intersect(
-          Rect.fromLTRB(_viewport.left, _viewport.top, overlap.left, _viewport.bottom),
-          deflate: const TableCellRect.fromLTRB(0, 0, 1, 0),
-        ));
-        removeCells.add(metrics.intersect(
-          Rect.fromLTRB(overlap.left, _viewport.top, overlap.right, overlap.top),
-          deflate: const TableCellRect.fromLTRB(0, 0, 0, 1),
-        ));
-        removeCells.add(metrics.intersect(
-          Rect.fromLTRB(overlap.left, overlap.bottom, overlap.right, _viewport.bottom),
-          deflate: const TableCellRect.fromLTRB(0, 1, 0, 0),
-        ));
-        removeCells.add(metrics.intersect(
-          Rect.fromLTRB(overlap.right, _viewport.top, _viewport.right, _viewport.bottom),
-          deflate: const TableCellRect.fromLTRB(1, 0, 0, 0),
-        ));
-        for (Rect rect in <Rect>[
-          Rect.fromLTRB(viewport.left, viewport.top, overlap.left, viewport.bottom),
-          Rect.fromLTRB(overlap.left, viewport.top, overlap.right, overlap.top),
-          Rect.fromLTRB(overlap.left, overlap.bottom, overlap.right, viewport.bottom),
-          Rect.fromLTRB(overlap.right, viewport.top, viewport.right, viewport.bottom),
-        ]) {
-          buildCells.add(skipAlreadyBuilt(metrics.intersect(rect)));
-        }
+      if (constraints.viewport.overlaps(_viewport)) {
+        final Rect overlap = constraints.viewport.intersect(_viewport);
+        final TableCellRect overlapCellRect = metrics.intersect(overlap);
+        removeCells.add(metrics.intersect(_viewport).subtract(overlapCellRect));
+        // TODO: double-check the need or lack thereof for skipAlreadyBuilt()
+        buildCells.add(/*skipAlreadyBuilt(*/viewportCellRect.subtract(overlapCellRect)/*)*/);
       } else {
-        removeCells.add(allCells);
-        buildCells.add(metrics.intersect(viewport));
+        removeCells.add(allCells());
+        buildCells.add(viewportCellRect);
       }
     }
 
@@ -1039,31 +1018,26 @@ class TableViewMetrics {
     return Rect.fromLTWH(0, rowIndex * rowHeight, totalWidth, rowHeight);
   }
 
-  TableCellRange intersect(
-    Rect rect, {
-    TableCellRect deflate = TableCellRect.zero,
-  }) {
+  TableCellRect intersect(Rect rect) {
     assert(rect != null);
-    assert(deflate != null);
     if (rect.isEmpty) {
-      return EmptyTableCellRange();
+      return TableCellRect.empty;
     }
     int leftIndex = columnBounds.indexWhere((Range bounds) => bounds.end > rect.left);
     int rightIndex = columnBounds.lastIndexWhere((Range bounds) => bounds.start < rect.right);
     if (leftIndex == -1 || rightIndex == -1) {
-      return EmptyTableCellRange();
+      return TableCellRect.empty;
     } else {
       int bottomIndex = rect.bottom ~/ rowHeight;
       if (rect.bottom.remainder(rowHeight) == 0) {
         bottomIndex -= 1;
       }
-      final TableCellRect intersection = TableCellRect.fromLTRB(
+      return TableCellRect.fromLTRB(
         leftIndex,
         rect.top ~/ rowHeight,
         rightIndex,
         bottomIndex,
       );
-      return intersection.deflate(deflate);
     }
   }
 
