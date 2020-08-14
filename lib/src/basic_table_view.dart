@@ -20,6 +20,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
+import 'debug.dart';
 import 'segment.dart';
 
 const double _kDoublePrecisionTolerance = 0.001;
@@ -194,23 +195,31 @@ abstract class TableCellRange with Diagnosticable {
 
   void visitCells(TableCellVisitor visitor);
 
-  TableCellRange subtract(TableCellRect rect) {
+  TableCellRange where(bool test(int rowIndex, int columnIndex)) {
     return ProxyTableCellRange((TableCellVisitor visitor) {
       visitCells((int rowIndex, int columnIndex) {
-        if (rowIndex < rect.top || rowIndex > rect.bottom || columnIndex < rect.left || columnIndex > rect.right) {
+        if (test(rowIndex, columnIndex)) {
           visitor(rowIndex, columnIndex);
         }
       });
     });
   }
 
+  TableCellRange subtract(TableCellRect rect) {
+    return where((int rowIndex, int columnIndex) {
+      return rowIndex < rect.top ||
+          rowIndex > rect.bottom ||
+          columnIndex < rect.left ||
+          columnIndex > rect.right;
+    });
+  }
+
   TableCellRange intersect(TableCellRect rect) {
-    return ProxyTableCellRange((TableCellVisitor visitor) {
-      visitCells((int rowIndex, int columnIndex) {
-        if (rowIndex >= rect.top && rowIndex <= rect.bottom && columnIndex >= rect.left && columnIndex <= rect.right) {
-          visitor(rowIndex, columnIndex);
-        }
-      });
+    return where((int rowIndex, int columnIndex) {
+      return rowIndex >= rect.top &&
+          rowIndex <= rect.bottom &&
+          columnIndex >= rect.left &&
+          columnIndex <= rect.right;
     });
   }
 }
@@ -324,7 +333,9 @@ class TableCellOffset with Diagnosticable {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (runtimeType != other.runtimeType) return false;
-    return other is TableCellOffset && other.rowIndex == rowIndex && other.columnIndex == columnIndex;
+    return other is TableCellOffset &&
+        other.rowIndex == rowIndex &&
+        other.columnIndex == columnIndex;
   }
 
   @override
@@ -351,15 +362,11 @@ class BasicTableViewElement extends RenderObjectElement {
   final Set<Element> _forgottenChildren = HashSet<Element>();
 
   @override
-  void update(BasicTableView newTable) {
-    assert(widget != newTable);
-    super.update(newTable);
-    assert(widget == newTable);
-
+  void update(BasicTableView newWidget) {
+    assert(widget != newWidget);
+    super.update(newWidget);
+    assert(widget == newWidget);
     renderObject.updateCallback(_layout);
-    // Force the callback to be called, even if the layout constraints are the
-    // same, because the logic in the callback might have changed.
-    renderObject.markNeedsBuild();
   }
 
   @protected
@@ -396,6 +403,18 @@ class BasicTableViewElement extends RenderObjectElement {
         Widget built;
         try {
           built = renderCell(column, rowIndex, columnIndex);
+          assert(() {
+            if (debugPaintTableCellBuilds) {
+              debugCurrentTableCellColor =
+                  debugCurrentTableCellColor.withHue((debugCurrentTableCellColor.hue + 2) % 360.0);
+              built = DecoratedBox(
+                decoration: BoxDecoration(color: debugCurrentTableCellColor.toColor()),
+                position: DecorationPosition.foreground,
+                child: built,
+              );
+            }
+            return true;
+          }());
           debugWidgetBuilderValue(widget, built);
         } catch (e, stack) {
           built = ErrorWidget.builder(
@@ -459,7 +478,7 @@ class BasicTableViewElement extends RenderObjectElement {
     // same. This is because that callback may depend on the updated widget
     // configuration, or an inherited widget.
     renderObject.markNeedsBuild();
-    super.performRebuild(); // Calls widget.updateRenderObject (a no-op in this case).
+    super.performRebuild(); // Calls widget.updateRenderObject
   }
 
   @override
@@ -618,11 +637,34 @@ class RenderBasicTableView extends RenderSegment {
     markNeedsBuild();
   }
 
+  /// Whether the whole table view is in need of being built.
   bool _needsBuild = true;
 
-  /// Marks this layout builder as needing to rebuild.
+  /// Marks this table view as needing to rebuild.
+  ///
+  /// See also:
+  ///
+  ///  * [markCellsDirty], which marks specific cells as needing to rebuild.
+  @protected
   void markNeedsBuild() {
     _needsBuild = true;
+    markNeedsLayout();
+  }
+
+  /// Specific cells in need of building.
+  UnionTableCellRange _dirtyCells;
+
+  /// Marks specific cells as needing to rebuild.
+  ///
+  /// See also:
+  ///
+  ///  * [markNeedsBuild], which marks the whole table view as needing to
+  ///    rebuild.
+  @protected
+  void markCellsDirty(TableCellRange cells) {
+    assert(cells != null);
+    _dirtyCells ??= UnionTableCellRange();
+    _dirtyCells.add(cells);
     markNeedsLayout();
   }
 
@@ -702,7 +744,7 @@ class RenderBasicTableView extends RenderSegment {
         .map<TableColumnWidth>((BasicTableColumn column) => column.width)
         .where((TableColumnWidth width) => !width.isFlex)
         .map<double>((TableColumnWidth width) => width.width)
-        .map<double>((double width) => roundColumnWidthsToWholePixel ? width.roundToDouble() : width)
+        .map<double>((double w) => roundColumnWidthsToWholePixel ? w.roundToDouble() : w)
         .fold<double>(0, (double previous, double width) => previous + width);
   }
 
@@ -734,7 +776,9 @@ class RenderBasicTableView extends RenderSegment {
   void calculateMetricsIfNecessary() {
     assert(debugDoingThisLayout);
     final BoxConstraints boxConstraints = constraints.asBoxConstraints();
-    if (_needsMetricsCalculation || _metrics.constraints != boxConstraints || _metrics.rowHeight != rowHeight) {
+    if (_needsMetricsCalculation ||
+        _metrics.constraints != boxConstraints ||
+        _metrics.rowHeight != rowHeight) {
       _metrics = TableViewMetrics.of(
         columns,
         rowHeight,
@@ -760,34 +804,16 @@ class RenderBasicTableView extends RenderSegment {
     });
   }
 
-  TableCellRange skipAlreadyBuilt(TableCellRange range) {
-    return ProxyTableCellRange((TableCellVisitor visitor) {
-      range.visitCells((int rowIndex, int columnIndex) {
-        if (!_children.containsKey(rowIndex) || !_children[rowIndex].containsKey(columnIndex)) {
-          visitor(rowIndex, columnIndex);
-        }
-      });
-    });
+  bool _isInBounds(int rowIndex, int columnIndex) {
+    return rowIndex < length && columnIndex < columns.length;
   }
 
-  TableCellRange skipOutOfBounds(TableCellRange range) {
-    return ProxyTableCellRange((TableCellVisitor visitor) {
-      range.visitCells((int rowIndex, int columnIndex) {
-        if (rowIndex < length && columnIndex < columns.length) {
-          visitor(rowIndex, columnIndex);
-        }
-      });
-    });
+  bool _isBuilt(int rowIndex, int columnIndex) {
+    return _children.containsKey(rowIndex) && _children[rowIndex].containsKey(columnIndex);
   }
 
-  TableCellRange skipEmptyCells(TableCellRange range) {
-    return ProxyTableCellRange((TableCellVisitor visitor) {
-      range.visitCells((int rowIndex, int columnIndex) {
-        if (_children.containsKey(rowIndex) && _children[rowIndex].containsKey(columnIndex)) {
-          visitor(rowIndex, columnIndex);
-        }
-      });
-    });
+  bool _isNotBuilt(int rowIndex, int columnIndex) {
+    return !_children.containsKey(rowIndex) || !_children[rowIndex].containsKey(columnIndex);
   }
 
   TableCellRange allCells() {
@@ -804,36 +830,40 @@ class RenderBasicTableView extends RenderSegment {
     assert(debugDoingThisLayout);
     final Rect previousViewport = _viewport;
     _viewport = constraints.viewport;
-    if (!_needsBuild && _viewport == previousViewport) {
+    if (!_needsBuild && _dirtyCells == null && _viewport == previousViewport) {
       return;
     }
 
-    final UnionTableCellRange buildCells = UnionTableCellRange();
-    final UnionTableCellRange removeCells = UnionTableCellRange();
     final TableCellRect viewportCellRect = metrics.intersect(_viewport);
+    TableCellRange removeCells = allCells().subtract(viewportCellRect);
+    TableCellRange buildCells;
 
     if (_needsBuild) {
+      buildCells = viewportCellRect;
       _needsBuild = false;
-      removeCells.add(allCells().subtract(viewportCellRect));
-      buildCells.add(viewportCellRect);
+      _dirtyCells = null;
+    } else if (_dirtyCells != null) {
+      buildCells = UnionTableCellRange(<TableCellRange>[
+        _dirtyCells.intersect(viewportCellRect),
+        viewportCellRect.where(_isNotBuilt),
+      ]);
+      _dirtyCells = null;
     } else {
       assert(previousViewport != null);
       if (_viewport.overlaps(previousViewport)) {
         final Rect overlap = _viewport.intersect(previousViewport);
         final TableCellRect overlapCellRect = metrics.intersect(overlap);
-        removeCells.add(metrics.intersect(previousViewport).subtract(overlapCellRect));
-        // TODO: buildCells.add(skipAlreadyBuilt(...))?
-        buildCells.add(viewportCellRect.subtract(overlapCellRect));
+        removeCells = metrics.intersect(previousViewport).subtract(overlapCellRect);
+        buildCells = viewportCellRect.subtract(overlapCellRect);
       } else {
-        removeCells.add(allCells());
-        buildCells.add(viewportCellRect);
+        buildCells = viewportCellRect;
       }
     }
 
     invokeLayoutCallback<SegmentConstraints>((SegmentConstraints _) {
       _layoutCallback(
-        visitChildrenToRemove: skipEmptyCells(skipOutOfBounds(removeCells)).visitCells,
-        visitChildrenToBuild: skipOutOfBounds(buildCells).visitCells,
+        visitChildrenToRemove: removeCells.where(_isInBounds).where(_isBuilt).visitCells,
+        visitChildrenToBuild: buildCells.where(_isInBounds).visitCells,
       );
     });
   }
@@ -972,7 +1002,8 @@ class TableViewMetrics {
       assert(() {
         if (maxWidthDelta < -_kDoublePrecisionTolerance) {
           FlutterError.reportError(FlutterErrorDetails(
-            exception: 'TableView column width adjustment was unable to satisfy the maxWidth constraint',
+            exception: 'TableView column width adjustment was unable to satisfy the '
+                'maxWidth constraint',
             stack: StackTrace.current,
             library: 'payouts',
           ));
@@ -1063,7 +1094,7 @@ class TableViewMetrics {
   }
 }
 
-class Range {
+class Range with Diagnosticable {
   const Range(this.start, this.end)
       : assert(start != null),
         assert(end != null),
@@ -1073,6 +1104,14 @@ class Range {
   final double end;
 
   double get extent => end - start;
+
+  @override
+  @protected
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DoubleProperty('start', start));
+    properties.add(DoubleProperty('end', end));
+  }
 
   @override
   int get hashCode => hashValues(start, end);

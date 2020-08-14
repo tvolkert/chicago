@@ -554,9 +554,16 @@ class RenderTableView extends RenderBasicTableView with TableViewColumnListenerM
   int get highlightedRow => _highlightedRow;
   set highlightedRow(int value) {
     if (_highlightedRow == value) return;
+    final int previousValue = _highlightedRow;
     _highlightedRow = value;
-    // TODO: only mark the old and new highlighted row as needing build
-    markNeedsBuild();
+    final UnionTableCellRange dirtyCells = UnionTableCellRange();
+    if (previousValue != null) {
+      dirtyCells.add(TableCellRect.fromLTRB(0, previousValue, columns.length - 1, previousValue));
+    }
+    if (value != null) {
+      dirtyCells.add(TableCellRect.fromLTRB(0, value, columns.length - 1, value));
+    }
+    markCellsDirty(dirtyCells);
   }
 
   void _onPointerExit(PointerExitEvent event) {
@@ -729,11 +736,11 @@ class RenderTableViewHeader extends RenderBasicTableView with TableViewColumnLis
     List<TableColumnController> columns,
     bool roundColumnWidthsToWholePixel = false,
   }) : super(
-    rowHeight: rowHeight,
-    length: length,
-    columns: columns,
-    roundColumnWidthsToWholePixel: roundColumnWidthsToWholePixel,
-  );
+          rowHeight: rowHeight,
+          length: length,
+          columns: columns,
+          roundColumnWidthsToWholePixel: roundColumnWidthsToWholePixel,
+        );
 }
 
 mixin TableViewColumnListenerMixin on RenderBasicTableView {
@@ -745,25 +752,32 @@ mixin TableViewColumnListenerMixin on RenderBasicTableView {
     final List<BasicTableColumn> oldColumns = super.columns;
     super.columns = value;
     if (oldColumns != columns) {
+      // Initializer value is List<BasicTableColumn>
       if (oldColumns is List<TableColumnController>) {
-        // Initializer value is List<BasicTableColumn>
-        oldColumns.forEach(_removeColumnListener);
+        for (int i = 0; i < oldColumns.length; i++) {
+          oldColumns[i].removeListener(_columnListeners[i]);
+        }
       }
-      columns.forEach(_addColumnListener);
+      _columnListeners = <VoidCallback>[];
+      for (int i = 0; i < columns.length; i++) {
+        final VoidCallback listener = _listenerForColumn(i);
+        _columnListeners.add(listener);
+        columns[i].addListener(listener);
+      }
     }
   }
 
-  void _addColumnListener(TableColumnController column) {
-    column.addListener(_handleColumnUpdated);
-  }
+  List<VoidCallback> _columnListeners;
 
-  void _removeColumnListener(TableColumnController column) {
-    column.removeListener(_handleColumnUpdated);
-  }
-
-  void _handleColumnUpdated() {
-    // TODO: Only need to mark columns >= updated column as needing a build
-    markNeedsBuild();
-    markNeedsMetricsCalculation();
+  VoidCallback _listenerForColumn(int columnIndex) {
+    return () {
+      markCellsDirty(TableCellRect.fromLTRB(
+        columnIndex,
+        constraints.viewport.top ~/ rowHeight,
+        columnIndex,
+        constraints.viewport.bottom ~/ rowHeight,
+      ));
+      markNeedsMetricsCalculation();
+    };
   }
 }
