@@ -802,29 +802,34 @@ class RenderBasicTableView extends RenderSegment {
   void rebuildIfNecessary() {
     assert(_layoutCallback != null);
     assert(debugDoingThisLayout);
+    final Rect previousViewport = _viewport;
+    _viewport = constraints.viewport;
+    if (!_needsBuild && _viewport == previousViewport) {
+      return;
+    }
+
     final UnionTableCellRange buildCells = UnionTableCellRange();
     final UnionTableCellRange removeCells = UnionTableCellRange();
-    final TableCellRect viewportCellRect = metrics.intersect(constraints.viewport);
+    final TableCellRect viewportCellRect = metrics.intersect(_viewport);
 
     if (_needsBuild) {
       _needsBuild = false;
       removeCells.add(allCells().subtract(viewportCellRect));
       buildCells.add(viewportCellRect);
     } else {
-      assert(_viewport != null);
-      if (constraints.viewport.overlaps(_viewport)) {
-        final Rect overlap = constraints.viewport.intersect(_viewport);
+      assert(previousViewport != null);
+      if (_viewport.overlaps(previousViewport)) {
+        final Rect overlap = _viewport.intersect(previousViewport);
         final TableCellRect overlapCellRect = metrics.intersect(overlap);
-        removeCells.add(metrics.intersect(_viewport).subtract(overlapCellRect));
-        // TODO: double-check the need or lack thereof for skipAlreadyBuilt()
-        buildCells.add(/*skipAlreadyBuilt(*/viewportCellRect.subtract(overlapCellRect)/*)*/);
+        removeCells.add(metrics.intersect(previousViewport).subtract(overlapCellRect));
+        // TODO: buildCells.add(skipAlreadyBuilt(...))?
+        buildCells.add(viewportCellRect.subtract(overlapCellRect));
       } else {
         removeCells.add(allCells());
         buildCells.add(viewportCellRect);
       }
     }
 
-    _viewport = constraints.viewport;
     invokeLayoutCallback<SegmentConstraints>((SegmentConstraints _) {
       _layoutCallback(
         visitChildrenToRemove: skipEmptyCells(skipOutOfBounds(removeCells)).visitCells,
