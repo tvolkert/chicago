@@ -33,7 +33,7 @@ int binarySearch<T>(
       max = mid;
     }
   }
-  return -min;
+  return -(min + 1);
 }
 
 /// Returns a [Comparator] that asserts that its first argument is comparable.
