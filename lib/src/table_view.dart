@@ -220,7 +220,7 @@ class TableViewSelectionController with ChangeNotifier {
     for (Span range in ranges) {
       assert(range != null);
       assert(range.start >= 0 && (!isAttached || range.end < _renderObject.length));
-      _selectedRanges.addRange(range.start, range.end);
+      selectedRanges.addRange(range.start, range.end);
     }
     _selectedRanges = selectedRanges;
     notifyListeners();
@@ -498,6 +498,7 @@ class TableViewElement extends BasicTableViewElement {
       rowIndex: rowIndex,
       columnIndex: columnIndex,
       rowHighlighted: renderObject.highlightedRow == rowIndex,
+      rowSelected: widget.selectionController.selectedIndex == rowIndex,
     );
   }
 }
@@ -526,12 +527,18 @@ class RenderTableView extends RenderBasicTableView with TableViewColumnListenerM
   set selectionController(TableViewSelectionController value) {
     assert(value != null);
     if (_selectionController == value) return;
-    if (_selectionController != null && attached) {
-      _selectionController._detach();
+    if (_selectionController != null) {
+      if (attached) {
+        _selectionController._detach();
+      }
+      _selectionController.removeListener(_handleSelectionChanged);
     }
     _selectionController = value;
-    if (_selectionController != null && attached) {
-      _selectionController._attach(this);
+    if (_selectionController != null) {
+      if (attached) {
+        _selectionController._attach(this);
+      }
+      _selectionController.addListener(_handleSelectionChanged);
     }
     markNeedsBuild();
   }
@@ -566,6 +573,11 @@ class RenderTableView extends RenderBasicTableView with TableViewColumnListenerM
     markCellsDirty(dirtyCells);
   }
 
+  void _handleSelectionChanged() {
+    // TODO: be more precise about what to rebuild (requires finer grained info from the notification).
+    markNeedsBuild();
+  }
+
   void _onPointerExit(PointerExitEvent event) {
     highlightedRow = null;
   }
@@ -583,10 +595,16 @@ class RenderTableView extends RenderBasicTableView with TableViewColumnListenerM
     }
   }
 
+  void _onPointerDown(PointerDownEvent event) {
+    final TableCellOffset cellOffset = metrics.hitTest(event.localPosition);
+    selectionController.selectedIndex = cellOffset.rowIndex;
+  }
+
   void _onPointerEvent(PointerEvent event) {
-    if (event is PointerExitEvent) return _onPointerExit(event);
-    if (event is PointerScrollEvent) return _onPointerScroll(event);
     if (event is PointerHoverEvent) return _onPointerHover(event);
+    if (event is PointerScrollEvent) return _onPointerScroll(event);
+    if (event is PointerExitEvent) return _onPointerExit(event);
+    if (event is PointerDownEvent) return _onPointerDown(event);
   }
 
   @override
@@ -620,6 +638,16 @@ class RenderTableView extends RenderBasicTableView with TableViewColumnListenerM
         ..style = PaintingStyle.fill
         ..color = const Color(0xffdddcd5);
       context.canvas.drawRect(rowBounds.shift(offset), paint);
+    }
+    if (selectionController.selectedRanges.isNotEmpty) {
+      for (Span range in selectionController.selectedRanges) {
+        final Rect rangeBounds =
+            metrics.getRowBounds(range.start).expandToInclude(metrics.getRowBounds(range.end));
+        Paint paint = Paint()
+          ..style = PaintingStyle.fill
+          ..color = const Color(0xff14538b);
+        context.canvas.drawRect(rangeBounds.shift(offset), paint);
+      }
     }
     super.paint(context, offset);
   }
