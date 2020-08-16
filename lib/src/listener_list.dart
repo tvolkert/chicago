@@ -13,7 +13,46 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-abstract class ListenerList<T> extends Iterable<T> {
+import 'package:flutter/foundation.dart';
+
+typedef ListenerVisitor<T> = void Function(T listener);
+
+mixin ListenerNotifier<T> {
+  ListenerList<T> _listeners = ListenerList<T>();
+
+  bool _debugAssertNotDisposed() {
+    assert(() {
+      if (_listeners == null) {
+        throw FlutterError('A $runtimeType was used after being disposed.\n'
+            'Once you have called dispose() on a $runtimeType, it can no longer be used.');
+      }
+      return true;
+    }());
+    return true;
+  }
+
+  void addListener(T listener) {
+    assert(_debugAssertNotDisposed());
+    _listeners.add(listener);
+  }
+
+  void removeListener(T listener) {
+    assert(_debugAssertNotDisposed());
+    _listeners.remove(listener);
+  }
+
+  @mustCallSuper
+  void dispose() {
+    assert(_debugAssertNotDisposed());
+    _listeners = null;
+  }
+
+  @protected
+  void notifyListeners(ListenerVisitor<T> visitor) => _listeners.forEach(visitor);
+}
+
+// TODO: make private
+class ListenerList<T> extends Iterable<T> {
   // First node in the list (we don't maintain a reference to the last
   // node, since we need to walk the list looking for duplicates on add)
   _Node<T> _first;
@@ -99,8 +138,7 @@ class _NodeIterator<T> implements Iterator<T> {
 
   @override
   bool moveNext() {
-    if (node == null)
-      return false;
+    if (node == null) return false;
     node = node.next;
     return node != null;
   }
