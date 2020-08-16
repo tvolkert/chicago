@@ -617,25 +617,6 @@ class RenderTableView extends RenderBasicTableView with TableViewColumnListenerM
 
   int _selectIndex = -1;
 
-  static bool isShiftKeyPressed() {
-    final Set<LogicalKeyboardKey> keys = RawKeyboard.instance.keysPressed;
-    return keys.contains(LogicalKeyboardKey.shiftLeft) ||
-        keys.contains(LogicalKeyboardKey.shiftRight);
-  }
-
-  static bool isPlatformCommandKeyPressed([TargetPlatform platform]) {
-    platform ??= defaultTargetPlatform;
-    final Set<LogicalKeyboardKey> keys = RawKeyboard.instance.keysPressed;
-    switch (platform) {
-      case TargetPlatform.macOS:
-        return keys.contains(LogicalKeyboardKey.metaLeft) ||
-            keys.contains(LogicalKeyboardKey.metaRight);
-      default:
-        return keys.contains(LogicalKeyboardKey.controlLeft) ||
-            keys.contains(LogicalKeyboardKey.controlRight);
-    }
-  }
-
   void _onPointerDown(PointerDownEvent event) {
     final SelectMode selectMode = selectionController.selectMode;
     if (selectMode != SelectMode.none) {

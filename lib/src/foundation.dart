@@ -13,6 +13,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+
 int binarySearch<T>(
   List<T> sortedList,
   T value, {
@@ -39,4 +42,23 @@ int binarySearch<T>(
 /// Returns a [Comparator] that asserts that its first argument is comparable.
 Comparator<T> _defaultCompare<T>() {
   return (T value1, T value2) => (value1 as Comparable<T>).compareTo(value2);
+}
+
+bool isShiftKeyPressed() {
+  final Set<LogicalKeyboardKey> keys = RawKeyboard.instance.keysPressed;
+  return keys.contains(LogicalKeyboardKey.shiftLeft) ||
+      keys.contains(LogicalKeyboardKey.shiftRight);
+}
+
+bool isPlatformCommandKeyPressed([TargetPlatform platform]) {
+  platform ??= defaultTargetPlatform;
+  final Set<LogicalKeyboardKey> keys = RawKeyboard.instance.keysPressed;
+  switch (platform) {
+    case TargetPlatform.macOS:
+      return keys.contains(LogicalKeyboardKey.metaLeft) ||
+          keys.contains(LogicalKeyboardKey.metaRight);
+    default:
+      return keys.contains(LogicalKeyboardKey.controlLeft) ||
+          keys.contains(LogicalKeyboardKey.controlRight);
+  }
 }
