@@ -21,6 +21,7 @@ import 'package:flutter/painting.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
+import 'listener_list.dart';
 import 'scroll_bar.dart';
 import 'segment.dart';
 
@@ -251,12 +252,79 @@ enum ScrollBarPolicy {
   expand,
 }
 
-class ScrollPane extends StatelessWidget {
+typedef ScrollOffsetChangedHandler = void Function(
+  ScrollController controller,
+  Offset previousOffset,
+);
+
+class ScrollPaneListener {
+  const ScrollPaneListener({
+    @required this.onScrollOffsetChanged,
+  }) : assert(onScrollOffsetChanged != null);
+
+  final ScrollOffsetChangedHandler onScrollOffsetChanged;
+}
+
+class ScrollController with ListenerNotifier<ScrollPaneListener> {
+  ScrollController({
+    Offset scrollOffset = Offset.zero,
+  })  : assert(scrollOffset != null),
+        _scrollOffset = scrollOffset;
+
+  Offset _scrollOffset;
+  Offset get scrollOffset => _scrollOffset;
+  set scrollOffset(Offset value) {
+    assert(value != null);
+    if (value == _scrollOffset) return;
+    final Offset previousOffset = _scrollOffset;
+    value = _boundsCheckIfAttached(value);
+    if (value == _scrollOffset) return;
+    _scrollOffset = value;
+    notifyListeners((ScrollPaneListener listener) {
+      listener.onScrollOffsetChanged(this, previousOffset);
+    });
+  }
+
+  void _skipBoundscheck(VoidCallback callback) {
+    assert(_boundsCheck);
+    _boundsCheck = false;
+    try {
+      callback();
+    } finally {
+      _boundsCheck = true;
+    }
+  }
+
+  RenderScrollPane _renderObject;
+  bool _boundsCheck = true;
+
+  Offset _boundsCheckIfAttached(Offset scrollOffset) {
+    if (_renderObject != null && _boundsCheck) {
+      return _renderObject._boundsCheckScrollOffset(scrollOffset);
+    }
+    return scrollOffset;
+  }
+
+  void _detach() {
+    assert(_renderObject != null);
+    _renderObject = null;
+  }
+
+  void _attach(RenderScrollPane renderObject) {
+    assert(renderObject != null);
+    assert(_renderObject == null);
+    _renderObject = renderObject;
+    scrollOffset = _renderObject._boundsCheckScrollOffset(scrollOffset);
+  }
+}
+
+class ScrollPane extends StatefulWidget {
   const ScrollPane({
     Key key,
     this.horizontalScrollBarPolicy = ScrollBarPolicy.auto,
     this.verticalScrollBarPolicy = ScrollBarPolicy.auto,
     this.clipBehavior = Clip.hardEdge,
+    this.scrollController,
     this.rowHeader,
     this.columnHeader,
     this.topLeftCorner = const _EmptyCorner(),
@@ -291,6 +359,12 @@ class ScrollPane extends StatelessWidget {
   /// Must be non-null; defaults to [Clip.hardEdge], which means that the
   /// contents of the scroll pane will never be painted over each other.
   final Clip clipBehavior;
+
+  /// The controller responsible for managing the scroll offset of this widget.
+  ///
+  /// If this is not provided, one will be created and maintained automatically
+  /// by this widget's [State] object.
+  final ScrollController scrollController;
 
   /// Optional widget that will be laid out to the left of the view, vertically
   /// aligned with the top of the view.
@@ -359,15 +433,51 @@ class ScrollPane extends StatelessWidget {
   final Widget view;
 
   @override
+  _ScrollPaneState createState() => _ScrollPaneState();
+}
+
+class _ScrollPaneState extends State<ScrollPane> {
+  ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.scrollController == null) {
+      _scrollController = ScrollController();
+    }
+  }
+
+  @override
+  void didUpdateWidget(ScrollPane oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.scrollController != widget.scrollController) {
+      if (oldWidget.scrollController == null) {
+        assert(_scrollController != null);
+        _scrollController.dispose();
+        _scrollController = null;
+      } else {
+        assert(_scrollController == null);
+        _scrollController = ScrollController();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController?.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return _ScrollPane(
-      view: view,
-      rowHeader: rowHeader,
-      columnHeader: columnHeader,
-      topLeftCorner: topLeftCorner,
-      bottomLeftCorner: bottomLeftCorner,
-      bottomRightCorner: bottomRightCorner,
-      topRightCorner: topRightCorner,
+      view: widget.view,
+      rowHeader: widget.rowHeader,
+      columnHeader: widget.columnHeader,
+      topLeftCorner: widget.topLeftCorner,
+      bottomLeftCorner: widget.bottomLeftCorner,
+      bottomRightCorner: widget.bottomRightCorner,
+      topRightCorner: widget.topRightCorner,
       horizontalScrollBar: const ScrollBar(
         orientation: Axis.horizontal,
         unitIncrement: 10,
@@ -376,9 +486,10 @@ class ScrollPane extends StatelessWidget {
         orientation: Axis.vertical,
         unitIncrement: 10,
       ),
-      horizontalScrollBarPolicy: horizontalScrollBarPolicy,
-      verticalScrollBarPolicy: verticalScrollBarPolicy,
-      clipBehavior: clipBehavior,
+      horizontalScrollBarPolicy: widget.horizontalScrollBarPolicy,
+      verticalScrollBarPolicy: widget.verticalScrollBarPolicy,
+      clipBehavior: widget.clipBehavior,
+      scrollController: widget.scrollController ?? _scrollController,
     );
   }
 }
@@ -420,6 +531,7 @@ class _ScrollPane extends RenderObjectWidget {
     @required this.horizontalScrollBarPolicy,
     @required this.verticalScrollBarPolicy,
     @required this.clipBehavior,
+    @required this.scrollController,
   })  : assert(view != null),
         assert(topLeftCorner != null),
         assert(bottomLeftCorner != null),
@@ -430,6 +542,7 @@ class _ScrollPane extends RenderObjectWidget {
         assert(horizontalScrollBarPolicy != null),
         assert(verticalScrollBarPolicy != null),
         assert(clipBehavior != null),
+        assert(scrollController != null),
         super(key: key);
 
   final Widget view;
@@ -444,6 +557,7 @@ class _ScrollPane extends RenderObjectWidget {
   final ScrollBarPolicy horizontalScrollBarPolicy;
   final ScrollBarPolicy verticalScrollBarPolicy;
   final Clip clipBehavior;
+  final ScrollController scrollController;
 
   @override
   RenderObjectElement createElement() => _ScrollPaneElement(this);
@@ -454,6 +568,7 @@ class _ScrollPane extends RenderObjectWidget {
       horizontalScrollBarPolicy: horizontalScrollBarPolicy,
       verticalScrollBarPolicy: verticalScrollBarPolicy,
       clipBehavior: clipBehavior,
+      scrollController: scrollController,
     );
   }
 
@@ -462,7 +577,8 @@ class _ScrollPane extends RenderObjectWidget {
     renderScrollPane
       ..horizontalScrollBarPolicy = horizontalScrollBarPolicy
       ..verticalScrollBarPolicy = verticalScrollBarPolicy
-      ..clipBehavior = clipBehavior;
+      ..clipBehavior = clipBehavior
+      ..scrollController = scrollController;
   }
 }
 
@@ -598,16 +714,20 @@ class RenderScrollPane extends RenderBox {
     ScrollBarPolicy horizontalScrollBarPolicy = ScrollBarPolicy.auto,
     ScrollBarPolicy verticalScrollBarPolicy = ScrollBarPolicy.auto,
     Clip clipBehavior = Clip.hardEdge,
+    ScrollController scrollController,
   })  : assert(horizontalScrollBarPolicy != null),
         assert(verticalScrollBarPolicy != null),
         assert(clipBehavior != null),
         _horizontalScrollBarPolicy = horizontalScrollBarPolicy,
         _verticalScrollBarPolicy = verticalScrollBarPolicy,
         _clipBehavior = clipBehavior {
-    _scrollBarValueListener = ScrollBarValueListener(valueChanged: _scrollBarValueChanged);
+    _scrollBarValueListener = ScrollBarValueListener(valueChanged: _onScrollBarValueChanged);
+    _scrollPaneListener = ScrollPaneListener(onScrollOffsetChanged: _onScrollOffsetChanged);
+    this.scrollController = scrollController;
   }
 
   ScrollBarValueListener _scrollBarValueListener;
+  ScrollPaneListener _scrollPaneListener;
 
   static const double _horizontalReveal = 30;
   static const double _verticalReveal = 30;
@@ -677,19 +797,6 @@ class RenderScrollPane extends RenderBox {
     return math.max(viewWidth - viewportWidth, 0);
   }
 
-  Offset _scrollOffset = Offset.zero;
-  Offset get scrollOffset => _scrollOffset;
-  set scrollOffset(Offset value) {
-    assert(value != null);
-    if (_scrollOffset == value) return;
-    value = _boundsCheckScrollOffset(value);
-    _scrollOffset = value;
-
-    horizontalScrollBar.value = value.dx;
-    verticalScrollBar.value = value.dy;
-    markNeedsLayout();
-  }
-
   ScrollBarPolicy _horizontalScrollBarPolicy;
   ScrollBarPolicy get horizontalScrollBarPolicy => _horizontalScrollBarPolicy;
   set horizontalScrollBarPolicy(ScrollBarPolicy value) {
@@ -715,6 +822,35 @@ class RenderScrollPane extends RenderBox {
     if (_clipBehavior == value) return;
     _clipBehavior = value;
     markNeedsPaint();
+  }
+
+  ScrollController _scrollController;
+  ScrollController get scrollController => _scrollController;
+  set scrollController(ScrollController value) {
+    assert(value != null);
+    if (value == _scrollController) return;
+    Offset previousScrollOffset;
+    if (_scrollController != null) {
+      previousScrollOffset = _scrollController.scrollOffset;
+      _scrollController.removeListener(_scrollPaneListener);
+      _scrollController._detach();
+    }
+    _scrollController = value;
+    _scrollController._attach(this);
+    _scrollController.addListener(_scrollPaneListener);
+    if (_scrollController.scrollOffset != previousScrollOffset) {
+      markNeedsLayout();
+    }
+  }
+
+  Offset get scrollOffset {
+    assert(scrollController != null);
+    return scrollController.scrollOffset;
+  }
+
+  set scrollOffset(Offset value) {
+    assert(scrollController != null);
+    scrollController.scrollOffset = value;
   }
 
   RenderBox _view;
@@ -801,12 +937,27 @@ class RenderScrollPane extends RenderBox {
     }
   }
 
-  void _scrollBarValueChanged(RenderScrollBar scrollBar, double previousValue) {
+  void _onScrollBarValueChanged(RenderScrollBar scrollBar, double previousValue) {
     double value = scrollBar.value;
     if (scrollBar == horizontalScrollBar) {
       scrollOffset = Offset(value, scrollOffset.dy);
     } else {
       scrollOffset = Offset(scrollOffset.dx, value);
+    }
+  }
+
+  bool _updatingScrollOffsetDuringLayout = false;
+
+  void _onScrollOffsetChanged(ScrollController controller, Offset previousScrollOffset) {
+    assert(controller == _scrollController);
+    assert(controller.scrollOffset != null);
+    assert(controller.scrollOffset != previousScrollOffset);
+    if (!_updatingScrollOffsetDuringLayout) {
+      final Offset value = controller.scrollOffset;
+      assert(!attached || value == _boundsCheckScrollOffset(value));
+      horizontalScrollBar.value = value.dx;
+      verticalScrollBar.value = value.dy;
+      markNeedsLayout();
     }
   }
 
@@ -1300,11 +1451,18 @@ class RenderScrollPane extends RenderBox {
     // everything out, since our maxScrollXYZ methods rely on valid
     // sizes from our components.
 
-    _scrollOffset = _boundsCheckScrollOffset(
-      scrollOffset,
-      horizontalScrollBarHeight: horizontalScrollBarHeight,
-      verticalScrollBarWidth: verticalScrollBarWidth,
-    );
+    scrollController._skipBoundscheck(() {
+      _updatingScrollOffsetDuringLayout = true;
+      try {
+        scrollController.scrollOffset = _boundsCheckScrollOffset(
+          scrollOffset,
+          horizontalScrollBarHeight: horizontalScrollBarHeight,
+          verticalScrollBarWidth: verticalScrollBarWidth,
+        );
+      } finally {
+        _updatingScrollOffsetDuringLayout = false;
+      }
+    });
 
     if (view != null) {
       _ScrollPaneParentData parentData = parentDataFor(view);
