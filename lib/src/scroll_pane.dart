@@ -275,54 +275,43 @@ class ScrollController with ListenerNotifier<ScrollPaneListener> {
   Offset get scrollOffset => _scrollOffset;
   set scrollOffset(Offset value) {
     assert(value != null);
+    value = _boundsCheckScrollOffset(value);
     if (value == _scrollOffset) return;
     final Offset previousOffset = _scrollOffset;
-    value = _boundsCheckIfAttached(value);
-    if (value == _scrollOffset) return;
     _scrollOffset = value;
     notifyListeners((ScrollPaneListener listener) {
       listener.onScrollOffsetChanged(this, previousOffset);
     });
   }
 
-  Offset get maxScrollOffset {
-    if (_renderObject != null) {
-      return Offset(_renderObject.getMaxScrollLeft(), _renderObject.getMaxScrollTop());
-    }
-    return Offset.infinite;
+  Size _viewportSize = Size.zero;
+  Size _viewSize = Size.zero;
+
+  void _setRenderValues({
+    @required Size viewSize,
+    @required Size viewportSize,
+    @required Offset scrollOffset,
+  }) {
+    assert(viewSize != null);
+    assert(viewportSize != null);
+    assert(scrollOffset != null);
+    _viewSize = viewSize;
+    _viewportSize = viewportSize;
+    this.scrollOffset = scrollOffset;
   }
 
-  void _skipBoundscheck(VoidCallback callback) {
-    assert(_boundsCheck);
-    _boundsCheck = false;
-    try {
-      callback();
-    } finally {
-      _boundsCheck = true;
-    }
+  Offset _boundsCheckScrollOffset(Offset value) {
+    return Offset(
+      math.min(math.max(value.dx, 0), _maxScrollLeft),
+      math.min(math.max(value.dy, 0), _maxScrollTop),
+    );
   }
 
-  RenderScrollPane _renderObject;
-  bool _boundsCheck = true;
+  double get _maxScrollLeft => math.max(_viewSize.width - _viewportSize.width, 0);
 
-  Offset _boundsCheckIfAttached(Offset scrollOffset) {
-    if (_renderObject != null && _boundsCheck) {
-      return _renderObject._boundsCheckScrollOffset(scrollOffset);
-    }
-    return scrollOffset;
-  }
+  double get _maxScrollTop => math.max(_viewSize.height - _viewportSize.height, 0);
 
-  void _detach() {
-    assert(_renderObject != null);
-    _renderObject = null;
-  }
-
-  void _attach(RenderScrollPane renderObject) {
-    assert(renderObject != null);
-    assert(_renderObject == null);
-    _renderObject = renderObject;
-    scrollOffset = _renderObject._boundsCheckScrollOffset(scrollOffset);
-  }
+  Offset get maxScrollOffset => Offset(_maxScrollLeft, _maxScrollTop);
 }
 
 class ScrollPane extends StatefulWidget {
@@ -814,75 +803,6 @@ class RenderScrollPane extends RenderBox {
   static const double _verticalReveal = 30;
   static const int _maxLayoutPasses = 4;
 
-  /// Returns an offset that is as close to to the proposed scroll offset
-  /// while being within the legal bounds defined by this scroll pane.
-  ///
-  /// If the `horizontalScrollBarHeight` argument is not specified, the value
-  /// will be taken from [horizontalScrollBar].
-  ///
-  /// If the `verticalScrollBarWidth` argument is not specified, the value
-  /// will be taken from [verticalScrollBar].
-  Offset _boundsCheckScrollOffset(
-    Offset proposedScrollOffset, {
-    double horizontalScrollBarHeight,
-    double verticalScrollBarWidth,
-  }) {
-    return Offset(
-      math.min(
-        math.max(proposedScrollOffset.dx, 0),
-        getMaxScrollLeft(verticalScrollBarWidth: verticalScrollBarWidth),
-      ),
-      math.min(
-        math.max(proposedScrollOffset.dy, 0),
-        getMaxScrollTop(horizontalScrollBarHeight: horizontalScrollBarHeight),
-      ),
-    );
-  }
-
-  /// Returns the maximum legal vertical scroll offset defined by this scroll
-  /// pane.
-  ///
-  /// If the `horizontalScrollBarHeight` argument is not specified, the value
-  /// will be taken from [horizontalScrollBar].
-  double getMaxScrollTop({double horizontalScrollBarHeight}) {
-    if (view == null) return 0;
-
-    double viewHeight = view.size.height;
-    double columnHeaderHeight = 0;
-    double height = size.height;
-
-    if (parentDataFor(horizontalScrollBar).visible) {
-      horizontalScrollBarHeight ??= horizontalScrollBar.size.height;
-    }
-    horizontalScrollBarHeight ??= 0;
-
-    if (columnHeader != null) columnHeaderHeight = columnHeader.size.height;
-    final double viewportHeight = height - columnHeaderHeight - horizontalScrollBarHeight;
-    return math.max(viewHeight - viewportHeight, 0);
-  }
-
-  /// Returns the maximum legal horizontal scroll offset defined by this scroll
-  /// pane.
-  ///
-  /// If the `verticalScrollBarWidth` argument is not specified, the value
-  /// will be taken from [verticalScrollBar].
-  double getMaxScrollLeft({double verticalScrollBarWidth}) {
-    if (view == null) return 0;
-
-    double viewWidth = view.size.width;
-    double rowHeaderWidth = 0;
-    double width = size.width;
-
-    if (parentDataFor(verticalScrollBar).visible) {
-      verticalScrollBarWidth ??= verticalScrollBar.size.width;
-    }
-    verticalScrollBarWidth ??= 0;
-
-    if (rowHeader != null) rowHeaderWidth = rowHeader.size.width;
-    final double viewportWidth = width - rowHeaderWidth - verticalScrollBarWidth;
-    return math.max(viewWidth - viewportWidth, 0);
-  }
-
   ScrollBarPolicy _horizontalScrollBarPolicy;
   ScrollBarPolicy get horizontalScrollBarPolicy => _horizontalScrollBarPolicy;
   set horizontalScrollBarPolicy(ScrollBarPolicy value) {
@@ -915,33 +835,18 @@ class RenderScrollPane extends RenderBox {
   set scrollController(ScrollController value) {
     assert(value != null);
     if (value == _scrollController) return;
-    Offset previousScrollOffset;
     if (_scrollController != null) {
-      previousScrollOffset = _scrollController.scrollOffset;
       _scrollController.removeListener(_scrollPaneListener);
-      _scrollController._detach();
     }
     _scrollController = value;
-    _scrollController._attach(this);
     _scrollController.addListener(_scrollPaneListener);
-    if (_scrollController.scrollOffset != previousScrollOffset) {
-      markNeedsLayout();
-    }
-  }
-
-  Offset get scrollOffset {
-    assert(scrollController != null);
-    return scrollController.scrollOffset;
-  }
-
-  set scrollOffset(Offset value) {
-    assert(scrollController != null);
-    scrollController.scrollOffset = value;
+    markNeedsLayout();
   }
 
   RenderBox _view;
   RenderBox get view => _view;
   set view(RenderBox value) {
+    if (value == _view) return;
     if (_view != null) dropChild(_view);
     _view = value;
     if (_view != null) adoptChild(_view);
@@ -950,6 +855,7 @@ class RenderScrollPane extends RenderBox {
   RenderBox _rowHeader;
   RenderBox get rowHeader => _rowHeader;
   set rowHeader(RenderBox value) {
+    if (value == _rowHeader) return;
     if (_rowHeader != null) dropChild(_rowHeader);
     _rowHeader = value;
     if (_rowHeader != null) adoptChild(_rowHeader);
@@ -958,6 +864,7 @@ class RenderScrollPane extends RenderBox {
   RenderBox _columnHeader;
   RenderBox get columnHeader => _columnHeader;
   set columnHeader(RenderBox value) {
+    if (value == _columnHeader) return;
     if (_columnHeader != null) dropChild(_columnHeader);
     _columnHeader = value;
     if (_columnHeader != null) adoptChild(_columnHeader);
@@ -966,6 +873,7 @@ class RenderScrollPane extends RenderBox {
   RenderBox _topLeftCorner;
   RenderBox get topLeftCorner => _topLeftCorner;
   set topLeftCorner(RenderBox value) {
+    if (value == _topLeftCorner) return;
     if (_topLeftCorner != null) dropChild(_topLeftCorner);
     _topLeftCorner = value;
     if (_topLeftCorner != null) adoptChild(_topLeftCorner);
@@ -974,6 +882,7 @@ class RenderScrollPane extends RenderBox {
   RenderBox _bottomLeftCorner;
   RenderBox get bottomLeftCorner => _bottomLeftCorner;
   set bottomLeftCorner(RenderBox value) {
+    if (value == _bottomLeftCorner) return;
     if (_bottomLeftCorner != null) dropChild(_bottomLeftCorner);
     _bottomLeftCorner = value;
     if (_bottomLeftCorner != null) adoptChild(_bottomLeftCorner);
@@ -982,6 +891,7 @@ class RenderScrollPane extends RenderBox {
   RenderBox _bottomRightCorner;
   RenderBox get bottomRightCorner => _bottomRightCorner;
   set bottomRightCorner(RenderBox value) {
+    if (value == _bottomRightCorner) return;
     if (_bottomRightCorner != null) dropChild(_bottomRightCorner);
     _bottomRightCorner = value;
     if (_bottomRightCorner != null) adoptChild(_bottomRightCorner);
@@ -990,6 +900,7 @@ class RenderScrollPane extends RenderBox {
   RenderBox _topRightCorner;
   RenderBox get topRightCorner => _topRightCorner;
   set topRightCorner(RenderBox value) {
+    if (value == _topRightCorner) return;
     if (_topRightCorner != null) dropChild(_topRightCorner);
     _topRightCorner = value;
     if (_topRightCorner != null) adoptChild(_topRightCorner);
@@ -998,8 +909,9 @@ class RenderScrollPane extends RenderBox {
   RenderScrollBar _horizontalScrollBar;
   RenderScrollBar get horizontalScrollBar => _horizontalScrollBar;
   set horizontalScrollBar(RenderScrollBar value) {
+    if (value == _horizontalScrollBar) return;
     if (_horizontalScrollBar != null) {
-      value.removeListener(_scrollBarValueListener);
+      _horizontalScrollBar.removeListener(_scrollBarValueListener);
       dropChild(_horizontalScrollBar);
     }
     _horizontalScrollBar = value;
@@ -1012,8 +924,9 @@ class RenderScrollPane extends RenderBox {
   RenderScrollBar _verticalScrollBar;
   RenderScrollBar get verticalScrollBar => _verticalScrollBar;
   set verticalScrollBar(RenderScrollBar value) {
+    if (value == _verticalScrollBar) return;
     if (_verticalScrollBar != null) {
-      value.removeListener(_scrollBarValueListener);
+      _verticalScrollBar.removeListener(_scrollBarValueListener);
       dropChild(_verticalScrollBar);
     }
     _verticalScrollBar = value;
@@ -1024,34 +937,40 @@ class RenderScrollPane extends RenderBox {
   }
 
   void _onScrollBarValueChanged(RenderScrollBar scrollBar, double previousValue) {
-    double value = scrollBar.value;
+    final double value = scrollBar.value;
     if (scrollBar == horizontalScrollBar) {
-      scrollOffset = Offset(value, scrollOffset.dy);
+      scrollController.scrollOffset = Offset(value, scrollController.scrollOffset.dy);
     } else {
-      scrollOffset = Offset(scrollOffset.dx, value);
+      scrollController.scrollOffset = Offset(scrollController.scrollOffset.dx, value);
     }
   }
 
-  bool _updatingScrollOffsetDuringLayout = false;
+  // TODO: see if there's a way to get rid of the need for this.
+  bool _ignoreScrollControllerEvents = false;
+  void _ignoreScrollControllerNotifications(VoidCallback callback) {
+    _ignoreScrollControllerEvents = true;
+    try {
+      callback();
+    } finally {
+      _ignoreScrollControllerEvents = false;
+    }
+  }
 
   void _onScrollOffsetChanged(ScrollController controller, Offset previousScrollOffset) {
-    assert(controller == _scrollController);
+    if (_ignoreScrollControllerEvents) return;
+    assert(controller == scrollController);
     assert(controller.scrollOffset != null);
     assert(controller.scrollOffset != previousScrollOffset);
-    if (!_updatingScrollOffsetDuringLayout) {
-      final Offset value = controller.scrollOffset;
-      assert(!attached || value == _boundsCheckScrollOffset(value));
-      horizontalScrollBar.value = value.dx;
-      verticalScrollBar.value = value.dy;
-      markNeedsLayout();
-    }
+    final Offset value = controller.scrollOffset;
+    assert(value.dx <= controller._maxScrollLeft);
+    assert(value.dy <= controller._maxScrollTop);
+    horizontalScrollBar.value = value.dx;
+    verticalScrollBar.value = value.dy;
+    markNeedsLayout();
   }
 
   void _onPointerScroll(PointerScrollEvent event) {
-    scrollOffset = Offset(
-      scrollOffset.dx + event.scrollDelta.dx,
-      scrollOffset.dy + event.scrollDelta.dy,
-    );
+    scrollController.scrollOffset += event.scrollDelta;
   }
 
   @override
@@ -1087,6 +1006,11 @@ class RenderScrollPane extends RenderBox {
     if (topRightCorner != null) topRightCorner.detach();
     if (horizontalScrollBar != null) horizontalScrollBar.detach();
     if (verticalScrollBar != null) verticalScrollBar.detach();
+    scrollController._setRenderValues(
+      scrollOffset: Offset.zero,
+      viewportSize: Size.zero,
+      viewSize: Size.zero,
+    );
   }
 
   @override
@@ -1326,6 +1250,8 @@ class RenderScrollPane extends RenderBox {
 
   @override
   void performLayout() {
+    // TODO: we could make layout more efficient by deferring our size calculation until the end
+    // TODO: of layout, and using the constraints rather than size during layout
     if (constraints.hasBoundedWidth && constraints.hasBoundedHeight) {
       size = constraints.biggest;
     } else if (constraints.hasBoundedWidth) {
@@ -1391,7 +1317,8 @@ class RenderScrollPane extends RenderBox {
           case ScrollBarPolicy.always:
           case ScrollBarPolicy.auto:
           case ScrollBarPolicy.never:
-          // Unbounded width constraints
+            // Unbounded width constraints
+            break;
         }
 
         switch (verticalScrollBarPolicy) {
@@ -1404,10 +1331,11 @@ class RenderScrollPane extends RenderBox {
           case ScrollBarPolicy.always:
           case ScrollBarPolicy.auto:
           case ScrollBarPolicy.never:
-          // Unbounded height constraints
+            // Unbounded height constraints
+            break;
         }
 
-        final Rect viewport = scrollOffset & Size(viewportWidth, viewportHeight);
+        final Rect viewport = scrollController.scrollOffset & Size(viewportWidth, viewportHeight);
         final SegmentConstraints viewConstraints = SegmentConstraints.fromBoxConstraints(
           viewport: viewport,
           boxConstraints: BoxConstraints(
@@ -1439,6 +1367,9 @@ class RenderScrollPane extends RenderBox {
       }
     } while (++i <= RenderScrollPane._maxLayoutPasses && scrollBarSizesChanged());
 
+    _cachedHorizontalScrollBarHeight = horizontalScrollBarHeight;
+    _cachedVerticalScrollBarWidth = verticalScrollBarWidth;
+
     if (i > RenderScrollPane._maxLayoutPasses) {
       assert(() {
         throw FlutterError('A RenderScrollPane exceeded its maximum number of layout cycles.\n'
@@ -1451,154 +1382,139 @@ class RenderScrollPane extends RenderBox {
     }
 
     if (columnHeader != null) {
-      final BoxConstraints boxConstraints = BoxConstraints.tightFor(
+      final BoxConstraints columnHeaderBoxConstraints = BoxConstraints.tightFor(
         width: viewWidth,
         height: columnHeaderHeight,
       );
-      final Offset segmentOffset = Offset(scrollOffset.dx, 0);
+      final Offset segmentOffset = Offset(scrollController.scrollOffset.dx, 0);
       final Size segmentSize = Size(viewWidth, columnHeaderHeight);
-      final Rect viewport = segmentOffset & segmentSize;
-      final SegmentConstraints constraints2 = SegmentConstraints.fromBoxConstraints(
-        boxConstraints: boxConstraints,
-        viewport: viewport,
+      final Rect columnHeaderViewport = segmentOffset & segmentSize;
+      final SegmentConstraints columnHeaderConstraints = SegmentConstraints.fromBoxConstraints(
+        boxConstraints: columnHeaderBoxConstraints,
+        viewport: columnHeaderViewport,
       );
-      columnHeader.layout(constraints2, parentUsesSize: true);
+      columnHeader.layout(columnHeaderConstraints, parentUsesSize: true);
     }
 
     if (rowHeader != null) {
-      final BoxConstraints boxConstraints = BoxConstraints.tightFor(
+      final BoxConstraints rowHeaderBoxConstraints = BoxConstraints.tightFor(
         width: rowHeaderWidth,
         height: viewHeight,
       );
-      final Offset segmentOffset = Offset(0, scrollOffset.dy);
+      final Offset segmentOffset = Offset(0, scrollController.scrollOffset.dy);
       final Size segmentSize = Size(rowHeaderWidth, viewHeight);
-      final Rect viewport = segmentOffset & segmentSize;
-      final SegmentConstraints constraints2 = SegmentConstraints.fromBoxConstraints(
-        boxConstraints: boxConstraints,
-        viewport: viewport,
+      final Rect rowHeaderViewport = segmentOffset & segmentSize;
+      final SegmentConstraints rowHeaderConstraints = SegmentConstraints.fromBoxConstraints(
+        boxConstraints: rowHeaderBoxConstraints,
+        viewport: rowHeaderViewport,
       );
-      rowHeader.layout(constraints2, parentUsesSize: true);
+      rowHeader.layout(rowHeaderConstraints, parentUsesSize: true);
     }
-
-    _ScrollPaneParentData horizontalScrollBarParentData = parentDataFor(horizontalScrollBar);
-    if (horizontalScrollBarHeight > 0) {
-      horizontalScrollBarParentData.visible = true;
-      horizontalScrollBarParentData.offset = Offset(
-        rowHeaderWidth,
-        height - horizontalScrollBarHeight,
-      );
-    } else {
-      horizontalScrollBarParentData.visible = false;
-    }
-
-    _ScrollPaneParentData verticalScrollBarParentData = parentDataFor(verticalScrollBar);
-    if (verticalScrollBarWidth > 0) {
-      verticalScrollBarParentData.visible = true;
-      verticalScrollBarParentData.offset = Offset(
-        width - verticalScrollBarWidth,
-        columnHeaderHeight,
-      );
-    } else {
-      verticalScrollBarParentData.visible = false;
-    }
-
-    // Handle corner components
 
     if (columnHeaderHeight > 0 && rowHeaderWidth > 0) {
-      _ScrollPaneParentData parentData2 = parentDataFor(topLeftCorner);
-      parentData2.offset = Offset.zero;
-      parentData2.visible = true;
-      topLeftCorner.layout(
-        BoxConstraints.tightFor(width: rowHeaderWidth, height: columnHeaderHeight),
-      );
+      _ScrollPaneParentData parentData = parentDataFor(topLeftCorner);
+      parentData.offset = Offset.zero;
+      parentData.visible = true;
+      topLeftCorner.layout(BoxConstraints.tightFor(
+        width: rowHeaderWidth,
+        height: columnHeaderHeight,
+      ));
     } else {
       topLeftCorner.layout(BoxConstraints.tight(Size.zero));
       parentDataFor(topLeftCorner).visible = false;
     }
 
     if (rowHeaderWidth > 0 && horizontalScrollBarHeight > 0) {
-      _ScrollPaneParentData parentData2 = parentDataFor(bottomLeftCorner);
-      parentData2.offset = Offset(0, height - horizontalScrollBarHeight);
-      parentData2.visible = true;
-      bottomLeftCorner.layout(
-        BoxConstraints.tightFor(width: rowHeaderWidth, height: horizontalScrollBarHeight),
-      );
+      _ScrollPaneParentData parentData = parentDataFor(bottomLeftCorner);
+      parentData.offset = Offset(0, height - horizontalScrollBarHeight);
+      parentData.visible = true;
+      bottomLeftCorner.layout(BoxConstraints.tightFor(
+        width: rowHeaderWidth,
+        height: horizontalScrollBarHeight,
+      ));
     } else {
       bottomLeftCorner.layout(BoxConstraints.tight(Size.zero));
       parentDataFor(bottomLeftCorner).visible = false;
     }
 
     if (verticalScrollBarWidth > 0 && horizontalScrollBarHeight > 0) {
-      _ScrollPaneParentData parentData2 = parentDataFor(bottomRightCorner);
-      parentData2.offset = Offset(
+      _ScrollPaneParentData parentData = parentDataFor(bottomRightCorner);
+      parentData.offset = Offset(
         width - verticalScrollBarWidth,
         height - horizontalScrollBarHeight,
       );
-      parentData2.visible = true;
-      bottomRightCorner.layout(
-        BoxConstraints.tightFor(width: verticalScrollBarWidth, height: horizontalScrollBarHeight),
-      );
+      parentData.visible = true;
+      bottomRightCorner.layout(BoxConstraints.tightFor(
+        width: verticalScrollBarWidth,
+        height: horizontalScrollBarHeight,
+      ));
     } else {
       bottomRightCorner.layout(BoxConstraints.tight(Size.zero));
       parentDataFor(bottomRightCorner).visible = false;
     }
 
     if (columnHeaderHeight > 0 && verticalScrollBarWidth > 0) {
-      _ScrollPaneParentData parentData2 = parentDataFor(topRightCorner);
-      parentData2.offset = Offset(width - verticalScrollBarWidth, 0);
-      parentData2.visible = true;
-      topRightCorner.layout(
-        BoxConstraints.tightFor(width: verticalScrollBarWidth, height: columnHeaderHeight),
-      );
+      _ScrollPaneParentData parentData = parentDataFor(topRightCorner);
+      parentData.offset = Offset(width - verticalScrollBarWidth, 0);
+      parentData.visible = true;
+      topRightCorner.layout(BoxConstraints.tightFor(
+        width: verticalScrollBarWidth,
+        height: columnHeaderHeight,
+      ));
     } else {
       topRightCorner.layout(BoxConstraints.tight(Size.zero));
       parentDataFor(topRightCorner).visible = false;
     }
 
-    // Perform bounds checking on the scrollTop and scrollLeft values,
-    // and adjust them as necessary. Make sure to do this after we've laid
-    // everything out, since our maxScrollXYZ methods rely on valid
-    // sizes from our components.
-
-    scrollController._skipBoundscheck(() {
-      _updatingScrollOffsetDuringLayout = true;
-      try {
-        scrollController.scrollOffset = _boundsCheckScrollOffset(
-          scrollOffset,
-          horizontalScrollBarHeight: horizontalScrollBarHeight,
-          verticalScrollBarWidth: verticalScrollBarWidth,
-        );
-      } finally {
-        _updatingScrollOffsetDuringLayout = false;
-      }
+    _ignoreScrollControllerNotifications(() {
+      // This will bounds-check the scroll offset. We ignore scroll controller
+      // notifications so as to keep from adjusting the scroll bar values
+      // (we do so below when we lay the scroll bars out)
+      scrollController._setRenderValues(
+        scrollOffset: scrollController.scrollOffset,
+        viewSize: view.size,
+        viewportSize: Size(
+          math.max(width - rowHeaderWidth - verticalScrollBarWidth, 0),
+          math.max(height - columnHeaderHeight - horizontalScrollBarHeight, 0),
+        ),
+      );
     });
+
+    // Position the view, row header, and column header only after giving the
+    // scroll controller a chance to bounds-check its scroll offset value.
 
     if (view != null) {
       _ScrollPaneParentData parentData = parentDataFor(view);
       parentData.offset = Offset(
-        rowHeaderWidth - scrollOffset.dx,
-        columnHeaderHeight - scrollOffset.dy,
+        rowHeaderWidth - scrollController.scrollOffset.dx,
+        columnHeaderHeight - scrollController.scrollOffset.dy,
       );
       parentData.visible = true;
     }
 
     if (columnHeader != null) {
       _ScrollPaneParentData parentData = parentDataFor(columnHeader);
-      parentData.offset = Offset(rowHeaderWidth - scrollOffset.dx, 0);
+      parentData.offset = Offset(rowHeaderWidth - scrollController.scrollOffset.dx, 0);
       parentData.visible = true;
     }
 
     if (rowHeader != null) {
       _ScrollPaneParentData parentData = parentDataFor(rowHeader);
-      parentData.offset = Offset(0, columnHeaderHeight - scrollOffset.dy);
+      parentData.offset = Offset(0, columnHeaderHeight - scrollController.scrollOffset.dy);
       parentData.visible = true;
     }
 
-    // Adjust the structure of our scroll bars. Make sure to do this after
-    // we adjust the scrollTop and scrollLeft values; otherwise we might
-    // try to set structure values that are out of bounds.
+    // Adjust the structure of our scroll bars. Make sure to do this after we
+    // bounds-check the scroll offset; otherwise we might try to set structure
+    // values that are out of bounds.
 
+    _ScrollPaneParentData horizontalScrollBarParentData = parentDataFor(horizontalScrollBar);
     if (viewWidth > 0 && horizontalScrollBarHeight > 0) {
+      horizontalScrollBarParentData.visible = true;
+      horizontalScrollBarParentData.offset = Offset(
+        rowHeaderWidth,
+        height - horizontalScrollBarHeight,
+      );
       final double viewportWidth = math.max(width - rowHeaderWidth - verticalScrollBarWidth, 0);
       final double horizontalScrollBarWidth =
           math.max(width - rowHeaderWidth - verticalScrollBarWidth, 0);
@@ -1611,15 +1527,16 @@ class RenderScrollPane extends RenderBox {
             width: horizontalScrollBarWidth,
             height: horizontalScrollBarHeight,
           ),
-          enabled: !(scrollOffset.dx == 0 && extent == viewWidth),
+          enabled: !(scrollController.scrollOffset.dx == 0 && extent == viewWidth),
           start: 0,
           end: viewWidth,
-          value: scrollOffset.dx,
+          value: scrollController.scrollOffset.dx,
           extent: extent,
         ),
         parentUsesSize: true,
       );
     } else {
+      horizontalScrollBarParentData.visible = false;
       horizontalScrollBar.layout(
         ScrollBarConstraints.fromBoxConstraints(
           boxConstraints: BoxConstraints.tight(Size.zero),
@@ -1633,7 +1550,13 @@ class RenderScrollPane extends RenderBox {
       );
     }
 
+    _ScrollPaneParentData verticalScrollBarParentData = parentDataFor(verticalScrollBar);
     if (viewHeight > 0 && verticalScrollBarWidth > 0) {
+      verticalScrollBarParentData.visible = true;
+      verticalScrollBarParentData.offset = Offset(
+        width - verticalScrollBarWidth,
+        columnHeaderHeight,
+      );
       final double viewportHeight =
           math.max(height - columnHeaderHeight - horizontalScrollBarHeight, 0);
       final double verticalScrollBarHeight =
@@ -1647,15 +1570,16 @@ class RenderScrollPane extends RenderBox {
             width: verticalScrollBarWidth,
             height: verticalScrollBarHeight,
           ),
-          enabled: !(scrollOffset.dy == 0 && extent == viewHeight),
+          enabled: !(scrollController.scrollOffset.dy == 0 && extent == viewHeight),
           start: 0,
           end: viewHeight,
-          value: scrollOffset.dy,
+          value: scrollController.scrollOffset.dy,
           extent: extent,
         ),
         parentUsesSize: true,
       );
     } else {
+      verticalScrollBarParentData.visible = false;
       verticalScrollBar.layout(
         ScrollBarConstraints.fromBoxConstraints(
           boxConstraints: BoxConstraints.tight(Size.zero),
@@ -1668,9 +1592,6 @@ class RenderScrollPane extends RenderBox {
         parentUsesSize: true,
       );
     }
-
-    _cachedHorizontalScrollBarHeight = horizontalScrollBar.size.height;
-    _cachedVerticalScrollBarWidth = verticalScrollBar.size.width;
   }
 
   double _cachedHorizontalScrollBarHeight = 0;
