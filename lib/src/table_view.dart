@@ -266,24 +266,24 @@ class TableViewSelectionController with ChangeNotifier {
   }
 }
 
-enum SortMode {
+enum TableViewSortMode {
   none,
   singleColumn,
   multiColumn,
 }
 
-typedef SortAddedHandler = void Function(
+typedef TableViewSortAddedHandler = void Function(
   TableViewSortController controller,
   String key,
 );
 
-typedef SortUpdatedHandler = void Function(
+typedef TableViewSortUpdatedHandler = void Function(
   TableViewSortController controller,
   String key,
   SortDirection previousSortDirection,
 );
 
-typedef SortChangedHandler = void Function(
+typedef TableViewSortChangedHandler = void Function(
   TableViewSortController controller,
 );
 
@@ -294,9 +294,9 @@ class TableViewSortListener {
     this.onChanged = _defaultOnChanged,
   });
 
-  final SortAddedHandler onAdded;
-  final SortUpdatedHandler onUpdated;
-  final SortChangedHandler onChanged;
+  final TableViewSortAddedHandler onAdded;
+  final TableViewSortUpdatedHandler onUpdated;
+  final TableViewSortChangedHandler onChanged;
 
   static void _defaultOnAdded(TableViewSortController _, String __) {}
   static void _defaultOnUpdated(TableViewSortController _, String __, SortDirection ___) {}
@@ -304,19 +304,19 @@ class TableViewSortListener {
 }
 
 class TableViewSortController with ListenerNotifier<TableViewSortListener> {
-  TableViewSortController({this.sortMode = SortMode.none});
+  TableViewSortController({this.sortMode = TableViewSortMode.none});
 
-  final SortMode sortMode;
+  final TableViewSortMode sortMode;
   final LinkedHashMap<String, SortDirection> _sortMap = LinkedHashMap<String, SortDirection>();
 
   SortDirection operator [](String columnKey) => _sortMap[columnKey];
 
   operator []=(String columnKey, SortDirection direction) {
-    assert(sortMode != SortMode.none);
+    assert(sortMode != TableViewSortMode.none);
     final SortDirection previousDirection = _sortMap[columnKey];
     if (previousDirection == direction) {
       return;
-    } else if (sortMode == SortMode.singleColumn) {
+    } else if (sortMode == TableViewSortMode.singleColumn) {
       final Map<String, SortDirection> newMap = <String, SortDirection>{};
       if (direction != null) {
         newMap[columnKey] = direction;
@@ -939,7 +939,7 @@ class _TableViewHeaderEnvelopeState extends State<TableViewHeaderEnvelope> {
       ),
     );
 
-    if (widget.sortController != null && widget.sortController.sortMode != SortMode.none) {
+    if (widget.sortController != null && widget.sortController.sortMode != TableViewSortMode.none) {
       renderedHeader = GestureDetector(
         onTapDown: (TapDownDetails _) => setState(() => _pressed = true),
         onTapUp: (TapUpDetails _) => setState(() => _pressed = false),
@@ -955,7 +955,7 @@ class _TableViewHeaderEnvelopeState extends State<TableViewHeaderEnvelope> {
               direction = SortDirection.ascending;
               break;
           }
-          if (widget.sortController.sortMode == SortMode.singleColumn) {
+          if (widget.sortController.sortMode == TableViewSortMode.singleColumn) {
             widget.sortController[key] = direction;
           } else if (isShiftKeyPressed()) {
             widget.sortController[key] = direction;
