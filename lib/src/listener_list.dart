@@ -18,7 +18,7 @@ import 'package:flutter/foundation.dart';
 typedef ListenerVisitor<T> = void Function(T listener);
 
 mixin ListenerNotifier<T> {
-  ListenerList<T> _listeners = ListenerList<T>();
+  _ListenerList<T> _listeners = _ListenerList<T>();
 
   bool _debugAssertNotDisposed() {
     assert(() {
@@ -51,8 +51,7 @@ mixin ListenerNotifier<T> {
   void notifyListeners(ListenerVisitor<T> visitor) => _listeners.forEach(visitor);
 }
 
-// TODO: make private
-class ListenerList<T> extends Iterable<T> {
+class _ListenerList<T> extends Iterable<T> {
   // First node in the list (we don't maintain a reference to the last
   // node, since we need to walk the list looking for duplicates on add)
   _Node<T> _first;

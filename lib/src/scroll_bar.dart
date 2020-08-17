@@ -147,7 +147,8 @@ class ScrollBarConstraints extends BoxConstraints {
 class RenderScrollBar extends RenderBox
     with
         ContainerRenderObjectMixin<RenderBox, _ScrollBarParentData>,
-        RenderBoxContainerDefaultsMixin<RenderBox, _ScrollBarParentData> {
+        RenderBoxContainerDefaultsMixin<RenderBox, _ScrollBarParentData>,
+        ListenerNotifier<ScrollBarValueListener> {
   RenderScrollBar({
     Axis orientation = Axis.vertical,
     double unitIncrement = 1,
@@ -207,9 +208,6 @@ class RenderScrollBar extends RenderBox
   static const double _buttonWidth = 15;
   static const double _minimumHandleLength = 31;
 
-  final _ScrollBarValueListenerList _scrollBarValueListeners = _ScrollBarValueListenerList();
-  ListenerList<ScrollBarValueListener> get scrollBarValueListeners => _scrollBarValueListeners;
-
   Axis _orientation;
   Axis get orientation => _orientation;
   set orientation(Axis value) {
@@ -262,7 +260,9 @@ class RenderScrollBar extends RenderBox
     if (_value == value) return false;
     double previousValue = _value;
     _value = value;
-    _scrollBarValueListeners.valueChanged(this, previousValue);
+    notifyListeners((ScrollBarValueListener listener) {
+      listener.valueChanged(this, previousValue);
+    });
     return true;
   }
 
@@ -635,18 +635,18 @@ class _ScrollBarParentData extends ContainerBoxParentData<RenderBox> {
   String toString() => '${super.toString()}; visible=$visible';
 }
 
-abstract class ScrollBarValueListener {
-  /// Called when a scroll bar's value has changed.
-  void valueChanged(RenderScrollBar scrollBar, double previousValue);
-}
+typedef ScrollBarValueChangedHandler = void Function(
+  RenderScrollBar scrollBar,
+  double previousValue,
+);
 
-class _ScrollBarValueListenerList extends ListenerList<ScrollBarValueListener> implements ScrollBarValueListener {
-  @override
-  void valueChanged(RenderScrollBar scrollBar, double previousValue) {
-    for (ScrollBarValueListener listener in this) {
-      listener.valueChanged(scrollBar, previousValue);
-    }
-  }
+class ScrollBarValueListener {
+  const ScrollBarValueListener({
+    @required this.valueChanged,
+  }) : assert(valueChanged != null);
+
+  /// Called when a scroll bar's value has changed.
+  final ScrollBarValueChangedHandler valueChanged;
 }
 
 class _RenderScrollBarButton extends RenderBox

@@ -593,7 +593,7 @@ class _ScrollPaneElement extends RenderObjectElement {
 
 // TODO do we get any benefit to this implementing RenderAbstractViewport?
 // TODO It looks like RenderAbstractViewport would provide some benefit
-class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
+class RenderScrollPane extends RenderBox {
   RenderScrollPane({
     ScrollBarPolicy horizontalScrollBarPolicy = ScrollBarPolicy.auto,
     ScrollBarPolicy verticalScrollBarPolicy = ScrollBarPolicy.auto,
@@ -603,7 +603,11 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
         assert(clipBehavior != null),
         _horizontalScrollBarPolicy = horizontalScrollBarPolicy,
         _verticalScrollBarPolicy = verticalScrollBarPolicy,
-        _clipBehavior = clipBehavior;
+        _clipBehavior = clipBehavior {
+    _scrollBarValueListener = ScrollBarValueListener(valueChanged: _scrollBarValueChanged);
+  }
+
+  ScrollBarValueListener _scrollBarValueListener;
 
   static const double _horizontalReveal = 30;
   static const double _verticalReveal = 30;
@@ -773,13 +777,13 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
   RenderScrollBar get horizontalScrollBar => _horizontalScrollBar;
   set horizontalScrollBar(RenderScrollBar value) {
     if (_horizontalScrollBar != null) {
-      value.scrollBarValueListeners.remove(this);
+      value.removeListener(_scrollBarValueListener);
       dropChild(_horizontalScrollBar);
     }
     _horizontalScrollBar = value;
     if (_horizontalScrollBar != null) {
       adoptChild(_horizontalScrollBar);
-      value.scrollBarValueListeners.add(this);
+      value.addListener(_scrollBarValueListener);
     }
   }
 
@@ -787,13 +791,22 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
   RenderScrollBar get verticalScrollBar => _verticalScrollBar;
   set verticalScrollBar(RenderScrollBar value) {
     if (_verticalScrollBar != null) {
-      value.scrollBarValueListeners.remove(this);
+      value.removeListener(_scrollBarValueListener);
       dropChild(_verticalScrollBar);
     }
     _verticalScrollBar = value;
     if (_verticalScrollBar != null) {
       adoptChild(_verticalScrollBar);
-      value.scrollBarValueListeners.add(this);
+      value.addListener(_scrollBarValueListener);
+    }
+  }
+
+  void _scrollBarValueChanged(RenderScrollBar scrollBar, double previousValue) {
+    double value = scrollBar.value;
+    if (scrollBar == horizontalScrollBar) {
+      scrollOffset = Offset(value, scrollOffset.dy);
+    } else {
+      scrollOffset = Offset(scrollOffset.dx, value);
     }
   }
 
@@ -1497,18 +1510,6 @@ class RenderScrollPane extends RenderBox implements ScrollBarValueListener {
     add(horizontalScrollBar, 'horizontalScrollBar');
     add(verticalScrollBar, 'verticalScrollBar');
     return result;
-  }
-
-  // ScrollBarValueListener methods
-
-  @override
-  void valueChanged(RenderScrollBar scrollBar, double previousValue) {
-    double value = scrollBar.value;
-    if (scrollBar == horizontalScrollBar) {
-      scrollOffset = Offset(value, scrollOffset.dy);
-    } else {
-      scrollOffset = Offset(scrollOffset.dx, value);
-    }
   }
 }
 
