@@ -425,6 +425,7 @@ class ScrollableTableView extends StatelessWidget {
     @required this.rowHeight,
     @required this.length,
     @required this.columns,
+    this.metricsController,
     this.selectionController,
     this.sortController,
     this.scrollController,
@@ -438,6 +439,7 @@ class ScrollableTableView extends StatelessWidget {
   final double rowHeight;
   final int length;
   final List<TableColumnController> columns;
+  final TableViewMetricsController metricsController;
   final TableViewSelectionController selectionController;
   final TableViewSortController sortController;
   final ScrollController scrollController;
@@ -460,6 +462,7 @@ class ScrollableTableView extends StatelessWidget {
         rowHeight: rowHeight,
         columns: columns,
         roundColumnWidthsToWholePixel: roundColumnWidthsToWholePixel,
+        metricsController: metricsController,
         selectionController: selectionController,
         sortController: sortController,
       ),
@@ -473,6 +476,7 @@ class TableView extends StatefulWidget {
     @required this.rowHeight,
     @required this.length,
     @required this.columns,
+    this.metricsController,
     this.selectionController,
     this.sortController,
     this.roundColumnWidthsToWholePixel = false,
@@ -486,6 +490,7 @@ class TableView extends StatefulWidget {
   final double rowHeight;
   final int length;
   final List<TableColumnController> columns;
+  final TableViewMetricsController metricsController;
   final TableViewSelectionController selectionController;
   final TableViewSortController sortController;
   final bool roundColumnWidthsToWholePixel;
@@ -516,6 +521,7 @@ class _TableViewState extends State<TableView> {
       rowHeight: widget.rowHeight,
       length: widget.length,
       columns: widget.columns,
+      metricsController: widget.metricsController,
       selectionController: widget.selectionController,
       sortController: widget.sortController,
       roundColumnWidthsToWholePixel: widget.roundColumnWidthsToWholePixel,
@@ -544,6 +550,7 @@ class RawTableView extends BasicTableView {
     @required int length,
     @required List<TableColumnController> columns,
     bool roundColumnWidthsToWholePixel = false,
+    TableViewMetricsController metricsController,
     this.selectionController,
     this.sortController,
     @required this.pointerEvents,
@@ -555,6 +562,7 @@ class RawTableView extends BasicTableView {
           length: length,
           columns: columns,
           roundColumnWidthsToWholePixel: roundColumnWidthsToWholePixel,
+          metricsController: metricsController,
         );
 
   final TableViewSelectionController selectionController;
@@ -623,6 +631,7 @@ class RenderTableView extends RenderBasicTableView with TableViewColumnListenerM
     int length,
     List<TableColumnController> columns,
     bool roundColumnWidthsToWholePixel = false,
+    TableViewMetricsController metricsController,
     TableViewSelectionController selectionController,
     TableViewSortController sortController,
     Stream<PointerEvent> pointerEvents,
@@ -632,6 +641,7 @@ class RenderTableView extends RenderBasicTableView with TableViewColumnListenerM
           length: length,
           columns: columns,
           roundColumnWidthsToWholePixel: roundColumnWidthsToWholePixel,
+          metricsController: metricsController,
         ) {
     _sortListener = TableViewSortListener(
       onAdded: _handleSortAdded,
@@ -861,6 +871,7 @@ class TableViewHeader extends BasicTableView {
     @required double rowHeight,
     @required List<TableColumnController> columns,
     bool roundColumnWidthsToWholePixel = false,
+    TableViewMetricsController metricsController,
     this.sortController,
   }) : super(
           key: key,
@@ -868,6 +879,7 @@ class TableViewHeader extends BasicTableView {
           length: 1,
           columns: columns,
           roundColumnWidthsToWholePixel: roundColumnWidthsToWholePixel,
+          metricsController: metricsController,
         );
 
   final TableViewSortController sortController;
@@ -885,6 +897,7 @@ class TableViewHeader extends BasicTableView {
       length: length,
       columns: columns,
       roundColumnWidthsToWholePixel: roundColumnWidthsToWholePixel,
+      metricsController: metricsController,
     );
   }
 
@@ -1040,11 +1053,13 @@ class RenderTableViewHeader extends RenderBasicTableView with TableViewColumnLis
     int length,
     List<TableColumnController> columns,
     bool roundColumnWidthsToWholePixel = false,
+    TableViewMetricsController metricsController,
   }) : super(
           rowHeight: rowHeight,
           length: length,
           columns: columns,
           roundColumnWidthsToWholePixel: roundColumnWidthsToWholePixel,
+          metricsController: metricsController,
         );
 }
 
