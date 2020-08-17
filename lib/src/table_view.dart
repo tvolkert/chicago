@@ -14,6 +14,7 @@
 // limitations under the License.
 
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
@@ -23,8 +24,12 @@ import 'package:flutter/widgets.dart' hide TableColumnWidth;
 import 'package:payouts/src/pivot/span.dart';
 
 import 'basic_table_view.dart';
+import 'foundation.dart';
+import 'listener_list.dart';
 import 'scroll_pane.dart';
 import 'sorting.dart';
+
+const double _kResizeHandleTargetPixels = 10; // logical
 
 /// Signature for a function that renders headers in a [ScrollableTableView].
 ///
@@ -71,20 +76,22 @@ typedef TableCellRenderer = Widget Function({
 /// listeners when changed.
 class TableColumnController extends BasicTableColumn with ChangeNotifier {
   TableColumnController({
-    @required this.name,
+    @required this.key,
     @required this.headerRenderer,
     @required TableCellRenderer cellRenderer,
     TableColumnWidth width = const FlexTableColumnWidth(),
     SortDirection sortDirection,
-  })  : assert(name != null),
+  })  : assert(key != null),
         assert(cellRenderer != null),
         assert(headerRenderer != null),
         assert(width != null),
         _width = width,
         super(cellRenderer: cellRenderer);
 
-  // TODO: do we need this?  How do we document it?
-  final String name;
+  /// A unique identifier for this column.
+  ///
+  /// This is the key by which we sort columns in [TableViewSortController].
+  final String key;
 
   /// The renderer responsible for the look & feel of the header for this column.
   final TableHeaderRenderer headerRenderer;
@@ -109,32 +116,15 @@ class TableColumnController extends BasicTableColumn with ChangeNotifier {
     notifyListeners();
   }
 
-  /// The sort direction of the column (may be null).
-  ///
-  /// Changing this value will notify listeners.
-  ///
-  /// This value does not directly control the sorting of the underlying table
-  /// data. It's the responsibility of listeners to respond to the change
-  /// notification by sorting the data.
-  SortDirection _sortDirection;
-  SortDirection get sortDirection => _sortDirection;
-  set sortDirection(SortDirection value) {
-    assert(value != null);
-    if (value == _sortDirection) return;
-    _sortDirection = value;
-    notifyListeners();
-  }
-
   @override
-  int get hashCode => hashValues(super.hashCode, headerRenderer, sortDirection);
+  int get hashCode => hashValues(super.hashCode, headerRenderer);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return super == other &&
         other is TableColumnController &&
-        headerRenderer == other.headerRenderer &&
-        sortDirection == other.sortDirection;
+        headerRenderer == other.headerRenderer;
   }
 }
 
@@ -276,6 +266,105 @@ class TableViewSelectionController with ChangeNotifier {
   }
 }
 
+enum SortMode {
+  none,
+  singleColumn,
+  multiColumn,
+}
+
+typedef SortAddedHandler = void Function(
+  TableViewSortController controller,
+  String key,
+);
+
+typedef SortUpdatedHandler = void Function(
+  TableViewSortController controller,
+  String key,
+  SortDirection previousSortDirection,
+);
+
+typedef SortChangedHandler = void Function(
+  TableViewSortController controller,
+);
+
+class TableViewSortListener {
+  const TableViewSortListener({
+    this.onAdded = _defaultOnAdded,
+    this.onUpdated = _defaultOnUpdated,
+    this.onChanged = _defaultOnChanged,
+  });
+
+  final SortAddedHandler onAdded;
+  final SortUpdatedHandler onUpdated;
+  final SortChangedHandler onChanged;
+
+  static void _defaultOnAdded(TableViewSortController _, String __) {}
+  static void _defaultOnUpdated(TableViewSortController _, String __, SortDirection ___) {}
+  static void _defaultOnChanged(TableViewSortController _) {}
+}
+
+class TableViewSortController with ListenerNotifier<TableViewSortListener> {
+  TableViewSortController({this.sortMode = SortMode.none});
+
+  final SortMode sortMode;
+  final LinkedHashMap<String, SortDirection> _sortMap = LinkedHashMap<String, SortDirection>();
+
+  SortDirection operator [](String columnKey) => _sortMap[columnKey];
+
+  operator []=(String columnKey, SortDirection direction) {
+    assert(sortMode != SortMode.none);
+    final SortDirection previousDirection = _sortMap[columnKey];
+    if (previousDirection == direction) {
+      return;
+    } else if (sortMode == SortMode.singleColumn) {
+      final Map<String, SortDirection> newMap = <String, SortDirection>{};
+      if (direction != null) {
+        newMap[columnKey] = direction;
+      }
+      replaceAll(newMap);
+    } else {
+      if (direction == null) {
+        remove(columnKey);
+      } else {
+        _sortMap[columnKey] = direction;
+        if (previousDirection == null) {
+          notifyListeners((TableViewSortListener listener) => listener.onAdded(this, columnKey));
+        } else {
+          notifyListeners((TableViewSortListener listener) {
+            listener.onUpdated(this, columnKey, previousDirection);
+          });
+        }
+      }
+    }
+  }
+
+  SortDirection remove(String columnKey) {
+    final SortDirection previousDirection = _sortMap.remove(columnKey);
+    if (previousDirection != null) {
+      notifyListeners((TableViewSortListener listener) {
+        listener.onUpdated(this, columnKey, null);
+      });
+    }
+    return previousDirection;
+  }
+
+  bool containsKey(String columnKey) => _sortMap.containsKey(columnKey);
+
+  bool get isEmpty => _sortMap.isEmpty;
+
+  int get length => _sortMap.length;
+
+  Iterable<String> get keys => _sortMap.keys;
+
+  void replaceAll(Map<String, SortDirection> map) {
+    _sortMap.clear();
+    for (String columnKey in map.keys) {
+      _sortMap[columnKey] = map[columnKey];
+    }
+    notifyListeners((TableViewSortListener listener) => listener.onChanged(this));
+  }
+}
+
 class ConstrainedTableColumnWidth extends TableColumnWidth {
   const ConstrainedTableColumnWidth({
     double width,
@@ -337,6 +426,7 @@ class ScrollableTableView extends StatelessWidget {
     @required this.length,
     @required this.columns,
     this.selectionController,
+    this.sortController,
     this.roundColumnWidthsToWholePixel = false,
   })  : assert(rowHeight != null),
         assert(length != null),
@@ -348,6 +438,7 @@ class ScrollableTableView extends StatelessWidget {
   final int length;
   final List<TableColumnController> columns;
   final TableViewSelectionController selectionController;
+  final TableViewSortController sortController;
   final bool roundColumnWidthsToWholePixel;
 
   @override
@@ -358,6 +449,7 @@ class ScrollableTableView extends StatelessWidget {
       columnHeader: TableViewHeader(
         rowHeight: rowHeight,
         columns: columns,
+        sortController: sortController,
         roundColumnWidthsToWholePixel: roundColumnWidthsToWholePixel,
       ),
       view: TableView(
@@ -366,6 +458,7 @@ class ScrollableTableView extends StatelessWidget {
         columns: columns,
         roundColumnWidthsToWholePixel: roundColumnWidthsToWholePixel,
         selectionController: selectionController,
+        sortController: sortController,
       ),
     );
   }
@@ -378,6 +471,7 @@ class TableView extends StatefulWidget {
     @required this.length,
     @required this.columns,
     this.selectionController,
+    this.sortController,
     this.roundColumnWidthsToWholePixel = false,
     this.platform,
   })  : assert(rowHeight != null),
@@ -390,6 +484,7 @@ class TableView extends StatefulWidget {
   final int length;
   final List<TableColumnController> columns;
   final TableViewSelectionController selectionController;
+  final TableViewSortController sortController;
   final bool roundColumnWidthsToWholePixel;
   final TargetPlatform platform;
 
@@ -419,6 +514,7 @@ class _TableViewState extends State<TableView> {
       length: widget.length,
       columns: widget.columns,
       selectionController: widget.selectionController,
+      sortController: widget.sortController,
       roundColumnWidthsToWholePixel: widget.roundColumnWidthsToWholePixel,
       pointerEvents: _pointerEvents.stream,
       platform: widget.platform ?? defaultTargetPlatform,
@@ -446,6 +542,7 @@ class RawTableView extends BasicTableView {
     @required List<TableColumnController> columns,
     bool roundColumnWidthsToWholePixel = false,
     this.selectionController,
+    this.sortController,
     @required this.pointerEvents,
     @required this.platform,
   })  : assert(platform != null),
@@ -458,6 +555,7 @@ class RawTableView extends BasicTableView {
         );
 
   final TableViewSelectionController selectionController;
+  final TableViewSortController sortController;
   final Stream<PointerEvent> pointerEvents;
   final TargetPlatform platform;
 
@@ -475,6 +573,7 @@ class RawTableView extends BasicTableView {
       columns: columns,
       roundColumnWidthsToWholePixel: roundColumnWidthsToWholePixel,
       selectionController: selectionController,
+      sortController: sortController,
       pointerEvents: pointerEvents,
       platform: platform,
     );
@@ -485,6 +584,7 @@ class RawTableView extends BasicTableView {
     super.updateRenderObject(context, renderObject);
     renderObject
       ..selectionController = selectionController
+      ..sortController = sortController
       ..pointerEvents = pointerEvents
       ..platform = platform;
   }
@@ -521,6 +621,7 @@ class RenderTableView extends RenderBasicTableView with TableViewColumnListenerM
     List<TableColumnController> columns,
     bool roundColumnWidthsToWholePixel = false,
     TableViewSelectionController selectionController,
+    TableViewSortController sortController,
     Stream<PointerEvent> pointerEvents,
     TargetPlatform platform,
   }) : super(
@@ -529,10 +630,18 @@ class RenderTableView extends RenderBasicTableView with TableViewColumnListenerM
           columns: columns,
           roundColumnWidthsToWholePixel: roundColumnWidthsToWholePixel,
         ) {
+    _sortListener = TableViewSortListener(
+      onAdded: _handleSortAdded,
+      onUpdated: _handleSortUpdated,
+      onChanged: _handleSortChanged,
+    );
     this.selectionController = selectionController;
+    this.sortController = sortController;
     this.pointerEvents = pointerEvents;
     this.platform = platform;
   }
+
+  TableViewSortListener _sortListener;
 
   TableViewSelectionController _selectionController;
   TableViewSelectionController get selectionController => _selectionController;
@@ -551,6 +660,20 @@ class RenderTableView extends RenderBasicTableView with TableViewColumnListenerM
         _selectionController._attach(this);
       }
       _selectionController.addListener(_handleSelectionChanged);
+    }
+    markNeedsBuild();
+  }
+
+  TableViewSortController _sortController;
+  TableViewSortController get sortController => _sortController;
+  set sortController(TableViewSortController value) {
+    if (_sortController == value) return;
+    if (_sortController != null) {
+      _sortController.removeListener(_sortListener);
+    }
+    _sortController = value;
+    if (_sortController != null) {
+      _sortController.addListener(_sortListener);
     }
     markNeedsBuild();
   }
@@ -595,6 +718,18 @@ class RenderTableView extends RenderBasicTableView with TableViewColumnListenerM
 
   void _handleSelectionChanged() {
     // TODO: be more precise about what to rebuild (requires finer grained info from the notification).
+    markNeedsBuild();
+  }
+
+  void _handleSortAdded(TableViewSortController controller, String key) {
+    markNeedsBuild();
+  }
+
+  void _handleSortUpdated(TableViewSortController controller, String key, SortDirection previousDirection) {
+    markNeedsBuild();
+  }
+
+  void _handleSortChanged(TableViewSortController controller) {
     markNeedsBuild();
   }
 
@@ -724,6 +859,7 @@ class TableViewHeader extends BasicTableView {
     @required double rowHeight,
     @required List<TableColumnController> columns,
     bool roundColumnWidthsToWholePixel = false,
+    this.sortController,
   }) : super(
           key: key,
           rowHeight: rowHeight,
@@ -731,6 +867,8 @@ class TableViewHeader extends BasicTableView {
           columns: columns,
           roundColumnWidthsToWholePixel: roundColumnWidthsToWholePixel,
         );
+
+  final TableViewSortController sortController;
 
   @override
   List<TableColumnController> get columns => super.columns as List<TableColumnController>;
@@ -750,18 +888,91 @@ class TableViewHeader extends BasicTableView {
 
   @protected
   Widget renderHeaderEnvelope({BuildContext context, int columnIndex}) {
-    final TableColumnController column = columns[columnIndex];
-    final bool isColumnResizable = column.width is ConstrainedTableColumnWidth;
+    return TableViewHeaderEnvelope(
+      column: columns[columnIndex],
+      columnIndex: columnIndex,
+      sortController: sortController,
+    );
+  }
+}
+
+class TableViewHeaderEnvelope extends StatefulWidget {
+  const TableViewHeaderEnvelope({
+    this.column,
+    this.columnIndex,
+    this.sortController,
+    Key key,
+  })  : assert(column != null),
+        assert(columnIndex != null),
+        super(key: key);
+
+  final TableColumnController column;
+  final int columnIndex;
+  final TableViewSortController sortController;
+
+  @override
+  _TableViewHeaderEnvelopeState createState() => _TableViewHeaderEnvelopeState();
+}
+
+class _TableViewHeaderEnvelopeState extends State<TableViewHeaderEnvelope> {
+  bool _pressed = false;
+
+  static const List<Color> _defaultGradientColors = <Color>[
+    Color(0xffdfded7),
+    Color(0xfff6f4ed),
+  ];
+
+  static const List<Color> _pressedGradientColors = <Color>[
+    Color(0xffdbdad3),
+    Color(0xffc4c3bc),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isColumnResizable = widget.column.width is ConstrainedTableColumnWidth;
+
+    Widget renderedHeader = Padding(
+      padding: EdgeInsets.only(left: 3),
+      child: widget.column.headerRenderer(
+        context: context,
+        columnIndex: widget.columnIndex,
+      ),
+    );
+
+    if (widget.sortController != null && widget.sortController.sortMode != SortMode.none) {
+      renderedHeader = GestureDetector(
+        onTapDown: (TapDownDetails _) => setState(() => _pressed = true),
+        onTapUp: (TapUpDetails _) => setState(() => _pressed = false),
+        onTapCancel: () => setState(() => _pressed = false),
+        onTap: () {
+          final String key = widget.column.key;
+          SortDirection direction = widget.sortController[key];
+          switch (direction) {
+            case SortDirection.ascending:
+              direction = SortDirection.descending;
+              break;
+            default:
+              direction = SortDirection.ascending;
+              break;
+          }
+          if (widget.sortController.sortMode == SortMode.singleColumn) {
+            widget.sortController[key] = direction;
+          } else if (isShiftKeyPressed()) {
+            widget.sortController[key] = direction;
+          } else {
+            widget.sortController.replaceAll(<String, SortDirection>{key: direction});
+          }
+        },
+        child: renderedHeader,
+      );
+    }
 
     return DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.bottomCenter,
           end: Alignment.topCenter,
-          colors: <Color>[
-            const Color(0xffdfded7),
-            const Color(0xfff6f4ed),
-          ],
+          colors: _pressed ? _pressedGradientColors : _defaultGradientColors,
         ),
         border: Border(
           bottom: const BorderSide(color: const Color(0xff999999)),
@@ -770,14 +981,11 @@ class TableViewHeader extends BasicTableView {
       child: Row(
         children: [
           Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(left: 3),
-              child: column.headerRenderer(context: context, columnIndex: columnIndex),
-            ),
+            child: renderedHeader,
           ),
           if (isColumnResizable)
             SizedBox(
-              width: 10,
+              width: _kResizeHandleTargetPixels,
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   border: Border(
@@ -787,13 +995,15 @@ class TableViewHeader extends BasicTableView {
                 child: MouseRegion(
                   cursor: SystemMouseCursors.resizeLeftRight,
                   child: GestureDetector(
-                    key: Key('$this dividerKey $columnIndex'),
+                    key: Key('$this dividerKey ${widget.columnIndex}'),
                     behavior: HitTestBehavior.translucent,
                     dragStartBehavior: DragStartBehavior.down,
                     onHorizontalDragUpdate: (DragUpdateDetails details) {
-                      assert(column.width is ConstrainedTableColumnWidth);
-                      final ConstrainedTableColumnWidth width = column.width;
-                      column.width = width.copyWith(width: width.width + details.primaryDelta);
+                      assert(widget.column.width is ConstrainedTableColumnWidth);
+                      final ConstrainedTableColumnWidth width = widget.column.width;
+                      widget.column.width = width.copyWith(
+                        width: width.width + details.primaryDelta,
+                      );
                     },
                   ),
                 ),
