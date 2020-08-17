@@ -310,7 +310,9 @@ class RenderScrollBar extends RenderBox
   ScrollBarConstraints get constraints => super.constraints as ScrollBarConstraints;
 
   @override
-  void insert(RenderBox child, {RenderBox after}) => throw UnsupportedError('Unsupported operation');
+  void insert(RenderBox child, {RenderBox after}) {
+    throw UnsupportedError('Unsupported operation');
+  }
 
   @override
   void add(RenderBox child) => throw UnsupportedError('Unsupported operation');
@@ -388,7 +390,10 @@ class RenderScrollBar extends RenderBox
   @override
   double computeMinIntrinsicHeight(double width) {
     if (orientation == Axis.horizontal) {
-      return math.max(_upButton.getMinIntrinsicHeight(width), _downButton.getMinIntrinsicHeight(width));
+      return math.max(
+        _upButton.getMinIntrinsicHeight(width),
+        _downButton.getMinIntrinsicHeight(width),
+      );
     } else {
       return _upButton.getMinIntrinsicHeight(width) + _downButton.getMinIntrinsicHeight(width);
     }
@@ -399,7 +404,10 @@ class RenderScrollBar extends RenderBox
     if (orientation == Axis.horizontal) {
       return _upButton.getMinIntrinsicWidth(height) + _downButton.getMinIntrinsicWidth(height);
     } else {
-      return math.max(_upButton.getMinIntrinsicWidth(height), _downButton.getMinIntrinsicWidth(height));
+      return math.max(
+        _upButton.getMinIntrinsicWidth(height),
+        _downButton.getMinIntrinsicWidth(height),
+      );
     }
   }
 
@@ -1107,10 +1115,18 @@ class _HandlePainter extends CustomPainter {
       ..color = const Color(0xff999999);
     if (orientation == Axis.horizontal) {
       canvas.drawLine(Offset(0.5, 0), Offset(0.5, size.height), borderPaint);
-      canvas.drawLine(Offset(size.width - 0.5, 0), Offset(size.width - 0.5, size.height), borderPaint);
+      canvas.drawLine(
+        Offset(size.width - 0.5, 0),
+        Offset(size.width - 0.5, size.height),
+        borderPaint,
+      );
     } else {
       canvas.drawLine(Offset(0, 0.5), Offset(size.width, 0.5), borderPaint);
-      canvas.drawLine(Offset(0, size.height - 0.5), Offset(size.width, size.height - 0.5), borderPaint);
+      canvas.drawLine(
+        Offset(0, size.height - 0.5),
+        Offset(size.width, size.height - 0.5),
+        borderPaint,
+      );
     }
 
     // Paint the hash marks
@@ -1118,25 +1134,25 @@ class _HandlePainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
     if (orientation == Axis.horizontal) {
-      double middle = size.width / 2;
+      final double mid = size.width / 2;
       hashPaint.color = darkBackgroundColor;
-      canvas.drawLine(Offset(middle - 3.5, 2.5), Offset(middle - 3.5, size.height - 2.5), hashPaint);
-      canvas.drawLine(Offset(middle - 0.5, 2.5), Offset(middle - 0.5, size.height - 2.5), hashPaint);
-      canvas.drawLine(Offset(middle + 2.5, 2.5), Offset(middle + 2.5, size.height - 2.5), hashPaint);
+      canvas.drawLine(Offset(mid - 3.5, 2.5), Offset(mid - 3.5, size.height - 2.5), hashPaint);
+      canvas.drawLine(Offset(mid - 0.5, 2.5), Offset(mid - 0.5, size.height - 2.5), hashPaint);
+      canvas.drawLine(Offset(mid + 2.5, 2.5), Offset(mid + 2.5, size.height - 2.5), hashPaint);
       hashPaint.color = brightBackgroundColor;
-      canvas.drawLine(Offset(middle - 2.5, 2.5), Offset(middle - 2.5, size.height - 2.5), hashPaint);
-      canvas.drawLine(Offset(middle + 0.5, 2.5), Offset(middle + 0.5, size.height - 2.5), hashPaint);
-      canvas.drawLine(Offset(middle + 3.5, 2.5), Offset(middle + 3.5, size.height - 2.5), hashPaint);
+      canvas.drawLine(Offset(mid - 2.5, 2.5), Offset(mid - 2.5, size.height - 2.5), hashPaint);
+      canvas.drawLine(Offset(mid + 0.5, 2.5), Offset(mid + 0.5, size.height - 2.5), hashPaint);
+      canvas.drawLine(Offset(mid + 3.5, 2.5), Offset(mid + 3.5, size.height - 2.5), hashPaint);
     } else {
-      double middle = size.height / 2;
+      final double mid = size.height / 2;
       hashPaint.color = darkBackgroundColor;
-      canvas.drawLine(Offset(2.5, middle - 3.5), Offset(size.width - 2.5, middle - 3.5), hashPaint);
-      canvas.drawLine(Offset(2.5, middle - 0.5), Offset(size.width - 2.5, middle - 0.5), hashPaint);
-      canvas.drawLine(Offset(2.5, middle + 2.5), Offset(size.width - 2.5, middle + 2.5), hashPaint);
+      canvas.drawLine(Offset(2.5, mid - 3.5), Offset(size.width - 2.5, mid - 3.5), hashPaint);
+      canvas.drawLine(Offset(2.5, mid - 0.5), Offset(size.width - 2.5, mid - 0.5), hashPaint);
+      canvas.drawLine(Offset(2.5, mid + 2.5), Offset(size.width - 2.5, mid + 2.5), hashPaint);
       hashPaint.color = brightBackgroundColor;
-      canvas.drawLine(Offset(2.5, middle - 2.5), Offset(size.width - 2.5, middle - 2.5), hashPaint);
-      canvas.drawLine(Offset(2.5, middle + 0.5), Offset(size.width - 2.5, middle + 0.5), hashPaint);
-      canvas.drawLine(Offset(2.5, middle + 3.5), Offset(size.width - 2.5, middle + 3.5), hashPaint);
+      canvas.drawLine(Offset(2.5, mid - 2.5), Offset(size.width - 2.5, mid - 2.5), hashPaint);
+      canvas.drawLine(Offset(2.5, mid + 0.5), Offset(size.width - 2.5, mid + 0.5), hashPaint);
+      canvas.drawLine(Offset(2.5, mid + 3.5), Offset(size.width - 2.5, mid + 3.5), hashPaint);
     }
   }
 
