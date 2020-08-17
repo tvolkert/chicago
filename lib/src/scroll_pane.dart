@@ -617,36 +617,110 @@ class _ScrollPaneElement extends RenderObjectElement {
   void update(_ScrollPane newWidget) {
     super.update(newWidget);
     assert(widget == newWidget);
-    _view = updateChild(_view, widget.view, _ScrollPaneSlot.view);
-    _rowHeader = updateChild(_rowHeader, widget.rowHeader, _ScrollPaneSlot.rowHeader);
-    _columnHeader = updateChild(_columnHeader, widget.columnHeader, _ScrollPaneSlot.columnHeader);
-    _topLeftCorner = updateChild(_topLeftCorner, widget.topLeftCorner, _ScrollPaneSlot.topLeftCorner);
-    _bottomLeftCorner = updateChild(_bottomLeftCorner, widget.bottomLeftCorner, _ScrollPaneSlot.bottomLeftCorner);
-    _bottomRightCorner = updateChild(_bottomRightCorner, widget.bottomRightCorner, _ScrollPaneSlot.bottomRightCorner);
-    _topRightCorner = updateChild(_topRightCorner, widget.topRightCorner, _ScrollPaneSlot.topRightCorner);
-    _horizontalScrollBar =
-        updateChild(_horizontalScrollBar, widget.horizontalScrollBar, _ScrollPaneSlot.horizontalScrollBar);
-    _verticalScrollBar = updateChild(_verticalScrollBar, widget.verticalScrollBar, _ScrollPaneSlot.verticalScrollBar);
+    _view = updateChild(
+      _view,
+      widget.view,
+      _ScrollPaneSlot.view,
+    );
+    _rowHeader = updateChild(
+      _rowHeader,
+      widget.rowHeader,
+      _ScrollPaneSlot.rowHeader,
+    );
+    _columnHeader = updateChild(
+      _columnHeader,
+      widget.columnHeader,
+      _ScrollPaneSlot.columnHeader,
+    );
+    _topLeftCorner = updateChild(
+      _topLeftCorner,
+      widget.topLeftCorner,
+      _ScrollPaneSlot.topLeftCorner,
+    );
+    _bottomLeftCorner = updateChild(
+      _bottomLeftCorner,
+      widget.bottomLeftCorner,
+      _ScrollPaneSlot.bottomLeftCorner,
+    );
+    _bottomRightCorner = updateChild(
+      _bottomRightCorner,
+      widget.bottomRightCorner,
+      _ScrollPaneSlot.bottomRightCorner,
+    );
+    _topRightCorner = updateChild(
+      _topRightCorner,
+      widget.topRightCorner,
+      _ScrollPaneSlot.topRightCorner,
+    );
+    _horizontalScrollBar = updateChild(
+      _horizontalScrollBar,
+      widget.horizontalScrollBar,
+      _ScrollPaneSlot.horizontalScrollBar,
+    );
+    _verticalScrollBar = updateChild(
+      _verticalScrollBar,
+      widget.verticalScrollBar,
+      _ScrollPaneSlot.verticalScrollBar,
+    );
   }
 
   @override
   void mount(Element parent, dynamic newSlot) {
     super.mount(parent, newSlot);
-    if (widget.view != null) _view = inflateWidget(widget.view, _ScrollPaneSlot.view);
-    if (widget.rowHeader != null) _rowHeader = inflateWidget(widget.rowHeader, _ScrollPaneSlot.rowHeader);
-    if (widget.columnHeader != null) _columnHeader = inflateWidget(widget.columnHeader, _ScrollPaneSlot.columnHeader);
-    if (widget.topLeftCorner != null)
-      _topLeftCorner = inflateWidget(widget.topLeftCorner, _ScrollPaneSlot.topLeftCorner);
-    if (widget.bottomLeftCorner != null)
-      _bottomLeftCorner = inflateWidget(widget.bottomLeftCorner, _ScrollPaneSlot.bottomLeftCorner);
-    if (widget.bottomRightCorner != null)
-      _bottomRightCorner = inflateWidget(widget.bottomRightCorner, _ScrollPaneSlot.bottomRightCorner);
-    if (widget.topRightCorner != null)
-      _topRightCorner = inflateWidget(widget.topRightCorner, _ScrollPaneSlot.topRightCorner);
-    if (widget.horizontalScrollBar != null)
-      _horizontalScrollBar = inflateWidget(widget.horizontalScrollBar, _ScrollPaneSlot.horizontalScrollBar);
-    if (widget.verticalScrollBar != null)
-      _verticalScrollBar = inflateWidget(widget.verticalScrollBar, _ScrollPaneSlot.verticalScrollBar);
+    if (widget.view != null) {
+      _view = inflateWidget(
+        widget.view,
+        _ScrollPaneSlot.view,
+      );
+    }
+    if (widget.rowHeader != null) {
+      _rowHeader = inflateWidget(
+        widget.rowHeader,
+        _ScrollPaneSlot.rowHeader,
+      );
+    }
+    if (widget.columnHeader != null) {
+      _columnHeader = inflateWidget(
+        widget.columnHeader,
+        _ScrollPaneSlot.columnHeader,
+      );
+    }
+    if (widget.topLeftCorner != null) {
+      _topLeftCorner = inflateWidget(
+        widget.topLeftCorner,
+        _ScrollPaneSlot.topLeftCorner,
+      );
+    }
+    if (widget.bottomLeftCorner != null) {
+      _bottomLeftCorner = inflateWidget(
+        widget.bottomLeftCorner,
+        _ScrollPaneSlot.bottomLeftCorner,
+      );
+    }
+    if (widget.bottomRightCorner != null) {
+      _bottomRightCorner = inflateWidget(
+        widget.bottomRightCorner,
+        _ScrollPaneSlot.bottomRightCorner,
+      );
+    }
+    if (widget.topRightCorner != null) {
+      _topRightCorner = inflateWidget(
+        widget.topRightCorner,
+        _ScrollPaneSlot.topRightCorner,
+      );
+    }
+    if (widget.horizontalScrollBar != null) {
+      _horizontalScrollBar = inflateWidget(
+        widget.horizontalScrollBar,
+        _ScrollPaneSlot.horizontalScrollBar,
+      );
+    }
+    if (widget.verticalScrollBar != null) {
+      _verticalScrollBar = inflateWidget(
+        widget.verticalScrollBar,
+        _ScrollPaneSlot.verticalScrollBar,
+      );
+    }
   }
 
   @override
@@ -747,9 +821,14 @@ class RenderScrollPane extends RenderBox {
     double verticalScrollBarWidth,
   }) {
     return Offset(
-      math.min(math.max(proposedScrollOffset.dx, 0), getMaxScrollLeft(verticalScrollBarWidth: verticalScrollBarWidth)),
       math.min(
-          math.max(proposedScrollOffset.dy, 0), getMaxScrollTop(horizontalScrollBarHeight: horizontalScrollBarHeight)),
+        math.max(proposedScrollOffset.dx, 0),
+        getMaxScrollLeft(verticalScrollBarWidth: verticalScrollBarWidth),
+      ),
+      math.min(
+        math.max(proposedScrollOffset.dy, 0),
+        getMaxScrollTop(horizontalScrollBarHeight: horizontalScrollBarHeight),
+      ),
     );
   }
 
@@ -1286,7 +1365,8 @@ class RenderScrollPane extends RenderBox {
       previousHorizontalScrollBarHeight = horizontalScrollBarHeight;
       previousVerticalScrollBarWidth = verticalScrollBarWidth;
       final double viewportWidth = math.max(width - rowHeaderWidth - verticalScrollBarWidth, 0);
-      final double viewportHeight = math.max(height - columnHeaderHeight - horizontalScrollBarHeight, 0);
+      final double viewportHeight =
+          math.max(height - columnHeaderHeight - horizontalScrollBarHeight, 0);
 
       if (view != null) {
         double minWidth = 0;
@@ -1364,7 +1444,10 @@ class RenderScrollPane extends RenderBox {
     }
 
     if (columnHeader != null) {
-      final BoxConstraints boxConstraints = BoxConstraints.tightFor(width: viewWidth, height: columnHeaderHeight);
+      final BoxConstraints boxConstraints = BoxConstraints.tightFor(
+        width: viewWidth,
+        height: columnHeaderHeight,
+      );
       final Offset segmentOffset = Offset(scrollOffset.dx, 0);
       final Size segmentSize = Size(viewWidth, columnHeaderHeight);
       final Rect viewport = segmentOffset & segmentSize;
@@ -1376,7 +1459,10 @@ class RenderScrollPane extends RenderBox {
     }
 
     if (rowHeader != null) {
-      final BoxConstraints boxConstraints = BoxConstraints.tightFor(width: rowHeaderWidth, height: viewHeight);
+      final BoxConstraints boxConstraints = BoxConstraints.tightFor(
+        width: rowHeaderWidth,
+        height: viewHeight,
+      );
       final Offset segmentOffset = Offset(0, scrollOffset.dy);
       final Size segmentSize = Size(rowHeaderWidth, viewHeight);
       final Rect viewport = segmentOffset & segmentSize;
@@ -1390,7 +1476,10 @@ class RenderScrollPane extends RenderBox {
     _ScrollPaneParentData horizontalScrollBarParentData = parentDataFor(horizontalScrollBar);
     if (horizontalScrollBarHeight > 0) {
       horizontalScrollBarParentData.visible = true;
-      horizontalScrollBarParentData.offset = Offset(rowHeaderWidth, height - horizontalScrollBarHeight);
+      horizontalScrollBarParentData.offset = Offset(
+        rowHeaderWidth,
+        height - horizontalScrollBarHeight,
+      );
     } else {
       horizontalScrollBarParentData.visible = false;
     }
@@ -1398,7 +1487,10 @@ class RenderScrollPane extends RenderBox {
     _ScrollPaneParentData verticalScrollBarParentData = parentDataFor(verticalScrollBar);
     if (verticalScrollBarWidth > 0) {
       verticalScrollBarParentData.visible = true;
-      verticalScrollBarParentData.offset = Offset(width - verticalScrollBarWidth, columnHeaderHeight);
+      verticalScrollBarParentData.offset = Offset(
+        width - verticalScrollBarWidth,
+        columnHeaderHeight,
+      );
     } else {
       verticalScrollBarParentData.visible = false;
     }
@@ -1409,7 +1501,9 @@ class RenderScrollPane extends RenderBox {
       _ScrollPaneParentData parentData2 = parentDataFor(topLeftCorner);
       parentData2.offset = Offset.zero;
       parentData2.visible = true;
-      topLeftCorner.layout(BoxConstraints.tightFor(width: rowHeaderWidth, height: columnHeaderHeight));
+      topLeftCorner.layout(
+        BoxConstraints.tightFor(width: rowHeaderWidth, height: columnHeaderHeight),
+      );
     } else {
       topLeftCorner.layout(BoxConstraints.tight(Size.zero));
       parentDataFor(topLeftCorner).visible = false;
@@ -1419,7 +1513,9 @@ class RenderScrollPane extends RenderBox {
       _ScrollPaneParentData parentData2 = parentDataFor(bottomLeftCorner);
       parentData2.offset = Offset(0, height - horizontalScrollBarHeight);
       parentData2.visible = true;
-      bottomLeftCorner.layout(BoxConstraints.tightFor(width: rowHeaderWidth, height: horizontalScrollBarHeight));
+      bottomLeftCorner.layout(
+        BoxConstraints.tightFor(width: rowHeaderWidth, height: horizontalScrollBarHeight),
+      );
     } else {
       bottomLeftCorner.layout(BoxConstraints.tight(Size.zero));
       parentDataFor(bottomLeftCorner).visible = false;
@@ -1427,10 +1523,14 @@ class RenderScrollPane extends RenderBox {
 
     if (verticalScrollBarWidth > 0 && horizontalScrollBarHeight > 0) {
       _ScrollPaneParentData parentData2 = parentDataFor(bottomRightCorner);
-      parentData2.offset = Offset(width - verticalScrollBarWidth, height - horizontalScrollBarHeight);
+      parentData2.offset = Offset(
+        width - verticalScrollBarWidth,
+        height - horizontalScrollBarHeight,
+      );
       parentData2.visible = true;
-      bottomRightCorner
-          .layout(BoxConstraints.tightFor(width: verticalScrollBarWidth, height: horizontalScrollBarHeight));
+      bottomRightCorner.layout(
+        BoxConstraints.tightFor(width: verticalScrollBarWidth, height: horizontalScrollBarHeight),
+      );
     } else {
       bottomRightCorner.layout(BoxConstraints.tight(Size.zero));
       parentDataFor(bottomRightCorner).visible = false;
@@ -1440,7 +1540,9 @@ class RenderScrollPane extends RenderBox {
       _ScrollPaneParentData parentData2 = parentDataFor(topRightCorner);
       parentData2.offset = Offset(width - verticalScrollBarWidth, 0);
       parentData2.visible = true;
-      topRightCorner.layout(BoxConstraints.tightFor(width: verticalScrollBarWidth, height: columnHeaderHeight));
+      topRightCorner.layout(
+        BoxConstraints.tightFor(width: verticalScrollBarWidth, height: columnHeaderHeight),
+      );
     } else {
       topRightCorner.layout(BoxConstraints.tight(Size.zero));
       parentDataFor(topRightCorner).visible = false;
@@ -1466,7 +1568,10 @@ class RenderScrollPane extends RenderBox {
 
     if (view != null) {
       _ScrollPaneParentData parentData = parentDataFor(view);
-      parentData.offset = Offset(rowHeaderWidth - scrollOffset.dx, columnHeaderHeight - scrollOffset.dy);
+      parentData.offset = Offset(
+        rowHeaderWidth - scrollOffset.dx,
+        columnHeaderHeight - scrollOffset.dy,
+      );
       parentData.visible = true;
     }
 
@@ -1488,12 +1593,17 @@ class RenderScrollPane extends RenderBox {
 
     if (viewWidth > 0 && horizontalScrollBarHeight > 0) {
       final double viewportWidth = math.max(width - rowHeaderWidth - verticalScrollBarWidth, 0);
-      final double horizontalScrollBarWidth = math.max(width - rowHeaderWidth - verticalScrollBarWidth, 0);
+      final double horizontalScrollBarWidth =
+          math.max(width - rowHeaderWidth - verticalScrollBarWidth, 0);
       final double extent = math.min(viewWidth, viewportWidth);
-      horizontalScrollBar.blockIncrement = math.max(1, viewportWidth - RenderScrollPane._horizontalReveal);
+      horizontalScrollBar.blockIncrement =
+          math.max(1, viewportWidth - RenderScrollPane._horizontalReveal);
       horizontalScrollBar.layout(
         ScrollBarConstraints.fromBoxConstraints(
-          boxConstraints: BoxConstraints.tightFor(width: horizontalScrollBarWidth, height: horizontalScrollBarHeight),
+          boxConstraints: BoxConstraints.tightFor(
+            width: horizontalScrollBarWidth,
+            height: horizontalScrollBarHeight,
+          ),
           enabled: !(scrollOffset.dx == 0 && extent == viewWidth),
           start: 0,
           end: viewWidth,
@@ -1517,13 +1627,19 @@ class RenderScrollPane extends RenderBox {
     }
 
     if (viewHeight > 0 && verticalScrollBarWidth > 0) {
-      final double viewportHeight = math.max(height - columnHeaderHeight - horizontalScrollBarHeight, 0);
-      final double verticalScrollBarHeight = math.max(height - columnHeaderHeight - horizontalScrollBarHeight, 0);
+      final double viewportHeight =
+          math.max(height - columnHeaderHeight - horizontalScrollBarHeight, 0);
+      final double verticalScrollBarHeight =
+          math.max(height - columnHeaderHeight - horizontalScrollBarHeight, 0);
       final double extent = math.min(viewHeight, viewportHeight);
-      verticalScrollBar.blockIncrement = math.max(1, viewportHeight - RenderScrollPane._verticalReveal);
+      verticalScrollBar.blockIncrement =
+          math.max(1, viewportHeight - RenderScrollPane._verticalReveal);
       verticalScrollBar.layout(
         ScrollBarConstraints.fromBoxConstraints(
-          boxConstraints: BoxConstraints.tightFor(width: verticalScrollBarWidth, height: verticalScrollBarHeight),
+          boxConstraints: BoxConstraints.tightFor(
+            width: verticalScrollBarWidth,
+            height: verticalScrollBarHeight,
+          ),
           enabled: !(scrollOffset.dy == 0 && extent == viewHeight),
           start: 0,
           end: viewHeight,
@@ -1572,7 +1688,12 @@ class RenderScrollPane extends RenderBox {
       if (_clipBehavior == Clip.none) {
         context.paintChild(view, offset + viewParentData.offset);
       } else {
-        Rect clipRect = Rect.fromLTWH(rowHeaderWidth, columnHeaderHeight, viewportWidth, viewportHeight).shift(offset);
+        Rect clipRect = Rect.fromLTWH(
+          rowHeaderWidth,
+          columnHeaderHeight,
+          viewportWidth,
+          viewportHeight,
+        ).shift(offset);
         context.clipRectAndPaint(clipRect, _clipBehavior, clipRect, () {
           context.paintChild(view, offset + viewParentData.offset);
         });
@@ -1585,7 +1706,12 @@ class RenderScrollPane extends RenderBox {
         if (_clipBehavior == Clip.none) {
           context.paintChild(rowHeader, offset + rowHeaderParentData.offset);
         } else {
-          Rect clipRect = Rect.fromLTWH(0, columnHeaderHeight, rowHeaderWidth, viewportHeight).shift(offset);
+          Rect clipRect = Rect.fromLTWH(
+            0,
+            columnHeaderHeight,
+            rowHeaderWidth,
+            viewportHeight,
+          ).shift(offset);
           context.clipRectAndPaint(clipRect, _clipBehavior, clipRect, () {
             context.paintChild(rowHeader, offset + rowHeaderParentData.offset);
           });
@@ -1599,7 +1725,12 @@ class RenderScrollPane extends RenderBox {
         if (_clipBehavior == Clip.none) {
           context.paintChild(columnHeader, offset + columnHeaderParentData.offset);
         } else {
-          Rect clipRect = Rect.fromLTWH(rowHeaderWidth, 0, viewportWidth, columnHeaderHeight).shift(offset);
+          Rect clipRect = Rect.fromLTWH(
+            rowHeaderWidth,
+            0,
+            viewportWidth,
+            columnHeaderHeight,
+          ).shift(offset);
           context.clipRectAndPaint(clipRect, _clipBehavior, clipRect, () {
             context.paintChild(columnHeader, offset + columnHeaderParentData.offset);
           });
