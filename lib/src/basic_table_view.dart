@@ -554,7 +554,10 @@ class RenderBasicTableView extends RenderSegment {
     assert(value != null);
     if (_rowHeight == value) return;
     _rowHeight = value;
-    markNeedsLayout();
+    markNeedsMetrics();
+    // The fact that the cell constraints changed could affect the built
+    // output (e.g. if the cell builder uses LayoutBuilder).
+    markNeedsBuild();
   }
 
   int _length;
@@ -564,6 +567,9 @@ class RenderBasicTableView extends RenderSegment {
     assert(value >= 0);
     if (_length == value) return;
     _length = value;
+    markNeedsMetrics();
+    // We rebuild because the cell at any given offset may not contain the same
+    // contents as it did before the length changed.
     markNeedsBuild();
   }
 
@@ -573,7 +579,7 @@ class RenderBasicTableView extends RenderSegment {
     assert(value != null);
     if (_columns == value) return;
     _columns = value;
-    markNeedsMetricsCalculation();
+    markNeedsMetrics();
     markNeedsBuild();
   }
 
@@ -583,7 +589,7 @@ class RenderBasicTableView extends RenderSegment {
     assert(value != null);
     if (_roundColumnWidthsToWholePixel == value) return;
     _roundColumnWidthsToWholePixel = value;
-    markNeedsMetricsCalculation();
+    markNeedsMetrics();
     // The fact that the cell constraints may change could affect the built
     // output (e.g. if the cell builder uses LayoutBuilder).
     markNeedsBuild();
@@ -711,7 +717,7 @@ class RenderBasicTableView extends RenderSegment {
   bool hitTestChildren(BoxHitTestResult result, {Offset position}) {
     assert(position != null);
     assert(metrics != null);
-    final TableCellOffset cellOffset = metrics.hitTest(position);
+    final TableCellOffset cellOffset = metrics.getCellAt(position);
     if (cellOffset == null ||
         !_children.containsKey(cellOffset.rowIndex) ||
         !_children[cellOffset.rowIndex].containsKey(cellOffset.columnIndex)) {
@@ -759,16 +765,16 @@ class RenderBasicTableView extends RenderSegment {
   @override
   double computeMaxIntrinsicHeight(double width) => computeMinIntrinsicHeight(width);
 
-  bool _needsMetricsCalculation = true;
-  TableViewMetrics _metrics;
+  bool _needsMetrics = true;
+  TableViewMetricsResolver _metrics;
   Rect _viewport;
 
   @protected
-  TableViewMetrics get metrics => _metrics;
+  TableViewMetricsResolver get metrics => _metrics;
 
   @protected
-  void markNeedsMetricsCalculation() {
-    _needsMetricsCalculation = true;
+  void markNeedsMetrics() {
+    _needsMetrics = true;
     markNeedsLayout();
   }
 
@@ -776,16 +782,15 @@ class RenderBasicTableView extends RenderSegment {
   void calculateMetricsIfNecessary() {
     assert(debugDoingThisLayout);
     final BoxConstraints boxConstraints = constraints.asBoxConstraints();
-    if (_needsMetricsCalculation ||
-        _metrics.constraints != boxConstraints ||
-        _metrics.rowHeight != rowHeight) {
-      _metrics = TableViewMetrics.of(
+    if (_needsMetrics || _metrics.constraints != boxConstraints) {
+      _metrics = TableViewMetricsResolver.of(
         columns,
         rowHeight,
+        length,
         boxConstraints,
         roundWidths: roundColumnWidthsToWholePixel,
       );
-      _needsMetricsCalculation = false;
+      _needsMetrics = false;
     }
   }
 
@@ -914,6 +919,62 @@ class _TableViewParentData extends BoxParentData {
   String toString() => '${super.toString()}, rowIndex=$rowIndex, columnIndex=$columnIndex';
 }
 
+/// Class capable of reporting various layout metrics of a [BasicTableView].
+@immutable
+abstract class TableViewMetrics {
+  /// Gets the row index found at the specified y-offset.
+  ///
+  /// The [dy] argument is in logical pixels and exists in the local coordinate
+  /// space of the table view.
+  ///
+  /// Returns -1 if the offset doesn't overlap with a row in the table view.
+  int getRowAt(double dy);
+
+  /// Gets the column index found at the specified x-offset.
+  ///
+  /// The [dx] argument is in logical pixels and exists in the local coordinate
+  /// space of the table view.
+  ///
+  /// Returns -1 if the offset doesn't overlap with a column in the table view.
+  int getColumnAt(double dx);
+
+  /// Gets the cell coordinates found at the specified offset.
+  ///
+  /// The [position] argument is in logical pixels and exists in the local
+  /// coordinate space of the table view.
+  ///
+  /// Returns null if the offset doesn't overlap with a cell in the table view.
+  TableCellOffset getCellAt(Offset position);
+
+  /// Gets the bounding [Rect] of the specified row in the table view.
+  ///
+  /// The returned [Rect] exists in the local coordinate space of the table
+  /// view.
+  ///
+  /// The [rowIndex] argument must be greater than or equal to zero and less
+  /// than the number of rows in the table view.
+  Rect getRowBounds(int rowIndex);
+
+  /// Gets the bounding [Rect] of the specified column in the table view.
+  ///
+  /// The returned [Rect] exists in the local coordinate space of the table
+  /// view.
+  ///
+  /// The [columnIndex] argument must be greater than or equal to zero and less
+  /// than the number of columns in the table view.
+  Rect getColumnBounds(int columnIndex);
+
+  /// Gets the bounding [Rect] of the specified cell in the table view.
+  ///
+  /// The returned [Rect] exists in the local coordinate space of the table
+  /// view.
+  ///
+  /// Both the [rowIndex] and the [columnIndex] argument must represent valid
+  /// (in bounds) values given the number of rows and columns in the table
+  /// view.
+  Rect getCellBounds(int rowIndex, int columnIndex);
+}
+
 /// Resolves column width specifications against [BoxConstraints].
 ///
 /// Produces a list of column widths whose sum satisfies the
@@ -928,11 +989,12 @@ class _TableViewParentData extends BoxParentData {
 /// The returned list is guaranteed to be the same length as [columns] and
 /// contain only non-negative finite values.
 @visibleForTesting
-class TableViewMetrics {
-  const TableViewMetrics._(
+class TableViewMetricsResolver implements TableViewMetrics {
+  const TableViewMetricsResolver._(
     this.columns,
     this.constraints,
     this.rowHeight,
+    this.length,
     this.columnBounds,
   );
 
@@ -950,14 +1012,18 @@ class TableViewMetrics {
   /// The fixed row height of each row in the table view.
   final double rowHeight;
 
+  /// The number of rows in the table view.
+  final int length;
+
   /// The offsets & widths of the columns in the table view.
   ///
   /// The values in this list correspond to the columns in the [columns] list.
   final List<Range> columnBounds;
 
-  static TableViewMetrics of(
+  static TableViewMetricsResolver of(
     List<BasicTableColumn> columns,
     double rowHeight,
+    int length,
     BoxConstraints constraints, {
     bool roundWidths = false,
   }) {
@@ -1039,20 +1105,17 @@ class TableViewMetrics {
       return result;
     });
 
-    return TableViewMetrics._(
+    return TableViewMetricsResolver._(
       columns,
       constraints,
       rowHeight,
+      length,
       resolvedColumnBounds,
     );
   }
 
   /// The total column width of the table view.
   double get totalWidth => columnBounds.last.end;
-
-  Rect getRowBounds(int rowIndex) {
-    return Rect.fromLTWH(0, rowIndex * rowHeight, totalWidth, rowHeight);
-  }
 
   TableCellRect intersect(Rect rect) {
     assert(rect != null);
@@ -1077,20 +1140,62 @@ class TableViewMetrics {
     }
   }
 
-  TableCellOffset hitTest(Offset position) {
-    assert(position != null);
-    assert(position.isFinite);
-    if (position.dy.isNegative) {
-      return null;
+  @override
+  Rect getRowBounds(int rowIndex) {
+    assert(rowIndex != null);
+    assert(rowIndex >= 0 && rowIndex < length);
+    return Rect.fromLTWH(0, rowIndex * rowHeight, totalWidth, rowHeight);
+  }
+
+  @override
+  Rect getColumnBounds(int columnIndex) {
+    assert(columnIndex != null);
+    assert(columnIndex >= 0 && columnIndex < columnBounds.length);
+    final Range columnRange = columnBounds[columnIndex];
+    return Rect.fromLTRB(columnRange.start, 0, columnRange.end, length * rowHeight);
+  }
+
+  @override
+  Rect getCellBounds(int rowIndex, int columnIndex) {
+    final Range columnRange = columnBounds[columnIndex];
+    final double rowStart = rowIndex * rowHeight;
+    return Rect.fromLTRB(columnRange.start, rowStart, columnRange.end, rowStart + rowHeight);
+  }
+
+  @override
+  int getRowAt(double dy) {
+    assert(dy != null);
+    assert(dy.isFinite);
+    if (dy.isNegative) {
+      return -1;
     }
-    int columnIndex = columnBounds.indexWhere((Range range) => range.start <= position.dx);
+    final int rowIndex = dy ~/ rowHeight;
+    if (rowIndex >= length) {
+      return -1;
+    }
+    return rowIndex;
+  }
+
+  @override
+  int getColumnAt(double dx) {
+    assert(dx != null);
+    assert(dx.isFinite);
+    int columnIndex = columnBounds.indexWhere((Range range) => range.start <= dx);
     if (columnIndex >= 0) {
-      columnIndex = columnBounds.indexWhere((Range range) => range.end > position.dx, columnIndex);
+      columnIndex = columnBounds.indexWhere((Range range) => range.end > dx, columnIndex);
     }
-    if (columnIndex == -1) {
+    return columnIndex;
+  }
+
+  @override
+  TableCellOffset getCellAt(Offset position) {
+    assert(position != null);
+    final int rowIndex = getRowAt(position.dy);
+    final int columnIndex = getColumnAt(position.dx);
+    if (rowIndex == -1 || columnIndex == -1) {
       return null;
     }
-    return TableCellOffset(position.dy ~/ rowHeight, columnIndex);
+    return TableCellOffset(rowIndex, columnIndex);
   }
 }
 

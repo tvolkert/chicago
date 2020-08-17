@@ -747,9 +747,9 @@ class RenderTableView extends RenderBasicTableView with TableViewColumnListenerM
   }
 
   void _onPointerHover(PointerHoverEvent event) {
-    final TableCellOffset cellOffset = metrics.hitTest(event.localPosition);
-    if (cellOffset != null) {
-      highlightedRow = cellOffset.rowIndex;
+    final int rowIndex = metrics.getRowAt(event.localPosition.dy);
+    if (rowIndex != -1) {
+      highlightedRow = rowIndex;
     }
   }
 
@@ -758,15 +758,14 @@ class RenderTableView extends RenderBasicTableView with TableViewColumnListenerM
   void _onPointerDown(PointerDownEvent event) {
     final SelectMode selectMode = selectionController.selectMode;
     if (selectMode != SelectMode.none) {
-      final TableCellOffset cellOffset = metrics.hitTest(event.localPosition);
-      final int rowIndex = cellOffset.rowIndex;
-      if (cellOffset.rowIndex >= 0 && cellOffset.rowIndex < length) {
+      final int rowIndex = metrics.getRowAt(event.localPosition.dy);
+      if (rowIndex >= 0 && rowIndex < length) {
         final Set<LogicalKeyboardKey> keys = RawKeyboard.instance.keysPressed;
 
         if (isShiftKeyPressed() && selectMode == SelectMode.multi) {
           final int startIndex = selectionController.firstSelectedIndex;
           if (startIndex == -1) {
-            selectionController.addSelectedIndex(cellOffset.rowIndex);
+            selectionController.addSelectedIndex(rowIndex);
           } else {
             final int endIndex = selectionController.lastSelectedIndex;
             final Span range = Span(rowIndex, rowIndex > startIndex ? startIndex : endIndex);
@@ -1083,7 +1082,7 @@ mixin TableViewColumnListenerMixin on RenderBasicTableView {
         columnIndex,
         constraints.viewport.bottom ~/ rowHeight,
       ));
-      markNeedsMetricsCalculation();
+      markNeedsMetrics();
     };
   }
 }
