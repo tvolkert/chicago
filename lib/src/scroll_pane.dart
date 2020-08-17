@@ -285,6 +285,13 @@ class ScrollController with ListenerNotifier<ScrollPaneListener> {
     });
   }
 
+  Offset get maxScrollOffset {
+    if (_renderObject != null) {
+      return Offset(_renderObject.getMaxScrollLeft(), _renderObject.getMaxScrollTop());
+    }
+    return Offset(double.infinity, double.infinity);
+  }
+
   void _skipBoundscheck(VoidCallback callback) {
     assert(_boundsCheck);
     _boundsCheck = false;
