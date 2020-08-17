@@ -289,7 +289,7 @@ class ScrollController with ListenerNotifier<ScrollPaneListener> {
     if (_renderObject != null) {
       return Offset(_renderObject.getMaxScrollLeft(), _renderObject.getMaxScrollTop());
     }
-    return Offset(double.infinity, double.infinity);
+    return Offset.infinite;
   }
 
   void _skipBoundscheck(VoidCallback callback) {
