@@ -140,7 +140,7 @@ class ScrollBarConstraints extends BoxConstraints {
 
   @override
   String toString() {
-    return 'SegmentConstraints(base=${super.toString()}, enabled=$enabled, start=$start, 3nd=$end, value=$value, extent=$extent)';
+    return 'ScrollBarConstraints(base=${super.toString()}, enabled=$enabled, start=$start, 3nd=$end, value=$value, extent=$extent)';
   }
 }
 
