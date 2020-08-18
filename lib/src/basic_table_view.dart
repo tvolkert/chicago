@@ -671,6 +671,7 @@ class RenderBasicTableView extends RenderSegment {
   @protected
   void markNeedsBuild() {
     _needsBuild = true;
+    // TODO: does build really necessitate layout? It's not clear that it does...
     markNeedsLayout();
   }
 
