@@ -80,7 +80,6 @@ class TableColumnController extends BasicTableColumn with ChangeNotifier {
     @required this.headerRenderer,
     @required TableCellRenderer cellRenderer,
     TableColumnWidth width = const FlexTableColumnWidth(),
-    SortDirection sortDirection,
   })  : assert(key != null),
         assert(cellRenderer != null),
         assert(headerRenderer != null),
@@ -625,7 +624,8 @@ class TableViewElement extends BasicTableViewElement {
 }
 
 @visibleForTesting
-class RenderTableView extends RenderBasicTableView with TableViewColumnListenerMixin {
+class RenderTableView extends RenderBasicTableView
+    with TableViewColumnListenerMixin, TableViewSortingMixin {
   RenderTableView({
     double rowHeight,
     int length,
@@ -643,18 +643,12 @@ class RenderTableView extends RenderBasicTableView with TableViewColumnListenerM
           roundColumnWidthsToWholePixel: roundColumnWidthsToWholePixel,
           metricsController: metricsController,
         ) {
-    _sortListener = TableViewSortListener(
-      onAdded: _handleSortAdded,
-      onUpdated: _handleSortUpdated,
-      onChanged: _handleSortChanged,
-    );
+    initializeSortListener();
     this.selectionController = selectionController;
     this.sortController = sortController;
     this.pointerEvents = pointerEvents;
     this.platform = platform;
   }
-
-  TableViewSortListener _sortListener;
 
   TableViewSelectionController _selectionController;
   TableViewSelectionController get selectionController => _selectionController;
@@ -673,20 +667,6 @@ class RenderTableView extends RenderBasicTableView with TableViewColumnListenerM
         _selectionController._attach(this);
       }
       _selectionController.addListener(_handleSelectionChanged);
-    }
-    markNeedsBuild();
-  }
-
-  TableViewSortController _sortController;
-  TableViewSortController get sortController => _sortController;
-  set sortController(TableViewSortController value) {
-    if (_sortController == value) return;
-    if (_sortController != null) {
-      _sortController.removeListener(_sortListener);
-    }
-    _sortController = value;
-    if (_sortController != null) {
-      _sortController.addListener(_sortListener);
     }
     markNeedsBuild();
   }
@@ -734,15 +714,21 @@ class RenderTableView extends RenderBasicTableView with TableViewColumnListenerM
     markNeedsBuild();
   }
 
-  void _handleSortAdded(TableViewSortController controller, String key) {
+  @override
+  @protected
+  void handleSortAdded(TableViewSortController _, String __) {
     markNeedsBuild();
   }
 
-  void _handleSortUpdated(TableViewSortController controller, String key, SortDirection previousDirection) {
+  @override
+  @protected
+  void handleSortUpdated(TableViewSortController _, String __, SortDirection ___) {
     markNeedsBuild();
   }
 
-  void _handleSortChanged(TableViewSortController controller) {
+  @override
+  @protected
+  void handleSortChanged(TableViewSortController _) {
     markNeedsBuild();
   }
 
@@ -898,7 +884,14 @@ class TableViewHeader extends BasicTableView {
       columns: columns,
       roundColumnWidthsToWholePixel: roundColumnWidthsToWholePixel,
       metricsController: metricsController,
+      sortController: sortController,
     );
+  }
+
+  @override
+  void updateRenderObject(BuildContext context, RenderTableViewHeader renderObject) {
+    super.updateRenderObject(context, renderObject);
+    renderObject..sortController = sortController;
   }
 
   @protected
@@ -1047,20 +1040,67 @@ class TableViewHeaderElement extends BasicTableViewElement {
   }
 }
 
-class RenderTableViewHeader extends RenderBasicTableView with TableViewColumnListenerMixin {
+class RenderTableViewHeader extends RenderBasicTableView
+    with TableViewColumnListenerMixin, TableViewSortingMixin {
   RenderTableViewHeader({
     double rowHeight,
     int length,
     List<TableColumnController> columns,
     bool roundColumnWidthsToWholePixel = false,
     TableViewMetricsController metricsController,
+    TableViewSortController sortController,
   }) : super(
           rowHeight: rowHeight,
           length: length,
           columns: columns,
           roundColumnWidthsToWholePixel: roundColumnWidthsToWholePixel,
           metricsController: metricsController,
-        );
+        ) {
+    initializeSortListener();
+    this.sortController = sortController;
+  }
+
+  @override
+  @protected
+  void handleSortAdded(TableViewSortController _, String __) {
+    markNeedsPaint();
+  }
+
+  @override
+  @protected
+  void handleSortUpdated(TableViewSortController _, String __, SortDirection ___) {
+    markNeedsPaint();
+  }
+
+  @override
+  @protected
+  void handleSortChanged(TableViewSortController _) {
+    markNeedsPaint();
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    super.paint(context, offset);
+
+    for (int columnIndex = 0; columnIndex < columns.length; columnIndex++) {
+      final SortDirection sortDirection = sortController[columns[columnIndex].key];
+      if (sortDirection != null) {
+        final Rect cellBounds = metrics.getCellBounds(0, columnIndex);
+        final SortIndicatorPainter painter = SortIndicatorPainter(sortDirection: sortDirection);
+        context.canvas.save();
+        try {
+          const Size indicatorSize = Size(7, 4);
+          context.canvas.translate(
+            cellBounds.right - indicatorSize.width - 5,
+            cellBounds.centerRight.dy - indicatorSize.height / 2,
+          );
+          painter.paint(context.canvas, indicatorSize);
+        } finally {
+          context.canvas.restore();
+        }
+      }
+    }
+  }
 }
 
 mixin TableViewColumnListenerMixin on RenderBasicTableView {
@@ -1101,4 +1141,40 @@ mixin TableViewColumnListenerMixin on RenderBasicTableView {
       markNeedsMetrics();
     };
   }
+}
+
+mixin TableViewSortingMixin on RenderBasicTableView {
+  TableViewSortListener _sortListener;
+
+  TableViewSortController _sortController;
+  TableViewSortController get sortController => _sortController;
+  set sortController(TableViewSortController value) {
+    if (_sortController == value) return;
+    if (_sortController != null) {
+      _sortController.removeListener(_sortListener);
+    }
+    _sortController = value;
+    if (_sortController != null) {
+      _sortController.addListener(_sortListener);
+    }
+    markNeedsBuild();
+  }
+
+  @protected
+  void initializeSortListener() {
+    _sortListener = TableViewSortListener(
+      onAdded: handleSortAdded,
+      onUpdated: handleSortUpdated,
+      onChanged: handleSortChanged,
+    );
+  }
+
+  @protected
+  void handleSortAdded(TableViewSortController controller, String key) {}
+
+  @protected
+  void handleSortUpdated(TableViewSortController controller, String key, SortDirection previous) {}
+
+  @protected
+  void handleSortChanged(TableViewSortController controller) {}
 }
