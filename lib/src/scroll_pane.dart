@@ -312,6 +312,76 @@ class ScrollController with ListenerNotifier<ScrollPaneListener> {
   double get _maxScrollTop => max(_viewSize.height - _viewportSize.height, 0);
 
   Offset get maxScrollOffset => Offset(_maxScrollLeft, _maxScrollTop);
+
+  /// The coordinates of [rect] are in the coordinate space of the viewport
+  /// (the same coordinate space as [scrollOffset]).
+  ///
+  /// If the [animation] argument is non-null, the scroll offset will be
+  /// animated to its destination value. Otherwise, the scroll offset will
+  /// jump to its destination.
+  void scrollToVisible(Rect rect, {AnimationController animation}) {
+    final Rect viewport = scrollOffset & _viewportSize;
+
+    double deltaX = 0;
+    final double leftDisplacement = rect.left - viewport.left;
+    final double rightDisplacement = rect.right - viewport.right;
+    if (leftDisplacement < 0 && rightDisplacement < 0) {
+      // The area lies to the left of our viewport bounds.
+      deltaX = max(leftDisplacement, rightDisplacement);
+    } else if (leftDisplacement > 0 && rightDisplacement > 0) {
+      // The area lies to the right of our viewport bounds.
+      deltaX = min(leftDisplacement, rightDisplacement);
+    }
+
+    double deltaY = 0;
+    final double topDisplacement = rect.top - viewport.top;
+    final double bottomDisplacement = rect.bottom - viewport.bottom;
+    if (topDisplacement < 0 && bottomDisplacement < 0) {
+      // The area lies above our viewport bounds.
+      deltaY = max(topDisplacement, bottomDisplacement);
+    } else if (topDisplacement > 0 && bottomDisplacement > 0) {
+      // The area lies below our viewport bounds.
+      deltaY = min(topDisplacement, bottomDisplacement);
+    }
+
+    if (deltaX != 0 || deltaY != 0) {
+      final Offset target = Offset(
+        min(max(scrollOffset.dx + deltaX, 0), max(_viewSize.width - viewport.width, 0)),
+        min(max(scrollOffset.dy + deltaY, 0), max(_viewSize.height - viewport.height, 0)),
+      );
+      if (animation == null) {
+        scrollOffset = target;
+      } else {
+        _animateTo(target, animation);
+      }
+    }
+  }
+
+  void _animateTo(Offset target, AnimationController animation) {
+    Animation<Offset> scrollAnimation = Tween<Offset>(
+      begin: scrollOffset,
+      end: target,
+    ).animate(CurvedAnimation(
+      parent: animation,
+      curve: Curves.fastOutSlowIn,
+    ));
+
+    void _handleTick() {
+      scrollOffset = scrollAnimation.value;
+    }
+
+    void _handleStatusChange(AnimationStatus status) {
+      if (status == AnimationStatus.completed) {
+        scrollAnimation.removeListener(_handleTick);
+        scrollAnimation.removeStatusListener(_handleStatusChange);
+      }
+    }
+
+    scrollAnimation.addListener(_handleTick);
+    scrollAnimation.addStatusListener(_handleStatusChange);
+    animation.reset();
+    animation.forward();
+  }
 }
 
 class ScrollPane extends StatefulWidget {
