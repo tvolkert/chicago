@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import 'dart:math' as math;
+import 'dart:math' show min, max;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
@@ -302,14 +302,14 @@ class ScrollController with ListenerNotifier<ScrollPaneListener> {
 
   Offset _boundsCheckScrollOffset(Offset value) {
     return Offset(
-      math.min(math.max(value.dx, 0), _maxScrollLeft),
-      math.min(math.max(value.dy, 0), _maxScrollTop),
+      min(max(value.dx, 0), _maxScrollLeft),
+      min(max(value.dy, 0), _maxScrollTop),
     );
   }
 
-  double get _maxScrollLeft => math.max(_viewSize.width - _viewportSize.width, 0);
+  double get _maxScrollLeft => max(_viewSize.width - _viewportSize.width, 0);
 
-  double get _maxScrollTop => math.max(_viewSize.height - _viewportSize.height, 0);
+  double get _maxScrollTop => max(_viewSize.height - _viewportSize.height, 0);
 
   Offset get maxScrollOffset => Offset(_maxScrollLeft, _maxScrollTop);
 }
@@ -777,6 +777,42 @@ class _ScrollPaneElement extends RenderObjectElement {
   }
 }
 
+class ScrollPaneViewportResolver implements ViewportResolver {
+  const ScrollPaneViewportResolver({
+    @required this.viewportOffset,
+    @required this.sizeAdjustment,
+    @required this.viewportConstraints,
+  });
+
+  final Offset viewportOffset;
+  final Offset sizeAdjustment;
+  final BoxConstraints viewportConstraints;
+
+  @override
+  Rect resolve(Size size) {
+    Size viewportSize = viewportConstraints.constrain(size + sizeAdjustment) - sizeAdjustment;
+    viewportSize = Size(
+      max(viewportSize.width, 0),
+      max(viewportSize.height, 0),
+    );
+    return viewportOffset & viewportSize;
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ScrollPaneViewportResolver &&
+        other.viewportOffset == viewportOffset &&
+        other.sizeAdjustment == sizeAdjustment &&
+        other.viewportConstraints == viewportConstraints;
+  }
+
+  @override
+  int get hashCode {
+    return hashValues(super.hashCode, viewportOffset, sizeAdjustment, viewportConstraints);
+  }
+}
+
 // TODO do we get any benefit to this implementing RenderAbstractViewport?
 // TODO It looks like RenderAbstractViewport would provide some benefit
 class RenderScrollPane extends RenderBox {
@@ -1149,7 +1185,7 @@ class RenderScrollPane extends RenderBox {
         if (height >= 0) {
           // Subtract the unconstrained preferred height of the
           // column header from the height constraint
-          height = math.max(height - preferredColumnHeaderHeight, 0);
+          height = max(height - preferredColumnHeaderHeight, 0);
         }
 
         preferredWidth = view.getMinIntrinsicWidth(height) + preferredRowHeaderWidth;
@@ -1235,7 +1271,7 @@ class RenderScrollPane extends RenderBox {
         if (width >= 0) {
           // Subtract the unconstrained preferred width of the row header
           // from the width constraint
-          width = math.max(width - preferredRowHeaderWidth, 0);
+          width = max(width - preferredRowHeaderWidth, 0);
         }
 
         preferredHeight = view.getMinIntrinsicHeight(width) + preferredColumnHeaderHeight;
@@ -1250,27 +1286,6 @@ class RenderScrollPane extends RenderBox {
 
   @override
   void performLayout() {
-    // TODO: we could make layout more efficient by deferring our size calculation until the end
-    // TODO: of layout, and using the constraints rather than size during layout
-    if (constraints.hasBoundedWidth && constraints.hasBoundedHeight) {
-      size = constraints.biggest;
-    } else if (constraints.hasBoundedWidth) {
-      final double width = constraints.constrainWidth();
-      final double height = constraints.constrainHeight(getMinIntrinsicHeight(width));
-      size = Size(width, height);
-    } else if (constraints.hasBoundedHeight) {
-      final double height = constraints.constrainHeight();
-      final double width = constraints.constrainWidth(getMinIntrinsicWidth(height));
-      size = Size(width, height);
-    } else {
-      final double width = constraints.constrainWidth(getMinIntrinsicWidth(double.infinity));
-      final double height = constraints.constrainHeight(getMinIntrinsicHeight(double.infinity));
-      size = Size(width, height);
-    }
-
-    final double width = size.width;
-    final double height = size.height;
-
     double rowHeaderWidth = 0;
     if (rowHeader != null) {
       rowHeaderWidth = rowHeader.getMaxIntrinsicWidth(double.infinity);
@@ -1283,10 +1298,12 @@ class RenderScrollPane extends RenderBox {
 
     double viewWidth = 0;
     double viewHeight = 0;
-    double previousHorizontalScrollBarHeight;
-    double horizontalScrollBarHeight = _cachedHorizontalScrollBarHeight;
+    double viewportWidth = 0;
+    double viewportHeight = 0;
     double previousVerticalScrollBarWidth;
+    double previousHorizontalScrollBarHeight;
     double verticalScrollBarWidth = _cachedVerticalScrollBarWidth;
+    double horizontalScrollBarHeight = _cachedHorizontalScrollBarHeight;
     int i = 0;
 
     bool scrollBarSizesChanged() {
@@ -1297,9 +1314,15 @@ class RenderScrollPane extends RenderBox {
     do {
       previousHorizontalScrollBarHeight = horizontalScrollBarHeight;
       previousVerticalScrollBarWidth = verticalScrollBarWidth;
-      final double viewportWidth = math.max(width - rowHeaderWidth - verticalScrollBarWidth, 0);
-      final double viewportHeight =
-          math.max(height - columnHeaderHeight - horizontalScrollBarHeight, 0);
+
+      final ScrollPaneViewportResolver viewportResolver = ScrollPaneViewportResolver(
+        viewportOffset: scrollController.scrollOffset,
+        viewportConstraints: constraints,
+        sizeAdjustment: Offset(
+          rowHeaderWidth + verticalScrollBarWidth,
+          columnHeaderHeight + horizontalScrollBarHeight,
+        ),
+      );
 
       if (view != null) {
         double minWidth = 0;
@@ -1309,10 +1332,15 @@ class RenderScrollPane extends RenderBox {
 
         switch (horizontalScrollBarPolicy) {
           case ScrollBarPolicy.stretch:
-            minWidth = maxWidth = viewportWidth;
+            if (constraints.hasBoundedWidth) {
+              minWidth = max(constraints.minWidth - rowHeaderWidth - verticalScrollBarWidth, 0);
+              maxWidth = max(constraints.maxWidth - rowHeaderWidth - verticalScrollBarWidth, 0);
+            }
             break;
           case ScrollBarPolicy.expand:
-            minWidth = viewportWidth;
+            if (constraints.hasBoundedWidth) {
+              minWidth = max(constraints.minWidth - rowHeaderWidth - verticalScrollBarWidth, 0);
+            }
             break;
           case ScrollBarPolicy.always:
           case ScrollBarPolicy.auto:
@@ -1323,10 +1351,18 @@ class RenderScrollPane extends RenderBox {
 
         switch (verticalScrollBarPolicy) {
           case ScrollBarPolicy.stretch:
-            minHeight = maxHeight = viewportHeight;
+            if (constraints.hasBoundedHeight) {
+              minHeight =
+                  max(constraints.minHeight - columnHeaderHeight - horizontalScrollBarHeight, 0);
+              maxHeight =
+                  max(constraints.maxHeight - columnHeaderHeight - horizontalScrollBarHeight, 0);
+            }
             break;
           case ScrollBarPolicy.expand:
-            minHeight = viewportHeight;
+            if (constraints.hasBoundedHeight) {
+              minHeight =
+                  max(constraints.minHeight - columnHeaderHeight - horizontalScrollBarHeight, 0);
+            }
             break;
           case ScrollBarPolicy.always:
           case ScrollBarPolicy.auto:
@@ -1335,20 +1371,21 @@ class RenderScrollPane extends RenderBox {
             break;
         }
 
-        final Rect viewport = scrollController.scrollOffset & Size(viewportWidth, viewportHeight);
-        final SegmentConstraints viewConstraints = SegmentConstraints.fromBoxConstraints(
-          viewport: viewport,
-          boxConstraints: BoxConstraints(
-            minWidth: minWidth,
-            maxWidth: maxWidth,
-            minHeight: minHeight,
-            maxHeight: maxHeight,
-          ),
+        final SegmentConstraints viewConstraints = SegmentConstraints(
+          minWidth: minWidth,
+          maxWidth: maxWidth,
+          minHeight: minHeight,
+          maxHeight: maxHeight,
+          viewportResolver: viewportResolver,
         );
         view.layout(viewConstraints, parentUsesSize: true);
         viewWidth = view.size.width;
         viewHeight = view.size.height;
       }
+
+      final Rect viewportRect = viewportResolver.resolve(Size(viewWidth, viewHeight));
+      viewportWidth = viewportRect.width;
+      viewportHeight = viewportRect.height;
 
       if (horizontalScrollBarPolicy == ScrollBarPolicy.always ||
           (horizontalScrollBarPolicy == ScrollBarPolicy.auto && viewWidth > viewportWidth) ||
@@ -1365,7 +1402,15 @@ class RenderScrollPane extends RenderBox {
       } else {
         verticalScrollBarWidth = 0;
       }
+
+      size = constraints.constrainDimensions(
+        viewportWidth + rowHeaderWidth + verticalScrollBarWidth,
+        viewportHeight + columnHeaderHeight + horizontalScrollBarHeight,
+      );
     } while (++i <= RenderScrollPane._maxLayoutPasses && scrollBarSizesChanged());
+
+    final double width = size.width;
+    final double height = size.height;
 
     _cachedHorizontalScrollBarHeight = horizontalScrollBarHeight;
     _cachedVerticalScrollBarWidth = verticalScrollBarWidth;
@@ -1382,31 +1427,25 @@ class RenderScrollPane extends RenderBox {
     }
 
     if (columnHeader != null) {
-      final BoxConstraints columnHeaderBoxConstraints = BoxConstraints.tightFor(
+      final SegmentConstraints columnHeaderConstraints = SegmentConstraints.tightFor(
         width: viewWidth,
         height: columnHeaderHeight,
-      );
-      final Offset segmentOffset = Offset(scrollController.scrollOffset.dx, 0);
-      final Size segmentSize = Size(viewWidth, columnHeaderHeight);
-      final Rect columnHeaderViewport = segmentOffset & segmentSize;
-      final SegmentConstraints columnHeaderConstraints = SegmentConstraints.fromBoxConstraints(
-        boxConstraints: columnHeaderBoxConstraints,
-        viewport: columnHeaderViewport,
+        viewportResolver: StaticViewportResolver.fromParts(
+          offset: Offset(scrollController.scrollOffset.dx, 0),
+          size: Size(viewportWidth, columnHeaderHeight),
+        ),
       );
       columnHeader.layout(columnHeaderConstraints, parentUsesSize: true);
     }
 
     if (rowHeader != null) {
-      final BoxConstraints rowHeaderBoxConstraints = BoxConstraints.tightFor(
+      final SegmentConstraints rowHeaderConstraints = SegmentConstraints.tightFor(
         width: rowHeaderWidth,
         height: viewHeight,
-      );
-      final Offset segmentOffset = Offset(0, scrollController.scrollOffset.dy);
-      final Size segmentSize = Size(rowHeaderWidth, viewHeight);
-      final Rect rowHeaderViewport = segmentOffset & segmentSize;
-      final SegmentConstraints rowHeaderConstraints = SegmentConstraints.fromBoxConstraints(
-        boxConstraints: rowHeaderBoxConstraints,
-        viewport: rowHeaderViewport,
+        viewportResolver: StaticViewportResolver.fromParts(
+          offset: Offset(0, scrollController.scrollOffset.dy),
+          size: Size(rowHeaderWidth, viewportHeight),
+        ),
       );
       rowHeader.layout(rowHeaderConstraints, parentUsesSize: true);
     }
@@ -1473,10 +1512,7 @@ class RenderScrollPane extends RenderBox {
       scrollController._setRenderValues(
         scrollOffset: scrollController.scrollOffset,
         viewSize: view.size,
-        viewportSize: Size(
-          math.max(width - rowHeaderWidth - verticalScrollBarWidth, 0),
-          math.max(height - columnHeaderHeight - horizontalScrollBarHeight, 0),
-        ),
+        viewportSize: Size(viewportWidth, viewportHeight),
       );
     });
 
@@ -1515,16 +1551,12 @@ class RenderScrollPane extends RenderBox {
         rowHeaderWidth,
         height - horizontalScrollBarHeight,
       );
-      final double viewportWidth = math.max(width - rowHeaderWidth - verticalScrollBarWidth, 0);
-      final double horizontalScrollBarWidth =
-          math.max(width - rowHeaderWidth - verticalScrollBarWidth, 0);
-      final double extent = math.min(viewWidth, viewportWidth);
-      horizontalScrollBar.blockIncrement =
-          math.max(1, viewportWidth - RenderScrollPane._horizontalReveal);
+      final double extent = min(viewWidth, viewportWidth);
+      horizontalScrollBar.blockIncrement = max(1, viewportWidth - _horizontalReveal);
       horizontalScrollBar.layout(
         ScrollBarConstraints.fromBoxConstraints(
           boxConstraints: BoxConstraints.tightFor(
-            width: horizontalScrollBarWidth,
+            width: viewportWidth,
             height: horizontalScrollBarHeight,
           ),
           enabled: !(scrollController.scrollOffset.dx == 0 && extent == viewWidth),
@@ -1557,18 +1589,13 @@ class RenderScrollPane extends RenderBox {
         width - verticalScrollBarWidth,
         columnHeaderHeight,
       );
-      final double viewportHeight =
-          math.max(height - columnHeaderHeight - horizontalScrollBarHeight, 0);
-      final double verticalScrollBarHeight =
-          math.max(height - columnHeaderHeight - horizontalScrollBarHeight, 0);
-      final double extent = math.min(viewHeight, viewportHeight);
-      verticalScrollBar.blockIncrement =
-          math.max(1, viewportHeight - RenderScrollPane._verticalReveal);
+      final double extent = min(viewHeight, viewportHeight);
+      verticalScrollBar.blockIncrement = max(1, viewportHeight - _verticalReveal);
       verticalScrollBar.layout(
         ScrollBarConstraints.fromBoxConstraints(
           boxConstraints: BoxConstraints.tightFor(
             width: verticalScrollBarWidth,
-            height: verticalScrollBarHeight,
+            height: viewportHeight,
           ),
           enabled: !(scrollController.scrollOffset.dy == 0 && extent == viewHeight),
           start: 0,

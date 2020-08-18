@@ -817,8 +817,10 @@ class RenderBasicTableView extends RenderSegment {
   @override
   void performLayout() {
     calculateMetricsIfNecessary();
-    rebuildIfNecessary();
     size = constraints.constrainDimensions(metrics.totalWidth, length * rowHeight);
+
+    // Relies on size being set.
+    rebuildIfNecessary();
 
     visitTableCells((RenderBox child, int rowIndex, int columnIndex) {
       final Range columnBounds = metrics.columnBounds[columnIndex];
@@ -854,7 +856,7 @@ class RenderBasicTableView extends RenderSegment {
     assert(_layoutCallback != null);
     assert(debugDoingThisLayout);
     final Rect previousViewport = _viewport;
-    _viewport = constraints.viewport;
+    _viewport = constraints.viewportResolver.resolve(size);
     if (!_needsBuild && _dirtyCells == null && _viewport == previousViewport) {
       return;
     }

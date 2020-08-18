@@ -16,26 +16,43 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 
+@immutable
+abstract class ViewportResolver {
+  Rect resolve(Size size);
+}
+
+class StaticViewportResolver implements ViewportResolver {
+  const StaticViewportResolver(this.viewport);
+
+  StaticViewportResolver.fromParts({
+    @required Offset offset,
+    @required Size size,
+  })  : assert(offset != null),
+        assert(size != null),
+        viewport = offset & size;
+
+  final Rect viewport;
+
+  @override
+  Rect resolve(Size size) => viewport;
+}
+
 class SegmentConstraints extends BoxConstraints {
   const SegmentConstraints({
     double minWidth = 0,
     double maxWidth = double.infinity,
     double minHeight = 0,
     double maxHeight = double.infinity,
-    this.viewport,
+    @required this.viewportResolver,
   }) : super(minWidth: minWidth, maxWidth: maxWidth, minHeight: minHeight, maxHeight: maxHeight);
 
-  SegmentConstraints.fromBoxConstraints({
-    BoxConstraints boxConstraints,
-    this.viewport,
-  }) : super(
-          minWidth: boxConstraints.minWidth,
-          maxWidth: boxConstraints.maxWidth,
-          minHeight: boxConstraints.minHeight,
-          maxHeight: boxConstraints.maxHeight,
-        );
+  SegmentConstraints.tightFor({
+    double width,
+    double height,
+    this.viewportResolver,
+  }) : super.tightFor(width: width, height: height);
 
-  final Rect viewport;
+  final ViewportResolver viewportResolver;
 
   BoxConstraints asBoxConstraints() {
     return BoxConstraints(
@@ -48,20 +65,21 @@ class SegmentConstraints extends BoxConstraints {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other))
-      return true;
-    return other is SegmentConstraints && super == other && other.viewport == viewport;
+    if (identical(this, other)) return true;
+    return other is SegmentConstraints &&
+        super == other &&
+        other.viewportResolver == viewportResolver;
   }
 
   @override
   int get hashCode {
     assert(debugAssertIsValid());
-    return hashValues(super.hashCode, viewport);
+    return hashValues(super.hashCode, viewportResolver);
   }
 
   @override
   String toString() {
-    return 'SegmentConstraints(base=${super.toString()}, viewport=$viewport)';
+    return 'SegmentConstraints(base=${super.toString()}, viewportResolver=$viewportResolver)';
   }
 }
 
@@ -72,7 +90,7 @@ abstract class RenderSegment extends RenderBox {
     assert(() {
       if (constraints is! SegmentConstraints) {
         FlutterError.reportError(FlutterErrorDetails(
-          exception: 'RenderSegment was given constraints other than SegmentConstraints',
+          exception: 'RenderSegment was given constraints other than FooConstraints',
           stack: StackTrace.current,
           library: 'chicago',
         ));
