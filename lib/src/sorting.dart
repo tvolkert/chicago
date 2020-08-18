@@ -39,18 +39,22 @@ class SortIndicatorPainter extends CustomPainter {
       ..color = color
       ..isAntiAlias = isAntiAlias;
     Path path = Path();
+    const double zero = 0;
+    final double x1 = (size.width - 1) / 2;
+    final double x2 = size.width - 1;
+    final double y1 = size.height - 1;
     switch (sortDirection) {
       case SortDirection.ascending:
         path
-          ..moveTo(0, 3)
-          ..lineTo(3, 0)
-          ..lineTo(6, 3);
+          ..moveTo(zero, y1)
+          ..lineTo(x1, zero)
+          ..lineTo(x2, y1);
         break;
       case SortDirection.descending:
         path
-          ..moveTo(0, 0)
-          ..lineTo(3, 3)
-          ..lineTo(6, 0);
+          ..moveTo(zero, zero)
+          ..lineTo(x1, y1)
+          ..lineTo(x2, zero);
         break;
     }
 
