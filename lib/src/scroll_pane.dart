@@ -811,6 +811,13 @@ class ScrollPaneViewportResolver implements ViewportResolver {
   int get hashCode {
     return hashValues(super.hashCode, viewportOffset, sizeAdjustment, viewportConstraints);
   }
+
+  @override
+  String toString() {
+    return 'ScrollPaneViewportResolver(viewportOffset=$viewportOffset, '
+        'sizeAdjustment=$sizeAdjustment, '
+        'viewportConstraints=$viewportConstraints)';
+  }
 }
 
 // TODO do we get any benefit to this implementing RenderAbstractViewport?

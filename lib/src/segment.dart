@@ -22,7 +22,7 @@ abstract class ViewportResolver {
 }
 
 class StaticViewportResolver implements ViewportResolver {
-  const StaticViewportResolver(this.viewport);
+  const StaticViewportResolver(this.viewport) : assert(viewport != null);
 
   StaticViewportResolver.fromParts({
     @required Offset offset,
@@ -35,6 +35,23 @@ class StaticViewportResolver implements ViewportResolver {
 
   @override
   Rect resolve(Size size) => viewport;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is StaticViewportResolver &&
+        other.viewport == viewport;
+  }
+
+  @override
+  int get hashCode {
+    return hashValues(super.hashCode, viewport);
+  }
+
+  @override
+  String toString() {
+    return 'StaticViewportResolver(viewport=$viewport)';
+  }
 }
 
 class SegmentConstraints extends BoxConstraints {
