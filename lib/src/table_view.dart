@@ -650,6 +650,24 @@ class RenderTableView extends RenderBasicTableView
     this.platform = platform;
   }
 
+  Set<int> _sortedColumns = <int>{};
+  void _resetSortedColumns() {
+    _sortedColumns.clear();
+    if (sortController != null) {
+      for (int i = 0; i < columns.length; i++) {
+        if (sortController[columns[i].key] != null) {
+          _sortedColumns.add(i);
+        }
+      }
+    }
+  }
+
+  @override
+  set sortController(TableViewSortController value) {
+    super.sortController = value;
+    _resetSortedColumns();
+  }
+
   TableViewSelectionController _selectionController;
   TableViewSelectionController get selectionController => _selectionController;
   set selectionController(TableViewSelectionController value) {
@@ -716,19 +734,28 @@ class RenderTableView extends RenderBasicTableView
 
   @override
   @protected
-  void handleSortAdded(TableViewSortController _, String __) {
+  void handleSortAdded(TableViewSortController controller, String key) {
+    final int columnIndex = columns.indexWhere((TableColumnController column) => column.key == key);
+    _sortedColumns.add(columnIndex);
     markNeedsBuild();
   }
 
   @override
   @protected
-  void handleSortUpdated(TableViewSortController _, String __, SortDirection ___) {
+  void handleSortUpdated(TableViewSortController controller, String key, SortDirection direction) {
+    final int columnIndex = columns.indexWhere((TableColumnController column) => column.key == key);
+    if (direction == null) {
+      _sortedColumns.remove(columnIndex);
+    } else {
+      _sortedColumns.add(columnIndex);
+    }
     markNeedsBuild();
   }
 
   @override
   @protected
-  void handleSortChanged(TableViewSortController _) {
+  void handleSortChanged(TableViewSortController controller) {
+    _resetSortedColumns();
     markNeedsBuild();
   }
 
@@ -830,21 +857,30 @@ class RenderTableView extends RenderBasicTableView
 
   @override
   void paint(PaintingContext context, Offset offset) {
+    if (_sortedColumns.isNotEmpty) {
+      final Paint paint = Paint()
+        ..style = PaintingStyle.fill
+        ..color = const Color(0xfff7f5ed);
+      for (int columnIndex in _sortedColumns) {
+        final Rect columnBounds = metrics.getColumnBounds(columnIndex);
+        context.canvas.drawRect(columnBounds.shift(offset), paint);
+      }
+    }
     if (_highlightedRow != null) {
       final Rect rowBounds = metrics.getRowBounds(_highlightedRow);
-      Paint paint = Paint()
+      final Paint paint = Paint()
         ..style = PaintingStyle.fill
         ..color = const Color(0xffdddcd5);
       context.canvas.drawRect(rowBounds.shift(offset), paint);
     }
     if (selectionController.selectedRanges.isNotEmpty) {
+      final Paint paint = Paint()
+        ..style = PaintingStyle.fill
+        ..color = const Color(0xff14538b);
       for (Span range in selectionController.selectedRanges) {
-        final Rect rangeBounds =
-            metrics.getRowBounds(range.start).expandToInclude(metrics.getRowBounds(range.end));
-        Paint paint = Paint()
-          ..style = PaintingStyle.fill
-          ..color = const Color(0xff14538b);
-        context.canvas.drawRect(rangeBounds.shift(offset), paint);
+        Rect bounds = metrics.getRowBounds(range.start);
+        bounds = bounds.expandToInclude(metrics.getRowBounds(range.end));
+        context.canvas.drawRect(bounds.shift(offset), paint);
       }
     }
     super.paint(context, offset);
