@@ -77,12 +77,11 @@ typedef TableCellRenderer = Widget Function({
 class TableColumnController extends BasicTableColumn with ChangeNotifier {
   TableColumnController({
     @required this.key,
-    @required this.headerRenderer,
     @required TableCellRenderer cellRenderer,
+    this.headerRenderer,
     TableColumnWidth width = const FlexTableColumnWidth(),
   })  : assert(key != null),
         assert(cellRenderer != null),
-        assert(headerRenderer != null),
         assert(width != null),
         _width = width,
         super(cellRenderer: cellRenderer);
@@ -429,10 +428,12 @@ class ScrollableTableView extends StatelessWidget {
     this.sortController,
     this.scrollController,
     this.roundColumnWidthsToWholePixel = false,
+    this.includeHeader = true,
   })  : assert(rowHeight != null),
         assert(length != null),
         assert(columns != null),
         assert(roundColumnWidthsToWholePixel != null),
+        assert(includeHeader != null),
         super(key: key);
 
   final double rowHeight;
@@ -443,19 +444,25 @@ class ScrollableTableView extends StatelessWidget {
   final TableViewSortController sortController;
   final ScrollController scrollController;
   final bool roundColumnWidthsToWholePixel;
+  final bool includeHeader;
 
   @override
   Widget build(BuildContext context) {
-    return ScrollPane(
-      horizontalScrollBarPolicy: ScrollBarPolicy.expand,
-      verticalScrollBarPolicy: ScrollBarPolicy.auto,
-      scrollController: scrollController,
-      columnHeader: TableViewHeader(
+    Widget columnHeader;
+    if (includeHeader) {
+      columnHeader = TableViewHeader(
         rowHeight: rowHeight,
         columns: columns,
         sortController: sortController,
         roundColumnWidthsToWholePixel: roundColumnWidthsToWholePixel,
-      ),
+      );
+    }
+
+    return ScrollPane(
+      horizontalScrollBarPolicy: ScrollBarPolicy.expand,
+      verticalScrollBarPolicy: ScrollBarPolicy.auto,
+      scrollController: scrollController,
+      columnHeader: columnHeader,
       view: TableView(
         length: length,
         rowHeight: rowHeight,
@@ -528,7 +535,8 @@ class _TableViewState extends State<TableView> {
       platform: widget.platform ?? defaultTargetPlatform,
     );
 
-    if (widget.selectionController.selectMode != SelectMode.none) {
+    if (widget.selectionController != null &&
+        widget.selectionController.selectMode != SelectMode.none) {
       result = MouseRegion(
         onEnter: _pointerEvents.add,
         onExit: _pointerEvents.add,
@@ -618,7 +626,7 @@ class TableViewElement extends BasicTableViewElement {
       rowIndex: rowIndex,
       columnIndex: columnIndex,
       rowHighlighted: renderObject.highlightedRow == rowIndex,
-      rowSelected: widget.selectionController.isRowSelected(rowIndex),
+      rowSelected: widget.selectionController?.isRowSelected(rowIndex) ?? false,
     );
   }
 }
@@ -671,7 +679,6 @@ class RenderTableView extends RenderBasicTableView
   TableViewSelectionController _selectionController;
   TableViewSelectionController get selectionController => _selectionController;
   set selectionController(TableViewSelectionController value) {
-    assert(value != null);
     if (_selectionController == value) return;
     if (_selectionController != null) {
       if (attached) {
@@ -779,7 +786,7 @@ class RenderTableView extends RenderBasicTableView
   int _selectIndex = -1;
 
   void _onPointerDown(PointerDownEvent event) {
-    final SelectMode selectMode = selectionController.selectMode;
+    final SelectMode selectMode = selectionController?.selectMode ?? SelectMode.none;
     if (selectMode != SelectMode.none) {
       final int rowIndex = metrics.getRowAt(event.localPosition.dy);
       if (rowIndex >= 0 && rowIndex < length) {
@@ -873,7 +880,7 @@ class RenderTableView extends RenderBasicTableView
         ..color = const Color(0xffdddcd5);
       context.canvas.drawRect(rowBounds.shift(offset), paint);
     }
-    if (selectionController.selectedRanges.isNotEmpty) {
+    if (selectionController != null && selectionController.selectedRanges.isNotEmpty) {
       final Paint paint = Paint()
         ..style = PaintingStyle.fill
         ..color = const Color(0xff14538b);

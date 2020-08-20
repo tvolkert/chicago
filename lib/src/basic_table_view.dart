@@ -1122,7 +1122,7 @@ class TableViewMetricsResolver implements TableViewMetrics {
         }
         return true;
       }());
-    } else {
+    } else if (flexColumns.isNotEmpty) {
       // There's still width to spare after fixed-width column allocations.
       double flexAllocation = 0;
       if (maxWidthDelta.isFinite) {
@@ -1161,7 +1161,7 @@ class TableViewMetricsResolver implements TableViewMetrics {
   }
 
   /// The total column width of the table view.
-  double get totalWidth => columnBounds.last.end;
+  double get totalWidth => columnBounds.isEmpty ? 0 : columnBounds.last.end;
 
   TableCellRect intersect(Rect rect) {
     assert(rect != null);
