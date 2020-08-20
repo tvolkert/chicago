@@ -683,6 +683,16 @@ class _ScrollPaneElement extends RenderObjectElement {
   void update(_ScrollPane newWidget) {
     super.update(newWidget);
     assert(widget == newWidget);
+    _updateChildren(newWidget);
+  }
+
+  @override
+  void mount(Element parent, dynamic newSlot) {
+    super.mount(parent, newSlot);
+    _updateChildren(widget);
+  }
+
+  void _updateChildren(_ScrollPane widget) {
     _view = updateChild(
       _view,
       widget.view,
@@ -731,65 +741,6 @@ class _ScrollPaneElement extends RenderObjectElement {
   }
 
   @override
-  void mount(Element parent, dynamic newSlot) {
-    super.mount(parent, newSlot);
-    if (widget.view != null) {
-      _view = inflateWidget(
-        widget.view,
-        _ScrollPaneSlot.view,
-      );
-    }
-    if (widget.rowHeader != null) {
-      _rowHeader = inflateWidget(
-        widget.rowHeader,
-        _ScrollPaneSlot.rowHeader,
-      );
-    }
-    if (widget.columnHeader != null) {
-      _columnHeader = inflateWidget(
-        widget.columnHeader,
-        _ScrollPaneSlot.columnHeader,
-      );
-    }
-    if (widget.topLeftCorner != null) {
-      _topLeftCorner = inflateWidget(
-        widget.topLeftCorner,
-        _ScrollPaneSlot.topLeftCorner,
-      );
-    }
-    if (widget.bottomLeftCorner != null) {
-      _bottomLeftCorner = inflateWidget(
-        widget.bottomLeftCorner,
-        _ScrollPaneSlot.bottomLeftCorner,
-      );
-    }
-    if (widget.bottomRightCorner != null) {
-      _bottomRightCorner = inflateWidget(
-        widget.bottomRightCorner,
-        _ScrollPaneSlot.bottomRightCorner,
-      );
-    }
-    if (widget.topRightCorner != null) {
-      _topRightCorner = inflateWidget(
-        widget.topRightCorner,
-        _ScrollPaneSlot.topRightCorner,
-      );
-    }
-    if (widget.horizontalScrollBar != null) {
-      _horizontalScrollBar = inflateWidget(
-        widget.horizontalScrollBar,
-        _ScrollPaneSlot.horizontalScrollBar,
-      );
-    }
-    if (widget.verticalScrollBar != null) {
-      _verticalScrollBar = inflateWidget(
-        widget.verticalScrollBar,
-        _ScrollPaneSlot.verticalScrollBar,
-      );
-    }
-  }
-
-  @override
   void visitChildren(ElementVisitor visitor) {
     visitor(_view);
     if (_rowHeader != null) visitor(_rowHeader);
@@ -803,7 +754,24 @@ class _ScrollPaneElement extends RenderObjectElement {
   }
 
   @override
-  void insertChildRenderObject(RenderBox child, _ScrollPaneSlot slot) {
+  void insertRenderObjectChild(RenderBox child, _ScrollPaneSlot slot) {
+    assert(child != null);
+    assert(slot != null);
+    _updateChildSlot(slot, child);
+  }
+
+  @override
+  void moveRenderObjectChild(RenderObject child, dynamic oldSlot, dynamic newSlot) {
+    assert(false);
+  }
+
+  @override
+  void removeRenderObjectChild(RenderBox child, _ScrollPaneSlot slot) {
+    assert(child.parent == renderObject);
+    _updateChildSlot(slot, null);
+  }
+
+  void _updateChildSlot(_ScrollPaneSlot slot, RenderBox child) {
     switch (slot) {
       case _ScrollPaneSlot.view:
         renderObject.view = child;
@@ -833,17 +801,6 @@ class _ScrollPaneElement extends RenderObjectElement {
         renderObject.verticalScrollBar = child;
         break;
     }
-  }
-
-  @override
-  void moveChildRenderObject(RenderObject child, dynamic slot) {
-    throw UnsupportedError('moveChildRenderObject()');
-  }
-
-  @override
-  void removeChildRenderObject(RenderBox child) {
-    assert(child.parent == renderObject);
-    throw UnimplementedError();
   }
 }
 

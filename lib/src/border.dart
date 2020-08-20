@@ -156,13 +156,21 @@ class _BorderLayoutElement extends RenderObjectElement {
   }
 
   @override
-  void insertChildRenderObject(RenderObject child, _BorderLayoutSlot slot) {
-    _placeChildInSlot(child, slot);
+  void insertRenderObjectChild(RenderBox child, _BorderLayoutSlot slot) {
+    assert(slot != null);
+    switch (slot) {
+      case _BorderLayoutSlot.title:
+        renderObject.title = child;
+        break;
+      case _BorderLayoutSlot.child:
+        renderObject.child = child;
+        break;
+    }
   }
 
   @override
-  void moveChildRenderObject(RenderObject child, _BorderLayoutSlot slot) {
-    _placeChildInSlot(child, slot);
+  void moveRenderObjectChild(RenderObject _, _BorderLayoutSlot __, _BorderLayoutSlot ___) {
+    assert(false);
   }
 
   @override
@@ -184,23 +192,14 @@ class _BorderLayoutElement extends RenderObjectElement {
   }
 
   @override
-  void removeChildRenderObject(RenderObject child) {
+  void removeRenderObjectChild(RenderObject child, _BorderLayoutSlot slot) {
     assert(child == renderObject.title || child == renderObject.child);
-    if (child == renderObject.title) {
-      renderObject.title = null;
-    } else if (child == renderObject.child) {
-      renderObject.child = null;
-    }
-  }
-
-  void _placeChildInSlot(RenderObject child, _BorderLayoutSlot slot) {
-    assert(slot != null);
     switch (slot) {
       case _BorderLayoutSlot.title:
-        renderObject.title = child as RenderBox;
+        renderObject.title = null;
         break;
       case _BorderLayoutSlot.child:
-        renderObject.child = child as RenderBox;
+        renderObject.child = null;
         break;
     }
   }

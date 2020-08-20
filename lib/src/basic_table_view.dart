@@ -518,21 +518,21 @@ class BasicTableViewElement extends RenderObjectElement {
   }
 
   @override
-  void insertChildRenderObject(RenderObject child, TableViewSlot slot) {
+  void insertRenderObjectChild(RenderObject child, TableViewSlot slot) {
     assert(child.parent == null);
     renderObject.insert(child, rowIndex: slot.row, columnIndex: slot.column);
     assert(child.parent == renderObject);
   }
 
   @override
-  void moveChildRenderObject(RenderObject child, TableViewSlot slot) {
+  void moveRenderObjectChild(RenderObject child, TableViewSlot oldSlot, TableViewSlot newSlot) {
     assert(child.parent == renderObject);
-    renderObject.move(child, rowIndex: slot.row, columnIndex: slot.column);
+    renderObject.move(child, rowIndex: oldSlot.row, columnIndex: oldSlot.column);
     assert(child.parent == renderObject);
   }
 
   @override
-  void removeChildRenderObject(RenderObject child) {
+  void removeRenderObjectChild(RenderObject child, TableViewSlot slot) {
     assert(child.parent == renderObject);
     renderObject.remove(child);
     assert(child.parent == null);

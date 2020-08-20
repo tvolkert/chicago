@@ -112,6 +112,7 @@ class Prompt extends StatelessWidget {
       case MessageType.info:
         return 'message_type-info-32x32.png';
     }
+    throw StateError('Unreachable code');
   }
 
   @override
