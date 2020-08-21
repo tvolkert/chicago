@@ -44,12 +44,17 @@ Comparator<T> _defaultCompare<T>() {
   return (T value1, T value2) => (value1 as Comparable<T>).compareTo(value2);
 }
 
+/// Returns true if any shift key is pressed on a physical keyboard.
 bool isShiftKeyPressed() {
   final Set<LogicalKeyboardKey> keys = RawKeyboard.instance.keysPressed;
   return keys.contains(LogicalKeyboardKey.shiftLeft) ||
       keys.contains(LogicalKeyboardKey.shiftRight);
 }
 
+/// Returns true if any "command" key is pressed on a physical keyboard.
+///
+/// A command key is the "Command" (⌘) key on MacOS, and the "Control" (⌃)
+/// key on other platforms.
 bool isPlatformCommandKeyPressed([TargetPlatform platform]) {
   platform ??= defaultTargetPlatform;
   final Set<LogicalKeyboardKey> keys = RawKeyboard.instance.keysPressed;

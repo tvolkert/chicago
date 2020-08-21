@@ -13,11 +13,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
-class LinkButton extends StatefulWidget {
+import 'hover_builder.dart';
+
+class LinkButton extends StatelessWidget {
   const LinkButton({
     Key key,
     this.image,
@@ -30,46 +31,31 @@ class LinkButton extends StatefulWidget {
   final VoidCallback onPressed;
 
   @override
-  _LinkButtonState createState() => _LinkButtonState();
-}
-
-class _LinkButtonState extends State<LinkButton> {
-  bool hover = false;
-
-  @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (PointerEnterEvent event) {
-        setState(() {
-          hover = true;
-        });
-      },
-      onExit: (PointerExitEvent event) {
-        setState(() {
-          hover = false;
-        });
-      },
+    return HoverBuilder(
       cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: widget.onPressed,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            if (widget.image != null)
-              Padding(
-                padding: EdgeInsets.only(right: 4),
-                child: Image(image: widget.image),
+      builder: (BuildContext context, bool hover) {
+        return GestureDetector(
+          onTap: onPressed,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              if (image != null)
+                Padding(
+                  padding: EdgeInsets.only(right: 4),
+                  child: Image(image: image),
+                ),
+              Text(
+                text,
+                style: TextStyle(
+                  color: Color(0xff2b5580),
+                  decoration: hover ? TextDecoration.underline : TextDecoration.none,
+                ),
               ),
-            Text(
-              widget.text,
-              style: TextStyle(
-                color: Color(0xff2b5580),
-                decoration: hover ? TextDecoration.underline : TextDecoration.none,
-              ),
-            ),
-          ],
-        ),
-      ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

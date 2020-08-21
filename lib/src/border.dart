@@ -26,6 +26,7 @@ class Border extends StatelessWidget {
     this.title,
     this.titleStyle,
     this.titlePadding = EdgeInsets.zero,
+    this.textDirection,
     this.borderColor = const Color(0xff000000),
     this.borderThickness = 1,
     this.borderRadius = BorderRadius.zero,
@@ -42,11 +43,41 @@ class Border extends StatelessWidget {
   final String title;
   final TextStyle titleStyle;
   final EdgeInsetsGeometry titlePadding;
+
+  /// The directionality of this widget.
+  ///
+  /// This affects the placement of the [title] widget and the associated
+  /// behavior of the [inset] amount.
+  final TextDirection textDirection;
+
+  /// The color of the border.
+  ///
+  /// If unspecified, this defaults to black.
   final Color borderColor;
+
+  /// The thickness of the border.
+  ///
+  /// If unspecified, this defaults to a 1-pixel border.
   final double borderThickness;
+
+  /// The border radius.
+  ///
+  /// If unspecified, this defaults to a zero-radius (square) border.
   final BorderRadiusGeometry borderRadius;
+
+  /// The color to paint inside the border, behind the [child] and [title].
+  ///
+  /// If unspecified, the background will be transparent.
   final Color backgroundColor;
+
+  /// The indentation (in pixels) for [title].
+  ///
+  /// If the [textDirection] is [TextDirection.ltr], then this will be a left
+  /// indent. If the [textDirection] is [TextDirection.rtl], then this will be
+  /// a right indent.
   final double inset;
+
+  /// The widget to lay out inside the border.
   final Widget child;
 
   @override
@@ -65,7 +96,7 @@ class Border extends StatelessWidget {
     }
 
     return _BorderLayout(
-      textDirection: Directionality.of(context),
+      textDirection: textDirection ?? Directionality.of(context),
       inset: inset,
       title: titleWidget,
       child: DecoratedBox(
@@ -97,17 +128,15 @@ class _BorderLayout extends RenderObjectWidget {
   final TextDirection textDirection;
 
   @override
-  RenderObjectElement createElement() {
-    return _BorderLayoutElement(this);
+  RenderObjectElement createElement() => _BorderLayoutElement(this);
+
+  @override
+  _RenderBorderLayout createRenderObject(BuildContext context) {
+    return _RenderBorderLayout(inset: inset, textDirection: textDirection);
   }
 
   @override
-  RenderBorderLayout createRenderObject(BuildContext context) {
-    return RenderBorderLayout(inset: inset, textDirection: textDirection);
-  }
-
-  @override
-  void updateRenderObject(BuildContext context, RenderBorderLayout renderObject) {
+  void updateRenderObject(BuildContext context, _RenderBorderLayout renderObject) {
     renderObject
       ..inset = inset
       ..textDirection = textDirection;
@@ -136,7 +165,7 @@ class _BorderLayoutElement extends RenderObjectElement {
   _BorderLayout get widget => super.widget as _BorderLayout;
 
   @override
-  RenderBorderLayout get renderObject => super.renderObject as RenderBorderLayout;
+  _RenderBorderLayout get renderObject => super.renderObject as _RenderBorderLayout;
 
   @override
   void visitChildren(ElementVisitor visitor) {
@@ -205,14 +234,15 @@ class _BorderLayoutElement extends RenderObjectElement {
   }
 }
 
-class RenderBorderLayout extends RenderBox {
-  RenderBorderLayout({
+class _RenderBorderLayout extends RenderBox {
+  _RenderBorderLayout({
     double inset = 0,
     TextDirection textDirection = TextDirection.ltr,
   })  : assert(inset != null),
-        assert(textDirection != null),
-        _inset = inset,
-        _textDirection = textDirection;
+        assert(textDirection != null) {
+    this.inset = inset;
+    this.textDirection = textDirection;
+  }
 
   double _inset;
   double get inset => _inset;
@@ -235,6 +265,7 @@ class RenderBorderLayout extends RenderBox {
   RenderBox _title;
   RenderBox get title => _title;
   set title(RenderBox value) {
+    if (value == _title) return;
     if (_title != null) dropChild(_title);
     _title = value;
     if (_title != null) adoptChild(_title);
@@ -243,6 +274,7 @@ class RenderBorderLayout extends RenderBox {
   RenderBox _child;
   RenderBox get child => _child;
   set child(RenderBox value) {
+    if (value == _child) return;
     if (_child != null) dropChild(_child);
     _child = value;
     if (_child != null) adoptChild(_child);
