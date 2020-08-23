@@ -925,6 +925,7 @@ class RenderBasicTableView extends RenderSegment {
       }
     }
 
+    // TODO: lowering length causes stranded built cells - figure out why...
     invokeLayoutCallback<SegmentConstraints>((SegmentConstraints _) {
       _layoutCallback(
         visitChildrenToRemove: removeCells.where(_isInBounds).where(_isBuilt).visitCells,

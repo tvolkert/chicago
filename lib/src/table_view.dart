@@ -283,6 +283,11 @@ class TableColumnController extends BasicTableColumn with ChangeNotifier {
   final String key;
 
   /// The renderer responsible for the look & feel of the header for this column.
+  ///
+  /// See also:
+  ///
+  ///  * [ScrollableTableView.includeHeader], which if false will allow for
+  ///    this field to be null.
   final TableHeaderRenderer headerRenderer;
 
   @override
@@ -325,7 +330,7 @@ enum SelectMode {
 
 class TableViewSelectionController with ChangeNotifier {
   TableViewSelectionController({
-    this.selectMode = SelectMode.none,
+    this.selectMode = SelectMode.single,
   }) : assert(selectMode != null);
 
   /// TODO: document
@@ -1479,21 +1484,23 @@ class RenderTableViewHeader extends RenderBasicTableView
   void paint(PaintingContext context, Offset offset) {
     super.paint(context, offset);
 
-    for (int columnIndex = 0; columnIndex < columns.length; columnIndex++) {
-      final SortDirection sortDirection = sortController[columns[columnIndex].key];
-      if (sortDirection != null) {
-        final Rect cellBounds = metrics.getCellBounds(0, columnIndex);
-        final SortIndicatorPainter painter = SortIndicatorPainter(sortDirection: sortDirection);
-        context.canvas.save();
-        try {
-          const Size indicatorSize = Size(7, 4);
-          context.canvas.translate(
-            cellBounds.right - indicatorSize.width - 5,
-            cellBounds.centerRight.dy - indicatorSize.height / 2,
-          );
-          painter.paint(context.canvas, indicatorSize);
-        } finally {
-          context.canvas.restore();
+    if (sortController != null) {
+      for (int columnIndex = 0; columnIndex < columns.length; columnIndex++) {
+        final SortDirection sortDirection = sortController[columns[columnIndex].key];
+        if (sortDirection != null) {
+          final Rect cellBounds = metrics.getCellBounds(0, columnIndex);
+          final SortIndicatorPainter painter = SortIndicatorPainter(sortDirection: sortDirection);
+          context.canvas.save();
+          try {
+            const Size indicatorSize = Size(7, 4);
+            context.canvas.translate(
+              cellBounds.right - indicatorSize.width - 5,
+              cellBounds.centerRight.dy - indicatorSize.height / 2,
+            );
+            painter.paint(context.canvas, indicatorSize);
+          } finally {
+            context.canvas.restore();
+          }
         }
       }
     }

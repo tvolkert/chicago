@@ -197,11 +197,13 @@ class _PushButtonState<T> extends State<PushButton<T>> {
           elevation: 4,
           items: widget.menuItems,
         ).then((T value) {
-          setState(() {
-            menuActive = false;
-          });
-          if (widget.onMenuItemSelected != null) {
-            widget.onMenuItemSelected(value);
+          if (mounted) {
+            setState(() {
+              menuActive = false;
+            });
+            if (widget.onMenuItemSelected != null) {
+              widget.onMenuItemSelected(value);
+            }
           }
         });
       };
