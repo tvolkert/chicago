@@ -67,3 +67,29 @@ bool isPlatformCommandKeyPressed([TargetPlatform platform]) {
           keys.contains(LogicalKeyboardKey.controlRight);
   }
 }
+
+class Vote {
+  const Vote._(this._name);
+
+  final String _name;
+
+  static const Vote approve = Vote._('approve');
+  static const Vote deny = Vote._('deny');
+  static const Vote abstain = Vote._('abstain');
+
+  Vote tally(Vote other) {
+    assert(other != null);
+    switch (other) {
+      case approve:
+        return this;
+      case deny:
+        return other;
+      case abstain:
+        return this == deny ? this : other;
+    }
+    throw StateError('Unreachable code');
+  }
+
+  @override
+  String toString() => _name;
+}

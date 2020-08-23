@@ -199,6 +199,20 @@ abstract class TableCellRange with Diagnosticable {
 
   void visitCells(TableCellVisitor visitor);
 
+  bool contains(int rowIndex, int columnIndex) {
+    bool result = false;
+    visitCells((int i, int j) {
+      if (i == rowIndex && j == columnIndex) {
+        result = true;
+      }
+    });
+    return result;
+  }
+
+  bool containsCell(TableCellOffset cellOffset) {
+    return contains(cellOffset.rowIndex, cellOffset.columnIndex);
+  }
+
   TableCellRange where(bool test(int rowIndex, int columnIndex)) {
     return ProxyTableCellRange((TableCellVisitor visitor) {
       visitCells((int rowIndex, int columnIndex) {
@@ -209,22 +223,29 @@ abstract class TableCellRange with Diagnosticable {
     });
   }
 
-  TableCellRange subtract(TableCellRect rect) {
-    return where((int rowIndex, int columnIndex) {
-      return rowIndex < rect.top ||
-          rowIndex > rect.bottom ||
-          columnIndex < rect.left ||
-          columnIndex > rect.right;
-    });
+  TableCellRange subtract(TableCellRange other) {
+    return where((int rowIndex, int columnIndex) => !other.contains(rowIndex, columnIndex));
   }
 
-  TableCellRange intersect(TableCellRect rect) {
-    return where((int rowIndex, int columnIndex) {
-      return rowIndex >= rect.top &&
-          rowIndex <= rect.bottom &&
-          columnIndex >= rect.left &&
-          columnIndex <= rect.right;
-    });
+  TableCellRange intersect(TableCellRange other) {
+    return where((int rowIndex, int columnIndex) => other.contains(rowIndex, columnIndex));
+  }
+}
+
+class SingleCellRange extends TableCellRange {
+  const SingleCellRange(this.rowIndex, this.columnIndex);
+
+  final int rowIndex;
+  final int columnIndex;
+
+  @override
+  void visitCells(TableCellVisitor visitor) {
+    visitor(rowIndex, columnIndex);
+  }
+
+  @override
+  bool contains(int rowIndex, int columnIndex) {
+    return rowIndex == this.rowIndex && columnIndex == this.columnIndex;
   }
 }
 
@@ -256,6 +277,11 @@ class TableCellRect extends TableCellRange {
   }
 
   @override
+  bool contains(int rowIndex, int columnIndex) {
+    return rowIndex >= top && rowIndex <= bottom && columnIndex >= left && columnIndex <= right;
+  }
+
+  @override
   @protected
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
@@ -271,6 +297,9 @@ class EmptyTableCellRange extends TableCellRange {
 
   @override
   void visitCells(TableCellVisitor visitor) {}
+
+  @override
+  bool contains(int rowIndex, int columnIndex) => false;
 }
 
 class ProxyTableCellRange extends TableCellRange {
@@ -585,7 +614,7 @@ class RenderBasicTableView extends RenderSegment {
     markNeedsBuild();
   }
 
-  List<BasicTableColumn> _columns = <BasicTableColumn>[];
+  List<BasicTableColumn> _columns;
   List<BasicTableColumn> get columns => _columns;
   set columns(covariant List<BasicTableColumn> value) {
     assert(value != null);

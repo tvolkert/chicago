@@ -21,13 +21,13 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart' hide TableColumnWidth;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart' hide ScrollController, TableColumnWidth;
-import 'package:payouts/src/pivot/span.dart';
 
 import 'basic_table_view.dart';
 import 'foundation.dart';
 import 'listener_list.dart';
 import 'scroll_pane.dart';
 import 'sorting.dart';
+import 'span.dart';
 
 const double _kResizeHandleTargetPixels = 10; // logical
 
@@ -56,6 +56,9 @@ typedef TableHeaderRenderer = Widget Function({
 /// typically because the table view allows selection of rows, and a mouse
 /// cursor is currently hovering over the row.
 ///
+/// The `isEditing` argument specifies whether row editing is currently active
+/// on the specified cell.
+///
 /// See also:
 ///  * [TableHeaderRenderer], which renders a column's header.
 ///  * [TableViewSelectionController.selectMode], which dictates whether rows
@@ -68,7 +71,195 @@ typedef TableCellRenderer = Widget Function({
   int columnIndex,
   bool rowSelected,
   bool rowHighlighted,
+  bool isEditing,
 });
+
+typedef PreviewTableViewEditStartedHandler = Vote Function(
+  TableViewEditorController controller,
+  int rowIndex,
+  int columnIndex,
+);
+
+typedef TableViewEditStartedHandler = void Function(
+  TableViewEditorController controller,
+);
+
+typedef PreviewTableViewEditFinishedHandler = Vote Function(
+  TableViewEditorController controller,
+);
+
+typedef TableViewEditFinishedHandler = void Function(
+  TableViewEditorController controller,
+  TableViewEditOutcome outcome,
+);
+
+@immutable
+class TableViewEditorListener {
+  const TableViewEditorListener({
+    this.onPreviewEditStarted = _defaultOnPreviewEditStarted,
+    this.onEditStarted = _defaultOnTableViewEditStarted,
+    this.onPreviewEditFinished = _defaultOnPreviewTableViewEditFinished,
+    this.onEditFinished = _defaultOnTableViewEditFinished,
+  });
+
+  final PreviewTableViewEditStartedHandler onPreviewEditStarted;
+  final TableViewEditStartedHandler onEditStarted;
+  final PreviewTableViewEditFinishedHandler onPreviewEditFinished;
+  final TableViewEditFinishedHandler onEditFinished;
+
+  static Vote _defaultOnPreviewEditStarted(TableViewEditorController _, int __, int ___) => Vote.approve;
+  static void _defaultOnTableViewEditStarted(TableViewEditorController _) {}
+  static Vote _defaultOnPreviewTableViewEditFinished(TableViewEditorController _) => Vote.approve;
+  static void _defaultOnTableViewEditFinished(TableViewEditorController _, TableViewEditOutcome __) {}
+}
+
+enum TableViewEditorBehavior {
+  /// When initiating an edit of a table cell via
+  /// [TableViewEditorController.beginEditing], re-render all cells in the row,
+  /// and set the `isEditing` [TableCellRenderer] flag to true for all cells in
+  /// the row.
+  wholeRow,
+
+  /// When initiating an edit of a table cell via
+  /// [TableViewEditorController.beginEditing], re-render only the requested
+  /// cell, and set the `isEditing` [TableCellRenderer] flag to true for only
+  /// that cell and not any other cells in the row.
+  singleCell,
+
+  /// Disable table cell editing.
+  ///
+  /// This can also be accomplished by setting no [TableViewEditorController]
+  /// on the [TableView].
+  none,
+}
+
+enum TableViewEditOutcome {
+  saved,
+
+  canceled,
+}
+
+class TableViewEditorController with ListenerNotifier<TableViewEditorListener> {
+  TableViewEditorController({
+    this.behavior = TableViewEditorBehavior.wholeRow,
+  });
+
+  /// The editing behavior when an edit begins via [beginEditing].
+  final TableViewEditorBehavior behavior;
+
+  /// True if this controller is associated with a table view.
+  ///
+  /// A controller may only be associated with one table view at a time.
+  RenderTableView _renderObject;
+  bool get isAttached => _renderObject != null;
+
+  void _attach(RenderTableView renderObject) {
+    assert(renderObject != null);
+    assert(!isAttached);
+    _renderObject = renderObject;
+  }
+
+  void _detach() {
+    assert(isAttached);
+    _renderObject = null;
+  }
+
+  int _rowIndex;
+  int _columnIndex;
+
+  TableCellRange get cellsBeingEdited {
+    assert(isEditing);
+    assert(isAttached);
+    switch (behavior) {
+      case TableViewEditorBehavior.singleCell:
+        return SingleCellRange(_rowIndex, _columnIndex);
+        break;
+      case TableViewEditorBehavior.wholeRow:
+        return TableCellRect.fromLTRB(0, _rowIndex, _renderObject.columns.length - 1, _rowIndex);
+        break;
+      case TableViewEditorBehavior.none:
+        assert(false);
+        break;
+    }
+    throw StateError('Unreachable');
+  }
+
+  /// True if an edit is currently in progress.
+  ///
+  /// If this is true, [editRowIndex] will be non-null.
+  bool get isEditing {
+    assert((_rowIndex == null) == (_columnIndex == null));
+    return _rowIndex != null;
+  }
+
+  bool isEditingCell(int rowIndex, int columnIndex) {
+    if (behavior == TableViewEditorBehavior.none) {
+      return false;
+    }
+    bool result = rowIndex == _rowIndex;
+    if (result && behavior == TableViewEditorBehavior.singleCell) {
+      result &= columnIndex == _columnIndex;
+    }
+    return result;
+  }
+
+  bool start(int rowIndex, int columnIndex) {
+    assert(!isEditing);
+    assert(isAttached);
+    assert(rowIndex != null);
+    assert(columnIndex != null);
+    assert(rowIndex >= 0 && rowIndex < _renderObject.length);
+    assert(columnIndex >= 0 && columnIndex < _renderObject.columns.length);
+    assert(behavior != TableViewEditorBehavior.none);
+
+    Vote vote = Vote.approve;
+    notifyListeners((TableViewEditorListener listener) {
+      vote = vote.tally(listener.onPreviewEditStarted(this, rowIndex, columnIndex));
+    });
+
+    if (vote == Vote.approve) {
+      _rowIndex = rowIndex;
+      _columnIndex = columnIndex;
+      notifyListeners((TableViewEditorListener listener) {
+        listener.onEditStarted(this);
+      });
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  bool save() {
+    assert(isEditing);
+    assert(isAttached);
+
+    Vote vote = Vote.approve;
+    notifyListeners((TableViewEditorListener listener) {
+      vote = vote.tally(listener.onPreviewEditFinished(this));
+    });
+
+    if (vote == Vote.approve) {
+      _rowIndex = null;
+      _columnIndex = null;
+      notifyListeners((TableViewEditorListener listener) {
+        listener.onEditFinished(this, TableViewEditOutcome.saved);
+      });
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  void cancel() {
+    assert(isEditing);
+    assert(isAttached);
+    _rowIndex = null;
+    _columnIndex = null;
+    notifyListeners((TableViewEditorListener listener) {
+      listener.onEditFinished(this, TableViewEditOutcome.canceled);
+    });
+  }
+}
 
 /// Controls the properties of a column in a [ScrollableTableView].
 ///
@@ -143,7 +334,7 @@ class TableViewSelectionController with ChangeNotifier {
   ListSelection _selectedRanges = ListSelection();
   RenderTableView _renderObject;
 
-  /// True if this controller is associated with a [ScrollableTableView].
+  /// True if this controller is associated with a table view.
   ///
   /// A selection controller may only be associated with one table view at a
   /// time.
@@ -426,6 +617,7 @@ class ScrollableTableView extends StatelessWidget {
     this.metricsController,
     this.selectionController,
     this.sortController,
+    this.editorController,
     this.scrollController,
     this.roundColumnWidthsToWholePixel = false,
     this.includeHeader = true,
@@ -442,6 +634,7 @@ class ScrollableTableView extends StatelessWidget {
   final TableViewMetricsController metricsController;
   final TableViewSelectionController selectionController;
   final TableViewSortController sortController;
+  final TableViewEditorController editorController;
   final ScrollController scrollController;
   final bool roundColumnWidthsToWholePixel;
   final bool includeHeader;
@@ -471,6 +664,7 @@ class ScrollableTableView extends StatelessWidget {
         metricsController: metricsController,
         selectionController: selectionController,
         sortController: sortController,
+        editorController: editorController,
       ),
     );
   }
@@ -484,6 +678,7 @@ class TableView extends StatefulWidget {
     @required this.columns,
     this.metricsController,
     this.selectionController,
+    this.editorController,
     this.sortController,
     this.roundColumnWidthsToWholePixel = false,
     this.platform,
@@ -498,6 +693,7 @@ class TableView extends StatefulWidget {
   final List<TableColumnController> columns;
   final TableViewMetricsController metricsController;
   final TableViewSelectionController selectionController;
+  final TableViewEditorController editorController;
   final TableViewSortController sortController;
   final bool roundColumnWidthsToWholePixel;
   final TargetPlatform platform;
@@ -508,16 +704,28 @@ class TableView extends StatefulWidget {
 
 class _TableViewState extends State<TableView> {
   StreamController<PointerEvent> _pointerEvents;
+  StreamController<Offset> _doubleTapEvents;
+  Offset _doubleTapPosition;
+
+  void _handleDoubleTapDown(TapDownDetails details) {
+    _doubleTapPosition = details.localPosition;
+  }
+
+  void _handleDoubleTap() {
+    _doubleTapEvents.add(_doubleTapPosition);
+  }
 
   @override
   void initState() {
     super.initState();
-    _pointerEvents = StreamController();
+    _pointerEvents = StreamController<PointerEvent>();
+    _doubleTapEvents = StreamController<Offset>();
   }
 
   @override
   void dispose() {
     _pointerEvents.close();
+    _doubleTapEvents.close();
     super.dispose();
   }
 
@@ -530,8 +738,10 @@ class _TableViewState extends State<TableView> {
       metricsController: widget.metricsController,
       selectionController: widget.selectionController,
       sortController: widget.sortController,
+      editorController: widget.editorController,
       roundColumnWidthsToWholePixel: widget.roundColumnWidthsToWholePixel,
       pointerEvents: _pointerEvents.stream,
+      doubleTapEvents: _doubleTapEvents.stream,
       platform: widget.platform ?? defaultTargetPlatform,
     );
 
@@ -541,6 +751,15 @@ class _TableViewState extends State<TableView> {
         onEnter: _pointerEvents.add,
         onExit: _pointerEvents.add,
         onHover: _pointerEvents.add,
+        child: result,
+      );
+    }
+
+    if (widget.editorController != null &&
+        widget.editorController.behavior != TableViewEditorBehavior.none) {
+      result = GestureDetector(
+        onDoubleTapDown: _handleDoubleTapDown,
+        onDoubleTap: _handleDoubleTap,
         child: result,
       );
     }
@@ -560,7 +779,9 @@ class RawTableView extends BasicTableView {
     TableViewMetricsController metricsController,
     this.selectionController,
     this.sortController,
+    this.editorController,
     @required this.pointerEvents,
+    @required this.doubleTapEvents,
     @required this.platform,
   })  : assert(platform != null),
         super(
@@ -574,7 +795,9 @@ class RawTableView extends BasicTableView {
 
   final TableViewSelectionController selectionController;
   final TableViewSortController sortController;
+  final TableViewEditorController editorController;
   final Stream<PointerEvent> pointerEvents;
+  final Stream<Offset> doubleTapEvents;
   final TargetPlatform platform;
 
   @override
@@ -590,9 +813,12 @@ class RawTableView extends BasicTableView {
       length: length,
       columns: columns,
       roundColumnWidthsToWholePixel: roundColumnWidthsToWholePixel,
+      metricsController: metricsController,
       selectionController: selectionController,
       sortController: sortController,
+      editorController: editorController,
       pointerEvents: pointerEvents,
+      doubleTapEvents: doubleTapEvents,
       platform: platform,
     );
   }
@@ -603,7 +829,9 @@ class RawTableView extends BasicTableView {
     renderObject
       ..selectionController = selectionController
       ..sortController = sortController
+      ..editorController = editorController
       ..pointerEvents = pointerEvents
+      ..doubleTapEvents = doubleTapEvents
       ..platform = platform;
   }
 }
@@ -621,12 +849,14 @@ class TableViewElement extends BasicTableViewElement {
   @override
   @protected
   Widget renderCell(covariant TableColumnController column, int rowIndex, int columnIndex) {
+    assert(column.cellRenderer is TableCellRenderer);
     return column.cellRenderer(
       context: this,
       rowIndex: rowIndex,
       columnIndex: columnIndex,
       rowHighlighted: renderObject.highlightedRow == rowIndex,
       rowSelected: widget.selectionController?.isRowSelected(rowIndex) ?? false,
+      isEditing: widget.editorController?.isEditingCell(rowIndex, columnIndex) ?? false,
     );
   }
 }
@@ -642,7 +872,9 @@ class RenderTableView extends RenderBasicTableView
     TableViewMetricsController metricsController,
     TableViewSelectionController selectionController,
     TableViewSortController sortController,
+    TableViewEditorController editorController,
     Stream<PointerEvent> pointerEvents,
+    Stream<Offset> doubleTapEvents,
     TargetPlatform platform,
   }) : super(
           rowHeight: rowHeight,
@@ -652,11 +884,19 @@ class RenderTableView extends RenderBasicTableView
           metricsController: metricsController,
         ) {
     initializeSortListener();
+    _editorListener = TableViewEditorListener(
+      onEditStarted: _handleEditStarted,
+      onEditFinished: _handleEditFinished,
+    );
     this.selectionController = selectionController;
     this.sortController = sortController;
+    this.editorController = editorController;
     this.pointerEvents = pointerEvents;
+    this.doubleTapEvents = doubleTapEvents;
     this.platform = platform;
   }
+
+  TableViewEditorListener _editorListener;
 
   Set<int> _sortedColumns = <int>{};
   void _resetSortedColumns() {
@@ -670,10 +910,38 @@ class RenderTableView extends RenderBasicTableView
     }
   }
 
+  void _cancelEditIfNecessary() {
+    if (_editorController != null && _editorController.isEditing) {
+      _editorController.cancel();
+    }
+  }
+
+  @override
+  set length(int value) {
+    int previousValue = length;
+    super.length = value;
+    if (length != previousValue) {
+      _cancelEditIfNecessary();
+    }
+  }
+
+  @override
+  set columns(List<TableColumnController> value) {
+    List<TableColumnController> previousValue = columns;
+    super.columns = value;
+    if (columns != previousValue) {
+      _cancelEditIfNecessary();
+    }
+  }
+
   @override
   set sortController(TableViewSortController value) {
+    TableViewSortController previousValue = sortController;
     super.sortController = value;
-    _resetSortedColumns();
+    if (sortController != previousValue) {
+      _resetSortedColumns();
+      _cancelEditIfNecessary();
+    }
   }
 
   TableViewSelectionController _selectionController;
@@ -696,18 +964,55 @@ class RenderTableView extends RenderBasicTableView
     markNeedsBuild();
   }
 
+  TableViewEditorController _editorController;
+  TableViewEditorController get editorController => _editorController;
+  set editorController(TableViewEditorController value) {
+    if (_editorController == value) return;
+    if (_editorController != null) {
+      _cancelEditIfNecessary();
+      if (attached) {
+        _editorController._detach();
+      }
+      _editorController.removeListener(_editorListener);
+    }
+    _editorController = value;
+    if (_editorController != null) {
+      if (attached) {
+        _editorController._attach(this);
+      }
+      _editorController.addListener(_editorListener);
+    }
+    markNeedsBuild();
+  }
+
   StreamSubscription<PointerEvent> _pointerEventsSubscription;
   Stream<PointerEvent> _pointerEvents;
   Stream<PointerEvent> get pointerEvents => _pointerEvents;
   set pointerEvents(Stream<PointerEvent> value) {
     assert(value != null);
     if (_pointerEvents == value) return;
-    if (_pointerEvents != null) {
-      assert(_pointerEventsSubscription != null);
+    if (_pointerEventsSubscription != null) {
+      assert(_pointerEvents != null);
       _pointerEventsSubscription.cancel();
+      _pointerEventsSubscription = null;
     }
     _pointerEvents = value;
     _pointerEventsSubscription = _pointerEvents.listen(_onPointerEvent);
+  }
+
+  StreamSubscription<Offset> _doubleTapEventsSubscription;
+  Stream<Offset> _doubleTapEvents;
+  Stream<Offset> get doubleTapEvents => _doubleTapEvents;
+  set doubleTapEvents(Stream<Offset> value) {
+    assert(value != null);
+    if (_doubleTapEvents == value) return;
+    if (_doubleTapEventsSubscription != null) {
+      assert(_doubleTapEvents != null);
+      _doubleTapEventsSubscription.cancel();
+      _doubleTapEventsSubscription = null;
+    }
+    _doubleTapEvents = value;
+    _doubleTapEventsSubscription = _doubleTapEvents.listen(_onDoubleTap);
   }
 
   TargetPlatform _platform;
@@ -732,6 +1037,39 @@ class RenderTableView extends RenderBasicTableView
       dirtyCells.add(TableCellRect.fromLTRB(0, value, columns.length - 1, value));
     }
     markCellsDirty(dirtyCells);
+  }
+
+  /// Local cache of the cells being edited, so that we know which cells to
+  /// mark dirty when the edit finishes.
+  TableCellRange _cellsBeingEdited;
+
+  void _handleEditStarted(TableViewEditorController controller) {
+    assert(controller == _editorController);
+    assert(_cellsBeingEdited == null);
+    _cellsBeingEdited = _editorController.cellsBeingEdited;
+    markCellsDirty(_cellsBeingEdited);
+    GestureBinding.instance.pointerRouter.addGlobalRoute(_handleGlobalPointerEvent);
+  }
+
+  void _handleGlobalPointerEvent(PointerEvent event) {
+    assert(_editorController != null);
+    assert(_editorController.isEditing);
+    assert(_cellsBeingEdited != null);
+    if (event is PointerDownEvent) {
+      final Offset localPosition = globalToLocal(event.position);
+      final TableCellOffset cellOffset = metrics.getCellAt(localPosition);
+      if (cellOffset == null || !_editorController.cellsBeingEdited.containsCell(cellOffset)) {
+        _editorController.save();
+      }
+    }
+  }
+
+  void _handleEditFinished(TableViewEditorController controller, TableViewEditOutcome outcome) {
+    assert(controller == _editorController);
+    assert(_cellsBeingEdited != null);
+    markCellsDirty(_cellsBeingEdited);
+    _cellsBeingEdited = null;
+    GestureBinding.instance.pointerRouter.removeGlobalRoute(_handleGlobalPointerEvent);
   }
 
   void _handleSelectionChanged() {
@@ -764,6 +1102,16 @@ class RenderTableView extends RenderBasicTableView
   void handleSortChanged(TableViewSortController controller) {
     _resetSortedColumns();
     markNeedsBuild();
+  }
+
+  void _onDoubleTap(Offset position) {
+    if (_editorController != null) {
+      assert(metrics != null);
+      final TableCellOffset cellOffset = metrics.getCellAt(position);
+      if (cellOffset != null) {
+        _editorController.start(cellOffset.rowIndex, cellOffset.columnIndex);
+      }
+    }
   }
 
   void _onPointerExit(PointerExitEvent event) {
@@ -852,12 +1200,18 @@ class RenderTableView extends RenderBasicTableView
     if (_selectionController != null) {
       _selectionController._attach(this);
     }
+    if (_editorController != null) {
+      _editorController._attach(this);
+    }
   }
 
   @override
   void detach() {
     if (_selectionController != null) {
       _selectionController._detach();
+    }
+    if (_editorController != null) {
+      _editorController._detach();
     }
     super.detach();
   }
@@ -1152,11 +1506,11 @@ mixin TableViewColumnListenerMixin on RenderBasicTableView {
 
   @override
   set columns(List<TableColumnController> value) {
-    final List<BasicTableColumn> oldColumns = super.columns;
+    final List<TableColumnController> oldColumns = columns;
     super.columns = value;
     if (oldColumns != columns) {
-      // Initializer value is List<BasicTableColumn>
-      if (oldColumns is List<TableColumnController>) {
+      // Initializer value is null (late bound).
+      if (oldColumns != null) {
         for (int i = 0; i < oldColumns.length; i++) {
           oldColumns[i].removeListener(_columnListeners[i]);
         }
