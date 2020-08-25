@@ -97,9 +97,9 @@ typedef TableViewEditFinishedHandler = void Function(
 class TableViewEditorListener {
   const TableViewEditorListener({
     this.onPreviewEditStarted = _defaultOnPreviewEditStarted,
-    this.onEditStarted = _defaultOnTableViewEditStarted,
-    this.onPreviewEditFinished = _defaultOnPreviewTableViewEditFinished,
-    this.onEditFinished = _defaultOnTableViewEditFinished,
+    this.onEditStarted = _defaultOnEditStarted,
+    this.onPreviewEditFinished = _defaultOnPreviewEditFinished,
+    this.onEditFinished = _defaultOnEditFinished,
   });
 
   final PreviewTableViewEditStartedHandler onPreviewEditStarted;
@@ -107,10 +107,21 @@ class TableViewEditorListener {
   final PreviewTableViewEditFinishedHandler onPreviewEditFinished;
   final TableViewEditFinishedHandler onEditFinished;
 
-  static Vote _defaultOnPreviewEditStarted(TableViewEditorController _, int __, int ___) => Vote.approve;
-  static void _defaultOnTableViewEditStarted(TableViewEditorController _) {}
-  static Vote _defaultOnPreviewTableViewEditFinished(TableViewEditorController _) => Vote.approve;
-  static void _defaultOnTableViewEditFinished(TableViewEditorController _, TableViewEditOutcome __) {}
+  static Vote _defaultOnPreviewEditStarted(TableViewEditorController _, int __, int ___) {
+    return Vote.approve;
+  }
+
+  static void _defaultOnEditStarted(TableViewEditorController _) {
+    // No-op
+  }
+
+  static Vote _defaultOnPreviewEditFinished(TableViewEditorController _) {
+    return Vote.approve;
+  }
+
+  static void _defaultOnEditFinished(TableViewEditorController _, TableViewEditOutcome __) {
+    // No-op
+  }
 }
 
 enum TableViewEditorBehavior {
@@ -707,6 +718,94 @@ class TableView extends StatefulWidget {
   _TableViewState createState() => _TableViewState();
 }
 
+typedef NavigatorObserverCallback = void Function(
+  Route<dynamic> route,
+  Route<dynamic> previousRoute,
+);
+
+typedef ObserveNavigator = NavigatorObserverToken Function({
+  NavigatorObserverCallback onPushed,
+  NavigatorObserverCallback onPopped,
+  NavigatorObserverCallback onRemoved,
+  NavigatorObserverCallback onReplaced,
+  NavigatorObserverCallback onStartUserGesture,
+  VoidCallback onStopUserGesture,
+});
+
+class NavigatorObserverToken {
+  const NavigatorObserverToken._(this._element, this._observer);
+
+  final TableViewElement _element;
+  final NavigatorObserver _observer;
+
+  void stop() {
+    if (_observer.navigator != null) {
+      _observer.navigator.removeObserver(_observer);
+    }
+    _element._navigatorObserver = null;
+  }
+}
+
+class _ProxyNavigatorObserver extends NavigatorObserver {
+  _ProxyNavigatorObserver({
+    this.onPushed,
+    this.onPopped,
+    this.onRemoved,
+    this.onReplaced,
+    this.onStartUserGesture,
+    this.onStopUserGesture,
+  });
+
+  final NavigatorObserverCallback onPushed;
+  final NavigatorObserverCallback onPopped;
+  final NavigatorObserverCallback onRemoved;
+  final NavigatorObserverCallback onReplaced;
+  final NavigatorObserverCallback onStartUserGesture;
+  final VoidCallback onStopUserGesture;
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic> previousRoute) {
+    if (onPushed != null) {
+      onPushed(route, previousRoute);
+    }
+  }
+
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic> previousRoute) {
+    if (onPopped != null) {
+      onPopped(route, previousRoute);
+    }
+  }
+
+  @override
+  void didRemove(Route<dynamic> route, Route<dynamic> previousRoute) {
+    if (onRemoved != null) {
+      onRemoved(route, previousRoute);
+    }
+  }
+
+  @override
+  void didReplace({Route<dynamic> oldRoute, Route<dynamic> newRoute}) {
+    if (onReplaced != null) {
+      onReplaced(newRoute, oldRoute);
+    }
+  }
+
+  @override
+  void didStartUserGesture(Route<dynamic> route, Route<dynamic> previousRoute) {
+    if (onStartUserGesture != null) {
+      onStartUserGesture(route, previousRoute);
+    }
+  }
+
+  @override
+  void didStopUserGesture() {
+    if (onStopUserGesture != null) {
+      onStopUserGesture();
+    }
+  }
+}
+
 class _TableViewState extends State<TableView> {
   StreamController<PointerEvent> _pointerEvents;
   StreamController<Offset> _doubleTapEvents;
@@ -864,6 +963,57 @@ class TableViewElement extends BasicTableViewElement {
       isEditing: widget.editorController?.isEditingCell(rowIndex, columnIndex) ?? false,
     );
   }
+
+  @override
+  void mount(Element parent, dynamic newSlot) {
+    super.mount(parent, newSlot);
+    renderObject.updateObserveNavigatorCallback(_observeNavigator);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _didChangeDependencies = true;
+  }
+
+  bool _didChangeDependencies = false;
+
+  @override
+  void performRebuild() {
+    if (_didChangeDependencies) {
+      _didChangeDependencies = false;
+      if (_navigatorObserver != null) {
+        if (_navigatorObserver.navigator != null) {
+          _navigatorObserver.navigator.removeObserver(_navigatorObserver);
+        }
+        Navigator.of(this).addObserver(_navigatorObserver);
+      }
+    }
+    super.performRebuild();
+  }
+
+  _ProxyNavigatorObserver _navigatorObserver;
+
+  NavigatorObserverToken _observeNavigator({
+    NavigatorObserverCallback onPushed,
+    NavigatorObserverCallback onPopped,
+    NavigatorObserverCallback onRemoved,
+    NavigatorObserverCallback onReplaced,
+    NavigatorObserverCallback onStartUserGesture,
+    VoidCallback onStopUserGesture,
+  }) {
+    assert(_navigatorObserver == null);
+    _navigatorObserver = _ProxyNavigatorObserver(
+      onPushed: onPushed,
+      onPopped: onPopped,
+      onRemoved: onRemoved,
+      onReplaced: onReplaced,
+      onStartUserGesture: onStartUserGesture,
+      onStopUserGesture: onStopUserGesture,
+    );
+    Navigator.of(this).addObserver(_navigatorObserver);
+    return NavigatorObserverToken._(this, _navigatorObserver);
+  }
 }
 
 @visibleForTesting
@@ -990,6 +1140,16 @@ class RenderTableView extends RenderBasicTableView
     markNeedsBuild();
   }
 
+  ObserveNavigator _observeNavigator;
+
+  @protected
+  void updateObserveNavigatorCallback(ObserveNavigator callback) {
+    _observeNavigator = callback;
+    if (_editorController != null && _editorController.isEditing) {
+      _editorController.cancel();
+    }
+  }
+
   StreamSubscription<PointerEvent> _pointerEventsSubscription;
   Stream<PointerEvent> _pointerEvents;
   Stream<PointerEvent> get pointerEvents => _pointerEvents;
@@ -1048,12 +1208,36 @@ class RenderTableView extends RenderBasicTableView
   /// mark dirty when the edit finishes.
   TableCellRange _cellsBeingEdited;
 
+  NavigatorObserverToken _navigatorObserverToken;
+  int _routesPushedDuringEdit = 0;
+
   void _handleEditStarted(TableViewEditorController controller) {
     assert(controller == _editorController);
     assert(_cellsBeingEdited == null);
+    assert(_observeNavigator != null);
+    assert(_navigatorObserverToken == null);
     _cellsBeingEdited = _editorController.cellsBeingEdited;
     markCellsDirty(_cellsBeingEdited);
     GestureBinding.instance.pointerRouter.addGlobalRoute(_handleGlobalPointerEvent);
+    _navigatorObserverToken = _observeNavigator(
+      onPushed: _handleRoutePushedDuringEditing,
+      onPopped: _handleRoutePoppedDuringEditing,
+    );
+  }
+
+  void _handleRoutePushedDuringEditing(Route<dynamic> route, Route<dynamic> previousRoute) {
+    assert(_routesPushedDuringEdit >= 0);
+    if (_routesPushedDuringEdit++ == 0) {
+      GestureBinding.instance.pointerRouter.removeGlobalRoute(_handleGlobalPointerEvent);
+    }
+  }
+
+  void _handleRoutePoppedDuringEditing(Route<dynamic> route, Route<dynamic> previousRoute) {
+    assert(_navigatorObserverToken != null);
+    assert(_routesPushedDuringEdit > 0);
+    if (--_routesPushedDuringEdit == 0) {
+      GestureBinding.instance.pointerRouter.addGlobalRoute(_handleGlobalPointerEvent);
+    }
   }
 
   void _handleGlobalPointerEvent(PointerEvent event) {
@@ -1072,6 +1256,9 @@ class RenderTableView extends RenderBasicTableView
   void _handleEditFinished(TableViewEditorController controller, TableViewEditOutcome outcome) {
     assert(controller == _editorController);
     assert(_cellsBeingEdited != null);
+    assert(_navigatorObserverToken != null);
+    _navigatorObserverToken.stop();
+    _navigatorObserverToken = null;
     markCellsDirty(_cellsBeingEdited);
     _cellsBeingEdited = null;
     GestureBinding.instance.pointerRouter.removeGlobalRoute(_handleGlobalPointerEvent);
