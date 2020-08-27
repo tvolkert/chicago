@@ -13,6 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'push_button.dart';
@@ -66,11 +68,13 @@ class Sheet extends StatelessWidget {
     BuildContext context,
     Widget content,
     EdgeInsetsGeometry padding = const EdgeInsets.all(8),
+    Color barrierColor = const Color(0x80000000),
     bool barrierDismissible = false,
   }) {
-    return _openDialog<T>(
+    return DialogTracker<T>().open(
       context: context,
       barrierDismissible: barrierDismissible,
+      barrierColor: barrierColor,
       child: Sheet(
         padding: padding,
         content: content,
@@ -145,7 +149,10 @@ class Prompt extends StatelessWidget {
                           children: [
                             Text(
                               message,
-                              style: Theme.of(context).textTheme.bodyText2.copyWith(fontWeight: FontWeight.bold),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyText2
+                                  .copyWith(fontWeight: FontWeight.bold),
                             ),
                             Padding(
                               padding: EdgeInsets.only(top: 11),
@@ -191,7 +198,7 @@ class Prompt extends StatelessWidget {
   }) {
     assert(messageType != null);
     assert(message != null);
-    return _openDialog<int>(
+    return DialogTracker<int>().open(
       context: context,
       barrierDismissible: false,
       child: Prompt(
@@ -205,52 +212,114 @@ class Prompt extends StatelessWidget {
   }
 }
 
-Future<T> _openDialog<T>({
-  BuildContext context,
-  bool barrierDismissible = true,
-  String barrierLabel = 'Dismiss',
-  Widget child,
-}) {
-  final ThemeData theme = Theme.of(context);
-  return showGeneralDialog<T>(
-    context: context,
-    barrierDismissible: barrierDismissible,
-    barrierLabel: barrierLabel,
-    barrierColor: const Color(0x80000000),
-    pageBuilder: (
-      BuildContext context,
-      Animation<double> animation,
-      Animation<double> secondaryAnimation,
-    ) {
-      Widget result = child;
-      if (theme != null) {
-        result = Theme(
-          data: theme,
-          child: result,
+/// Tracks the open/close animation of a dialog, allowing callers to open a
+/// dialog and get notified when the dialog fully closes (closing animation
+/// completes) rather than simply when the modal route is popped (closing
+/// animation starts)
+@visibleForTesting
+class DialogTracker<T> {
+  final Completer<T> _completer = Completer<T>();
+
+  Animation<double> _animation;
+  bool _isDialogClosing = false;
+  _AsyncResult<T> _result;
+
+  Future<T> open({
+    BuildContext context,
+    bool barrierDismissible = true,
+    String barrierLabel = 'Dismiss',
+    Color barrierColor = const Color(0x80000000),
+    Widget child,
+  }) {
+    final ThemeData theme = Theme.of(context);
+    showGeneralDialog<T>(
+      context: context,
+      barrierDismissible: barrierDismissible,
+      barrierLabel: barrierLabel,
+      barrierColor: barrierColor,
+      pageBuilder: (
+        BuildContext context,
+        Animation<double> animation,
+        Animation<double> secondaryAnimation,
+      ) {
+        Widget result = child;
+        if (theme != null) {
+          result = Theme(
+            data: theme,
+            child: result,
+          );
+        }
+        return result;
+      },
+      transitionDuration: const Duration(milliseconds: 300),
+      transitionBuilder: (
+        BuildContext context,
+        Animation<double> animation,
+        Animation<double> secondaryAnimation,
+        Widget child,
+      ) {
+        assert(_animation == null || _animation == animation);
+        if (_animation == null) {
+          assert(animation != null);
+          _animation = animation;
+          animation.addStatusListener(_handleAnimationStatusUpdate);
+        }
+        return Align(
+          alignment: Alignment.topCenter,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: Offset(0, -1),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOut,
+            )),
+            child: child,
+          ),
         );
-      }
-      return result;
-    },
-    transitionDuration: const Duration(milliseconds: 300),
-    transitionBuilder: (
-      BuildContext context,
-      Animation<double> animation,
-      Animation<double> secondaryAnimation,
-      Widget child,
-    ) {
-      return Align(
-        alignment: Alignment.topCenter,
-        child: SlideTransition(
-          position: Tween<Offset>(
-            begin: Offset(0, -1),
-            end: Offset.zero,
-          ).animate(CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOut,
-          )),
-          child: child,
-        ),
-      );
-    },
-  );
+      },
+    ).then((T value) {
+      _result = _AsyncResult.value(value);
+    }).catchError((dynamic error, StackTrace stack) {
+      _result = _AsyncResult.error(error, stack);
+    });
+    return _completer.future;
+  }
+
+  void _handleAnimationStatusUpdate(AnimationStatus status) {
+    if (!_isDialogClosing && status == AnimationStatus.reverse) {
+      _isDialogClosing = true;
+    }
+    if (_isDialogClosing && status == AnimationStatus.dismissed) {
+      assert(_result != null);
+      assert(!_completer.isCompleted);
+      _isDialogClosing = false;
+      _animation.removeStatusListener(_handleAnimationStatusUpdate);
+      _animation = null;
+      _result.complete(_completer);
+    }
+  }
+}
+
+class _AsyncResult<T> {
+  const _AsyncResult.value(this.value)
+      : error = null,
+        stack = null;
+
+  const _AsyncResult.error(this.error, this.stack)
+      : assert(error != null),
+        assert(stack != null),
+        value = null;
+
+  final FutureOr<T> value;
+  final dynamic error;
+  final StackTrace stack;
+
+  void complete(Completer<T> completer) {
+    if (error != null) {
+      completer.completeError(error, stack);
+    } else {
+      completer.complete(value);
+    }
+  }
 }
