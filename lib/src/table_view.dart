@@ -25,6 +25,7 @@ import 'package:flutter/widgets.dart' hide ScrollController, TableColumnWidth;
 import 'basic_table_view.dart';
 import 'foundation.dart';
 import 'listener_list.dart';
+import 'navigator_listener.dart';
 import 'scroll_pane.dart';
 import 'sorting.dart';
 import 'span.dart';
@@ -718,12 +719,7 @@ class TableView extends StatefulWidget {
   _TableViewState createState() => _TableViewState();
 }
 
-typedef NavigatorObserverCallback = void Function(
-  Route<dynamic> route,
-  Route<dynamic> previousRoute,
-);
-
-typedef ObserveNavigator = NavigatorObserverToken Function({
+typedef ObserveNavigator = NavigatorListenerRegistration Function({
   NavigatorObserverCallback onPushed,
   NavigatorObserverCallback onPopped,
   NavigatorObserverCallback onRemoved,
@@ -731,80 +727,6 @@ typedef ObserveNavigator = NavigatorObserverToken Function({
   NavigatorObserverCallback onStartUserGesture,
   VoidCallback onStopUserGesture,
 });
-
-class NavigatorObserverToken {
-  const NavigatorObserverToken._(this._element, this._observer);
-
-  final TableViewElement _element;
-  final NavigatorObserver _observer;
-
-  void stop() {
-    if (_observer.navigator != null) {
-      _observer.navigator.removeObserver(_observer);
-    }
-    _element._navigatorObserver = null;
-  }
-}
-
-class _ProxyNavigatorObserver extends NavigatorObserver {
-  _ProxyNavigatorObserver({
-    this.onPushed,
-    this.onPopped,
-    this.onRemoved,
-    this.onReplaced,
-    this.onStartUserGesture,
-    this.onStopUserGesture,
-  });
-
-  final NavigatorObserverCallback onPushed;
-  final NavigatorObserverCallback onPopped;
-  final NavigatorObserverCallback onRemoved;
-  final NavigatorObserverCallback onReplaced;
-  final NavigatorObserverCallback onStartUserGesture;
-  final VoidCallback onStopUserGesture;
-
-  @override
-  void didPush(Route<dynamic> route, Route<dynamic> previousRoute) {
-    if (onPushed != null) {
-      onPushed(route, previousRoute);
-    }
-  }
-
-  @override
-  void didPop(Route<dynamic> route, Route<dynamic> previousRoute) {
-    if (onPopped != null) {
-      onPopped(route, previousRoute);
-    }
-  }
-
-  @override
-  void didRemove(Route<dynamic> route, Route<dynamic> previousRoute) {
-    if (onRemoved != null) {
-      onRemoved(route, previousRoute);
-    }
-  }
-
-  @override
-  void didReplace({Route<dynamic> oldRoute, Route<dynamic> newRoute}) {
-    if (onReplaced != null) {
-      onReplaced(newRoute, oldRoute);
-    }
-  }
-
-  @override
-  void didStartUserGesture(Route<dynamic> route, Route<dynamic> previousRoute) {
-    if (onStartUserGesture != null) {
-      onStartUserGesture(route, previousRoute);
-    }
-  }
-
-  @override
-  void didStopUserGesture() {
-    if (onStopUserGesture != null) {
-      onStopUserGesture();
-    }
-  }
-}
 
 class _TableViewState extends State<TableView> {
   StreamController<PointerEvent> _pointerEvents;
@@ -982,19 +904,17 @@ class TableViewElement extends BasicTableViewElement {
   void performRebuild() {
     if (_didChangeDependencies) {
       _didChangeDependencies = false;
-      if (_navigatorObserver != null) {
-        if (_navigatorObserver.navigator != null) {
-          _navigatorObserver.navigator.removeObserver(_navigatorObserver);
-        }
-        Navigator.of(this).addObserver(_navigatorObserver);
-      }
+//      if (_navigatorObserver != null) {
+//        if (_navigatorObserver.navigator != null) {
+//          _navigatorObserver.navigator.removeObserver(_navigatorObserver);
+//        }
+//        Navigator.of(this).addObserver(_navigatorObserver);
+//      }
     }
     super.performRebuild();
   }
 
-  _ProxyNavigatorObserver _navigatorObserver;
-
-  NavigatorObserverToken _observeNavigator({
+  NavigatorListenerRegistration _observeNavigator({
     NavigatorObserverCallback onPushed,
     NavigatorObserverCallback onPopped,
     NavigatorObserverCallback onRemoved,
@@ -1002,8 +922,7 @@ class TableViewElement extends BasicTableViewElement {
     NavigatorObserverCallback onStartUserGesture,
     VoidCallback onStopUserGesture,
   }) {
-    assert(_navigatorObserver == null);
-    _navigatorObserver = _ProxyNavigatorObserver(
+    return NavigatorListener.of(this).addObserver(
       onPushed: onPushed,
       onPopped: onPopped,
       onRemoved: onRemoved,
@@ -1011,8 +930,6 @@ class TableViewElement extends BasicTableViewElement {
       onStartUserGesture: onStartUserGesture,
       onStopUserGesture: onStopUserGesture,
     );
-    Navigator.of(this).addObserver(_navigatorObserver);
-    return NavigatorObserverToken._(this, _navigatorObserver);
   }
 }
 
@@ -1208,7 +1125,7 @@ class RenderTableView extends RenderBasicTableView
   /// mark dirty when the edit finishes.
   TableCellRange _cellsBeingEdited;
 
-  NavigatorObserverToken _navigatorObserverToken;
+  NavigatorListenerRegistration _navigatorObserverToken;
   int _routesPushedDuringEdit = 0;
 
   void _handleEditStarted(TableViewEditorController controller) {
@@ -1257,7 +1174,7 @@ class RenderTableView extends RenderBasicTableView
     assert(controller == _editorController);
     assert(_cellsBeingEdited != null);
     assert(_navigatorObserverToken != null);
-    _navigatorObserverToken.stop();
+    _navigatorObserverToken.dispose();
     _navigatorObserverToken = null;
     markCellsDirty(_cellsBeingEdited);
     _cellsBeingEdited = null;

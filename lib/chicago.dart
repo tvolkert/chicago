@@ -20,6 +20,7 @@ export 'src/colors.dart';
 export 'src/hover_builder.dart';
 export 'src/link_button.dart';
 export 'src/listener_list.dart';
+export 'src/navigator_listener.dart';
 export 'src/push_button.dart';
 export 'src/scroll_bar.dart';
 export 'src/scroll_pane.dart';
