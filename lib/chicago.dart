@@ -27,3 +27,4 @@ export 'src/sheet.dart';
 export 'src/sorting.dart';
 export 'src/tab_pane.dart';
 export 'src/table_view.dart';
+export 'src/text_input.dart';
