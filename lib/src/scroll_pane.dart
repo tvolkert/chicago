@@ -21,6 +21,7 @@ import 'package:flutter/painting.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
+import 'deferred_layout.dart';
 import 'listener_list.dart';
 import 'scroll_bar.dart';
 import 'segment.dart';
@@ -849,7 +850,7 @@ class ScrollPaneViewportResolver implements ViewportResolver {
 
 // TODO do we get any benefit to this implementing RenderAbstractViewport?
 // TODO It looks like RenderAbstractViewport would provide some benefit
-class RenderScrollPane extends RenderBox {
+class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
   RenderScrollPane({
     ScrollBarPolicy horizontalScrollBarPolicy = ScrollBarPolicy.auto,
     ScrollBarPolicy verticalScrollBarPolicy = ScrollBarPolicy.auto,
@@ -1036,7 +1037,7 @@ class RenderScrollPane extends RenderBox {
     assert(value.dy <= controller._maxScrollTop);
     horizontalScrollBar.value = value.dx;
     verticalScrollBar.value = value.dy;
-    markNeedsLayout();
+    markNeedsLayoutDeferred();
   }
 
   void _onPointerScroll(PointerScrollEvent event) {
