@@ -892,28 +892,6 @@ class TableViewElement extends BasicTableViewElement {
     renderObject.updateObserveNavigatorCallback(_observeNavigator);
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _didChangeDependencies = true;
-  }
-
-  bool _didChangeDependencies = false;
-
-  @override
-  void performRebuild() {
-    if (_didChangeDependencies) {
-      _didChangeDependencies = false;
-//      if (_navigatorObserver != null) {
-//        if (_navigatorObserver.navigator != null) {
-//          _navigatorObserver.navigator.removeObserver(_navigatorObserver);
-//        }
-//        Navigator.of(this).addObserver(_navigatorObserver);
-//      }
-    }
-    super.performRebuild();
-  }
-
   NavigatorListenerRegistration _observeNavigator({
     NavigatorObserverCallback onPushed,
     NavigatorObserverCallback onPopped,
@@ -1062,9 +1040,7 @@ class RenderTableView extends RenderBasicTableView
   @protected
   void updateObserveNavigatorCallback(ObserveNavigator callback) {
     _observeNavigator = callback;
-    if (_editorController != null && _editorController.isEditing) {
-      _editorController.cancel();
-    }
+    _cancelEditIfNecessary();
   }
 
   StreamSubscription<PointerEvent> _pointerEventsSubscription;
@@ -1125,18 +1101,18 @@ class RenderTableView extends RenderBasicTableView
   /// mark dirty when the edit finishes.
   TableCellRange _cellsBeingEdited;
 
-  NavigatorListenerRegistration _navigatorObserverToken;
+  NavigatorListenerRegistration _navigatorListenerRegistration;
   int _routesPushedDuringEdit = 0;
 
   void _handleEditStarted(TableViewEditorController controller) {
     assert(controller == _editorController);
     assert(_cellsBeingEdited == null);
     assert(_observeNavigator != null);
-    assert(_navigatorObserverToken == null);
+    assert(_navigatorListenerRegistration == null);
     _cellsBeingEdited = _editorController.cellsBeingEdited;
     markCellsDirty(_cellsBeingEdited);
     GestureBinding.instance.pointerRouter.addGlobalRoute(_handleGlobalPointerEvent);
-    _navigatorObserverToken = _observeNavigator(
+    _navigatorListenerRegistration = _observeNavigator(
       onPushed: _handleRoutePushedDuringEditing,
       onPopped: _handleRoutePoppedDuringEditing,
     );
@@ -1150,7 +1126,7 @@ class RenderTableView extends RenderBasicTableView
   }
 
   void _handleRoutePoppedDuringEditing(Route<dynamic> route, Route<dynamic> previousRoute) {
-    assert(_navigatorObserverToken != null);
+    assert(_navigatorListenerRegistration != null);
     assert(_routesPushedDuringEdit > 0);
     if (--_routesPushedDuringEdit == 0) {
       GestureBinding.instance.pointerRouter.addGlobalRoute(_handleGlobalPointerEvent);
@@ -1173,9 +1149,9 @@ class RenderTableView extends RenderBasicTableView
   void _handleEditFinished(TableViewEditorController controller, TableViewEditOutcome outcome) {
     assert(controller == _editorController);
     assert(_cellsBeingEdited != null);
-    assert(_navigatorObserverToken != null);
-    _navigatorObserverToken.dispose();
-    _navigatorObserverToken = null;
+    assert(_navigatorListenerRegistration != null);
+    _navigatorListenerRegistration.dispose();
+    _navigatorListenerRegistration = null;
     markCellsDirty(_cellsBeingEdited);
     _cellsBeingEdited = null;
     GestureBinding.instance.pointerRouter.removeGlobalRoute(_handleGlobalPointerEvent);
