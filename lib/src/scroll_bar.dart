@@ -205,7 +205,6 @@ class RenderScrollBar extends RenderBox
   _RenderScrollBarHandle _handle;
   _AutomaticScroller automaticScroller;
 
-  static const double _buttonWidth = 15;
   static const double _minimumHandleLength = 31;
 
   Axis _orientation;
