@@ -20,11 +20,11 @@ import 'package:flutter/widgets.dart';
 class Tab {
   const Tab({
     this.label,
-    this.child,
+    this.builder,
   });
 
   final String label;
-  final Widget child;
+  final WidgetBuilder builder;
 }
 
 class TabPane extends StatefulWidget {
@@ -33,7 +33,6 @@ class TabPane extends StatefulWidget {
     this.initialSelectedIndex = 0,
     this.tabs,
   })  : assert(tabs != null),
-        //assert(tabs.length > 0),
         super(key: key);
 
   final int initialSelectedIndex;
@@ -60,7 +59,7 @@ class _TabPaneState extends State<TabPane> {
       if (i == selectedIndex) {
         tabs.add(
           Ink(
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: Color(0xfff7f5ee),
               border: Border(
                 top: BorderSide(width: 1, color: Color(0xff999999)),
@@ -75,7 +74,7 @@ class _TabPaneState extends State<TabPane> {
               ),
             ),
             child: Padding(
-              padding: EdgeInsets.fromLTRB(4, 3, 4, 4),
+              padding: const EdgeInsets.fromLTRB(4, 3, 4, 4),
               child: Text(tab.label),
             ),
           ),
@@ -91,7 +90,7 @@ class _TabPaneState extends State<TabPane> {
                 });
               },
               child: Ink(
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: Color(0xffc4c3bc),
                   border: Border(
                     top: BorderSide(width: 1, color: Color(0xff999999)),
@@ -106,7 +105,7 @@ class _TabPaneState extends State<TabPane> {
                   ),
                 ),
                 child: Padding(
-                  padding: EdgeInsets.fromLTRB(4, 3, 4, 4),
+                  padding: const EdgeInsets.fromLTRB(4, 3, 4, 4),
                   child: Text(tab.label),
                 ),
               ),
@@ -116,24 +115,24 @@ class _TabPaneState extends State<TabPane> {
       }
       tabs.add(
         Ink(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             border: Border(
               bottom: BorderSide(width: 1, color: Color(0xff999999)),
             ),
           ),
-          child: SizedBox(width: 2),
+          child: const SizedBox(width: 2),
         ),
       );
     }
     tabs.add(
       Expanded(
         child: Ink(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             border: Border(
               bottom: BorderSide(width: 1, color: Color(0xff999999)),
             ),
           ),
-          child: SizedBox(width: 4),
+          child: const SizedBox(width: 4),
         ),
       ),
     );
@@ -147,27 +146,15 @@ class _TabPaneState extends State<TabPane> {
         ),
         Expanded(
           child: Ink(
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               border: Border(
                 left: BorderSide(width: 1, color: Color(0xff999999)),
                 right: BorderSide(width: 1, color: Color(0xff999999)),
                 bottom: BorderSide(width: 1, color: Color(0xff999999)),
               ),
-              color: Color(0xfff7f5ee),
+              color: const Color(0xfff7f5ee),
             ),
-            child: IndexedStack(
-              index: selectedIndex,
-              sizing: StackFit.passthrough,
-              children: List<Widget>.generate(widget.tabs.length, (int index) {
-                return TickerMode(
-                  enabled: index == selectedIndex,
-                  child: ExcludeFocus(
-                    excluding: index != selectedIndex,
-                    child: widget.tabs[index].child,
-                  ),
-                );
-              }),
-            ),
+            child: widget.tabs[selectedIndex].builder(context),
           ),
         ),
       ],
