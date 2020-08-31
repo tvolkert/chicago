@@ -16,6 +16,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+typedef Predicate<T> = bool Function(T item);
+
 int binarySearch<T>(
   List<T> sortedList,
   T value, {

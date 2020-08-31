@@ -73,6 +73,7 @@ typedef TableCellRenderer = Widget Function({
   bool rowSelected,
   bool rowHighlighted,
   bool isEditing,
+  bool isRowDisabled,
 });
 
 typedef PreviewTableViewEditStartedHandler = Vote Function(
@@ -571,6 +572,36 @@ class TableViewSortController with ListenerNotifier<TableViewSortListener> {
   }
 }
 
+typedef TableViewRowDisabledFilterChangedHandler = void Function(Predicate<int> previousFilter);
+
+class TableViewRowDisablerListener {
+  const TableViewRowDisablerListener({
+    @required this.onTableViewRowDisabledFilterChanged,
+  });
+
+  final TableViewRowDisabledFilterChangedHandler onTableViewRowDisabledFilterChanged;
+}
+
+class TableViewRowDisablerController with ListenerNotifier<TableViewRowDisablerListener> {
+  TableViewRowDisablerController({Predicate<int> filter}) : _filter = filter;
+
+  Predicate<int> _filter;
+  Predicate<int> get filter => _filter;
+  set filter(Predicate<int> value) {
+    Predicate<int> previousValue = _filter;
+    if (value != previousValue) {
+      _filter = value;
+      notifyListeners((TableViewRowDisablerListener listener) {
+        if (listener.onTableViewRowDisabledFilterChanged != null) {
+          listener.onTableViewRowDisabledFilterChanged(previousValue);
+        }
+      });
+    }
+  }
+
+  bool isRowDisabled(int rowIndex) => filter != null && filter(rowIndex);
+}
+
 class ConstrainedTableColumnWidth extends TableColumnWidth {
   const ConstrainedTableColumnWidth({
     double width,
@@ -635,6 +666,7 @@ class ScrollableTableView extends StatelessWidget {
     this.selectionController,
     this.sortController,
     this.editorController,
+    this.rowDisabledController,
     this.scrollController,
     this.roundColumnWidthsToWholePixel = false,
     this.includeHeader = true,
@@ -652,6 +684,7 @@ class ScrollableTableView extends StatelessWidget {
   final TableViewSelectionController selectionController;
   final TableViewSortController sortController;
   final TableViewEditorController editorController;
+  final TableViewRowDisablerController rowDisabledController;
   final ScrollController scrollController;
   final bool roundColumnWidthsToWholePixel;
   final bool includeHeader;
@@ -682,6 +715,7 @@ class ScrollableTableView extends StatelessWidget {
         selectionController: selectionController,
         sortController: sortController,
         editorController: editorController,
+        rowDisabledController: rowDisabledController,
       ),
     );
   }
@@ -697,6 +731,7 @@ class TableView extends StatefulWidget {
     this.selectionController,
     this.editorController,
     this.sortController,
+    this.rowDisabledController,
     this.roundColumnWidthsToWholePixel = false,
     this.platform,
   })  : assert(rowHeight != null),
@@ -712,6 +747,7 @@ class TableView extends StatefulWidget {
   final TableViewSelectionController selectionController;
   final TableViewEditorController editorController;
   final TableViewSortController sortController;
+  final TableViewRowDisablerController rowDisabledController;
   final bool roundColumnWidthsToWholePixel;
   final TargetPlatform platform;
 
@@ -765,6 +801,7 @@ class _TableViewState extends State<TableView> {
       selectionController: widget.selectionController,
       sortController: widget.sortController,
       editorController: widget.editorController,
+      rowDisabledController: widget.rowDisabledController,
       roundColumnWidthsToWholePixel: widget.roundColumnWidthsToWholePixel,
       pointerEvents: _pointerEvents.stream,
       doubleTapEvents: _doubleTapEvents.stream,
@@ -806,6 +843,7 @@ class RawTableView extends BasicTableView {
     this.selectionController,
     this.sortController,
     this.editorController,
+    this.rowDisabledController,
     @required this.pointerEvents,
     @required this.doubleTapEvents,
     @required this.platform,
@@ -822,6 +860,7 @@ class RawTableView extends BasicTableView {
   final TableViewSelectionController selectionController;
   final TableViewSortController sortController;
   final TableViewEditorController editorController;
+  final TableViewRowDisablerController rowDisabledController;
   final Stream<PointerEvent> pointerEvents;
   final Stream<Offset> doubleTapEvents;
   final TargetPlatform platform;
@@ -843,6 +882,7 @@ class RawTableView extends BasicTableView {
       selectionController: selectionController,
       sortController: sortController,
       editorController: editorController,
+      rowDisabledController: rowDisabledController,
       pointerEvents: pointerEvents,
       doubleTapEvents: doubleTapEvents,
       platform: platform,
@@ -856,6 +896,7 @@ class RawTableView extends BasicTableView {
       ..selectionController = selectionController
       ..sortController = sortController
       ..editorController = editorController
+      ..rowDisabledController = rowDisabledController
       ..pointerEvents = pointerEvents
       ..doubleTapEvents = doubleTapEvents
       ..platform = platform;
@@ -883,6 +924,7 @@ class TableViewElement extends BasicTableViewElement {
       rowHighlighted: renderObject.highlightedRow == rowIndex,
       rowSelected: widget.selectionController?.isRowSelected(rowIndex) ?? false,
       isEditing: widget.editorController?.isEditingCell(rowIndex, columnIndex) ?? false,
+      isRowDisabled: widget.rowDisabledController?.isRowDisabled(rowIndex) ?? false,
     );
   }
 
@@ -923,6 +965,7 @@ class RenderTableView extends RenderBasicTableView
     TableViewSelectionController selectionController,
     TableViewSortController sortController,
     TableViewEditorController editorController,
+    TableViewRowDisablerController rowDisabledController,
     Stream<PointerEvent> pointerEvents,
     Stream<Offset> doubleTapEvents,
     TargetPlatform platform,
@@ -938,15 +981,20 @@ class RenderTableView extends RenderBasicTableView
       onEditStarted: _handleEditStarted,
       onEditFinished: _handleEditFinished,
     );
+    _rowDisablerListener = TableViewRowDisablerListener(
+      onTableViewRowDisabledFilterChanged: _handleRowDisabledFilterChanged,
+    );
     this.selectionController = selectionController;
     this.sortController = sortController;
     this.editorController = editorController;
+    this.rowDisabledController = rowDisabledController;
     this.pointerEvents = pointerEvents;
     this.doubleTapEvents = doubleTapEvents;
     this.platform = platform;
   }
 
   TableViewEditorListener _editorListener;
+  TableViewRowDisablerListener _rowDisablerListener;
 
   Set<int> _sortedColumns = <int>{};
   void _resetSortedColumns() {
@@ -1034,6 +1082,24 @@ class RenderTableView extends RenderBasicTableView
     }
     markNeedsBuild();
   }
+
+  TableViewRowDisablerController _rowDisabledController;
+  TableViewRowDisablerController get rowDisabledController => _rowDisabledController;
+  set rowDisabledController(TableViewRowDisablerController value) {
+    if (value != _rowDisabledController) {
+      _cancelEditIfNecessary();
+      if (_rowDisabledController != null) {
+        _rowDisabledController.removeListener(_rowDisablerListener);
+      }
+      _rowDisabledController = value;
+      if (_rowDisabledController != null) {
+        _rowDisabledController.addListener(_rowDisablerListener);
+      }
+      markNeedsBuild();
+    }
+  }
+
+  bool _isRowDisabled(int rowIndex) => _rowDisabledController?.isRowDisabled(rowIndex) ?? false;
 
   ObserveNavigator _observeNavigator;
 
@@ -1157,6 +1223,11 @@ class RenderTableView extends RenderBasicTableView
     GestureBinding.instance.pointerRouter.removeGlobalRoute(_handleGlobalPointerEvent);
   }
 
+  void _handleRowDisabledFilterChanged(Predicate<int> previousFilter) {
+    _cancelEditIfNecessary();
+    markNeedsBuild();
+  }
+
   void _handleSelectionChanged() {
     // TODO: be more precise about what to rebuild (requires finer grained info from the notification).
     markNeedsBuild();
@@ -1193,7 +1264,7 @@ class RenderTableView extends RenderBasicTableView
     if (_editorController != null) {
       assert(metrics != null);
       final TableCellOffset cellOffset = metrics.getCellAt(position);
-      if (cellOffset != null) {
+      if (cellOffset != null && !_isRowDisabled(cellOffset.rowIndex)) {
         _editorController.start(cellOffset.rowIndex, cellOffset.columnIndex);
       }
     }
@@ -1211,9 +1282,7 @@ class RenderTableView extends RenderBasicTableView
 
   void _onPointerHover(PointerHoverEvent event) {
     final int rowIndex = metrics.getRowAt(event.localPosition.dy);
-    if (rowIndex != -1) {
-      highlightedRow = rowIndex;
-    }
+    highlightedRow = rowIndex != -1 && !_isRowDisabled(rowIndex) ? rowIndex : null;
   }
 
   int _selectIndex = -1;
@@ -1222,7 +1291,7 @@ class RenderTableView extends RenderBasicTableView
     final SelectMode selectMode = selectionController?.selectMode ?? SelectMode.none;
     if (selectMode != SelectMode.none) {
       final int rowIndex = metrics.getRowAt(event.localPosition.dy);
-      if (rowIndex >= 0 && rowIndex < length) {
+      if (rowIndex >= 0 && rowIndex < length && !_isRowDisabled(rowIndex)) {
         final Set<LogicalKeyboardKey> keys = RawKeyboard.instance.keysPressed;
 
         if (isShiftKeyPressed() && selectMode == SelectMode.multi) {
