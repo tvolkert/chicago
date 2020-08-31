@@ -103,6 +103,19 @@ class _PushButtonState<T> extends State<PushButton<T>> {
   }
 
   @override
+  void didUpdateWidget(PushButton<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.onPressed == null) {
+      hover = false;
+      pressed = false;
+      if (menuActive) {
+        Navigator.of(context).pop();
+        menuActive = false;
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final bool enabled = widget.onPressed != null;
 
