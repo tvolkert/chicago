@@ -13,18 +13,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import 'dart:collection';
+
 import 'package:flutter/foundation.dart';
 
 typedef ListenerVisitor<T> = void Function(T listener);
 
+class _ListenerEntry<T> extends LinkedListEntry<_ListenerEntry<T>> {
+  _ListenerEntry(this.listener);
+  final T listener;
+}
+
 mixin ListenerNotifier<T> {
-  _ListenerList<T> _listeners = _ListenerList<T>();
+  LinkedList<_ListenerEntry> _listeners = LinkedList<_ListenerEntry>();
 
   bool _debugAssertNotDisposed() {
     assert(() {
       if (_listeners == null) {
-        throw FlutterError('A $runtimeType was used after being disposed.\n'
-            'Once you have called dispose() on a $runtimeType, it can no longer be used.');
+        throw FlutterError(
+            'A $runtimeType was used after being disposed.\n'
+                'Once you have called dispose() on a $runtimeType, it can no longer be used.'
+        );
       }
       return true;
     }());
@@ -33,12 +42,17 @@ mixin ListenerNotifier<T> {
 
   void addListener(T listener) {
     assert(_debugAssertNotDisposed());
-    _listeners.add(listener);
+    _listeners.add(_ListenerEntry<T>(listener));
   }
 
   void removeListener(T listener) {
     assert(_debugAssertNotDisposed());
-    _listeners.remove(listener);
+    for (final _ListenerEntry<T> entry in _listeners) {
+      if (entry.listener == listener) {
+        entry.unlink();
+        return;
+      }
+    }
   }
 
   @mustCallSuper
@@ -48,97 +62,33 @@ mixin ListenerNotifier<T> {
   }
 
   @protected
-  void notifyListeners(ListenerVisitor<T> visitor) => _listeners.forEach(visitor);
-}
+  void notifyListeners(ListenerVisitor<T> visitor) {
+    assert(_debugAssertNotDisposed());
+    if (_listeners.isEmpty)
+      return;
 
-class _ListenerList<T> extends Iterable<T> {
-  // First node in the list (we don't maintain a reference to the last
-  // node, since we need to walk the list looking for duplicates on add)
-  _Node<T> _first;
+    final List<_ListenerEntry<T>> localListeners = List<_ListenerEntry<T>>.from(_listeners);
 
-  /// Adds a listener to the list, if it has not previously been added.
-  void add(T listener) {
-    if (listener == null) {
-      throw ArgumentError('listener is null.');
-    }
-
-    _Node<T> node = _first;
-
-    if (node == null) {
-      _first = _Node<T>(listener: listener);
-    } else {
-      while (node.next != null && node.listener != listener) {
-        node = node.next;
-      }
-
-      if (node.next == null && node.listener != listener) {
-        node.next = _Node<T>(previous: node, listener: listener);
-      } else {
-        throw ArgumentError('Duplicate listener $listener added to $this');
-      }
-    }
-  }
-
-  /// Removes a listener from the list, if it has previously been added.
-  void remove(T listener) {
-    if (listener == null) {
-      throw ArgumentError('listener is null.');
-    }
-
-    _Node<T> node = _first;
-    while (node != null && node.listener != listener) {
-      node = node.next;
-    }
-
-    if (node == null) {
-      throw ArgumentError('Nonexistent listener $listener removed from $this');
-    } else {
-      if (node.previous == null) {
-        _first = node.next;
-
-        if (_first != null) {
-          _first.previous = null;
+    for (final _ListenerEntry<T> entry in localListeners) {
+      try {
+        if (entry.list != null) {
+          visitor(entry.listener);
         }
-      } else {
-        node.previous.next = node.next;
-
-        if (node.next != null) {
-          node.next.previous = node.previous;
-        }
+      } catch (exception, stack) {
+        FlutterError.reportError(FlutterErrorDetails(
+          exception: exception,
+          stack: stack,
+          library: 'chicago library',
+          context: ErrorDescription('while dispatching notifications for $runtimeType'),
+          informationCollector: () sync* {
+            yield DiagnosticsProperty<ListenerNotifier<T>>(
+              'The $runtimeType sending notification was',
+              this,
+              style: DiagnosticsTreeStyle.errorProperty,
+            );
+          },
+        ));
       }
     }
-  }
-
-  @override
-  Iterator<T> get iterator => _NodeIterator<T>(_first);
-}
-
-class _Node<T> {
-  _Node<T> previous;
-  _Node<T> next;
-  T listener;
-
-  _Node({_Node<T> previous, _Node<T> next, T listener}) {
-    this.previous = previous;
-    this.next = next;
-    this.listener = listener;
-  }
-}
-
-class _NodeIterator<T> implements Iterator<T> {
-  _Node<T> node;
-
-  _NodeIterator(_Node<T> first) {
-    node = _Node<T>(next: first);
-  }
-
-  @override
-  T get current => node.listener;
-
-  @override
-  bool moveNext() {
-    if (node == null) return false;
-    node = node.next;
-    return node != null;
   }
 }
