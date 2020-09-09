@@ -25,7 +25,7 @@ class _ListenerEntry<T> extends LinkedListEntry<_ListenerEntry<T>> {
 }
 
 mixin ListenerNotifier<T> {
-  LinkedList<_ListenerEntry> _listeners = LinkedList<_ListenerEntry>();
+  LinkedList<_ListenerEntry<T>> _listeners = LinkedList<_ListenerEntry<T>>();
 
   bool _debugAssertNotDisposed() {
     assert(() {
