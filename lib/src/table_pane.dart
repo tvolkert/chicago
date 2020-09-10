@@ -20,6 +20,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
+import 'foundation.dart';
+
 void main() {
   runApp(
     ColoredBox(
@@ -148,15 +150,21 @@ typedef _IntrinsicComputer = double Function(RenderBox child, double crossAxisCo
 
 double _sum(double a, double b) => a + b;
 
-class TablePaneColumn {
+class TablePaneColumn with Diagnosticable {
   const TablePaneColumn({
     this.width = const RelativeTablePaneColumnWidth(),
   });
 
   final TablePaneColumnWidth width;
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<TablePaneColumnWidth>('width', width));
+  }
 }
 
-abstract class TablePaneColumnWidth {
+abstract class TablePaneColumnWidth with Diagnosticable {
   const TablePaneColumnWidth._();
 
   @protected
@@ -164,6 +172,13 @@ abstract class TablePaneColumnWidth {
 
   @protected
   bool get isRelative;
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DoubleProperty('width', width));
+    properties.add(DiagnosticsProperty<bool>('isRelative', isRelative));
+  }
 }
 
 class IntrinsicTablePaneColumnWidth extends TablePaneColumnWidth {
@@ -306,6 +321,8 @@ class TableCell extends ParentDataWidget<TableCellParentData> {
 }
 
 class EmptyTableCell extends LeafRenderObjectWidget {
+  const EmptyTableCell({Key key}) : super(key: key);
+
   @override
   RenderObject createRenderObject(BuildContext context) => RenderEmptyTableCell();
 }
@@ -316,8 +333,8 @@ class TablePane extends MultiChildRenderObjectWidget {
     @required this.columns,
     this.horizontalSpacing = 0,
     this.verticalSpacing = 0,
-    this.horizontalSize = MainAxisSize.max,
-    this.verticalSize = MainAxisSize.max,
+    this.horizontalSize = MainAxisSize.min,
+    this.verticalSize = MainAxisSize.min,
     @required List<Widget> children,
   })  : assert(horizontalSpacing != null),
         assert(verticalSpacing != null),
@@ -359,7 +376,7 @@ class TablePane extends MultiChildRenderObjectWidget {
 class TableRow extends MultiChildRenderObjectWidget {
   TableRow({
     Key key,
-    this.height = const RelativeTablePaneRowHeight(),
+    this.height = const IntrinsicTablePaneRowHeight(),
     List<Widget> children,
   }) : super(key: key, children: children);
 
@@ -684,7 +701,7 @@ class RenderTablePane extends RenderBox
     final List<double> relativeWeights = List<double>.filled(rows.length, 0);
     final List<bool> defaultHeightRows = List<bool>.filled(rows.length, false);
     final List<double> columnWidths = width.isFinite
-        ? _computeActualColumnWidths(width)
+        ? _computeActualColumnWidths(LinearConstraints.tight(width))
         : _computeIntrinsicColumnWidths(double.infinity, (RenderBox child, double height) {
             return child.getMaxIntrinsicWidth(height);
           });
@@ -811,10 +828,12 @@ class RenderTablePane extends RenderBox
     return rowHeights;
   }
 
-  // TODO Pass `LinearConstraints heightConstraints` instead of `double height`
-  List<double> _computeActualRowHeights(double height, List<double> columnWidths) {
-    assert(height != null);
-    assert(!height.isNegative);
+  List<double> _computeActualRowHeights(
+    LinearConstraints heightConstraints,
+    List<double> columnWidths,
+  ) {
+    assert(heightConstraints != null);
+    assert(heightConstraints.isNormalized);
     assert(columnWidths != null);
     final List<double> rowHeights = List<double>.filled(rows.length, 0);
     final List<bool> defaultHeightRows = List<bool>.filled(rows.length, false);
@@ -925,16 +944,62 @@ class RenderTablePane extends RenderBox
 
     // Finally, we allocate the heights of the relative rows by divvying
     // up the remaining height
+    final double height = heightConstraints.constrainMainAxisSize(verticalSize);
     final double remainingHeight = math.max(height - reservedHeight, 0);
-    if (totalRelativeWeight > 0 && remainingHeight > 0) {
+    if (totalRelativeWeight > 0) {
+      assert(() {
+        if (remainingHeight.isInfinite) {
+          throw FlutterError.fromParts(<DiagnosticsNode>[
+            ErrorSummary('RenderTablePane was given infinite height constraints with '
+                'relative-height rows'),
+            ErrorDescription(
+                'Relative-height TableRow instances will fill the remaining space when a '
+                'TablePane is laid out. If there is infinite space remaining, they have no '
+                'way of knowing what height to be.'),
+            ErrorSpacer(),
+            DiagnosticsProperty<Object>(
+              'The $runtimeType that contained a default-height row was created by',
+              debugCreator,
+              style: DiagnosticsTreeStyle.errorProperty,
+            ),
+            ErrorSpacer(),
+            DiagnosticsProperty<Object>(
+              'The default-height row was created by',
+              rows.firstWhere((RenderTableRow row) => row.height.isRelative).debugCreator,
+              style: DiagnosticsTreeStyle.errorProperty,
+            ),
+          ]);
+        }
+        return true;
+      }());
       for (int i = 0; i < rows.length; i++) {
         if (rowHeights[i] < 0) {
-          final double relativeWeight = -rowHeights[i];
-          final double weightPercentage = relativeWeight / totalRelativeWeight;
-          rowHeights[i] = remainingHeight * weightPercentage;
+          if (remainingHeight > 0) {
+            final double relativeWeight = -rowHeights[i];
+            final double weightPercentage = relativeWeight / totalRelativeWeight;
+            rowHeights[i] = remainingHeight * weightPercentage;
+          } else {
+            rowHeights[i] = 0;
+          }
         }
       }
     }
+
+    assert(() {
+      if (rowHeights.any((double value) => value.isNegative)) {
+        throw FlutterError.fromParts(<DiagnosticsNode>[
+          ErrorSummary('RenderTablePane computed a negative-height row.'),
+          ErrorDescription('This indicates a bug in RenderTablePane.'),
+          ErrorSpacer(),
+          DiagnosticsProperty<List<double>>('The computed row heights were', rowHeights),
+          ErrorSpacer(),
+          DiagnosticsProperty<Object>(
+              'The RenderTablePane in question was created by', debugCreator,
+              style: DiagnosticsTreeStyle.errorProperty),
+        ]);
+      }
+      return true;
+    }());
 
     return rowHeights;
   }
@@ -1088,10 +1153,9 @@ class RenderTablePane extends RenderBox
     return columnWidths;
   }
 
-  // TODO Pass `LinearConstraints widthConstraints` instead of `double width`
-  List<double> _computeActualColumnWidths(double width) {
-    assert(width != null);
-    assert(!width.isNegative);
+  List<double> _computeActualColumnWidths(LinearConstraints widthConstraints) {
+    assert(widthConstraints != null);
+    assert(widthConstraints.isNormalized);
     final List<double> columnWidths = List<double>.filled(columns.length, 0);
     final List<bool> defaultWidthColumns = List<bool>.filled(columns.length, false);
 
@@ -1197,16 +1261,56 @@ class RenderTablePane extends RenderBox
 
     // Finally, we allocate the widths of the relative columns by divvying up
     // the remaining width
+    final double width = widthConstraints.constrainMainAxisSize(horizontalSize);
     final double remainingWidth = math.max(width - reservedWidth, 0);
-    if (totalRelativeWeight > 0 && remainingWidth > 0) {
+    if (totalRelativeWeight > 0) {
+      assert(() {
+        if (remainingWidth.isInfinite) {
+          throw FlutterError.fromParts(<DiagnosticsNode>[
+            ErrorSummary('RenderTablePane was given infinite width constraints with '
+                'relative-width columns'),
+            ErrorDescription(
+                'Relative-width TablePaneColumn instances will fill the remaining width when a '
+                'TablePane is laid out. If there is infinite width remaining, they have no '
+                'way of knowing what width to be.'),
+            ErrorSpacer(),
+            DiagnosticsProperty<Object>(
+              'The $runtimeType that contained a default-width column was created by',
+              debugCreator,
+              style: DiagnosticsTreeStyle.errorProperty,
+            ),
+          ]);
+        }
+        return true;
+      }());
       for (int j = 0; j < columns.length; j++) {
         if (columnWidths[j] < 0) {
-          final double relativeWeight = -columnWidths[j];
-          final double weightPercentage = relativeWeight / totalRelativeWeight;
-          columnWidths[j] = remainingWidth * weightPercentage;
+          if (remainingWidth > 0) {
+            final double relativeWeight = -columnWidths[j];
+            final double weightPercentage = relativeWeight / totalRelativeWeight;
+            columnWidths[j] = remainingWidth * weightPercentage;
+          } else {
+            columnWidths[j] = 0;
+          }
         }
       }
     }
+
+    assert(() {
+      if (columnWidths.any((double value) => value.isNegative)) {
+        throw FlutterError.fromParts(<DiagnosticsNode>[
+          ErrorSummary('RenderTablePane computed a negative-width column.'),
+          ErrorDescription('This indicates a bug in RenderTablePane.'),
+          ErrorSpacer(),
+          DiagnosticsProperty<List<double>>('The computed column widths were', columnWidths),
+          ErrorSpacer(),
+          DiagnosticsProperty<Object>(
+              'The RenderTablePane in question was created by', debugCreator,
+              style: DiagnosticsTreeStyle.errorProperty),
+        ]);
+      }
+      return true;
+    }());
 
     return columnWidths;
   }
@@ -1338,6 +1442,41 @@ class RenderTablePane extends RenderBox
       _computeHeight(metrics.rowHeights),
     );
 
+    assert(() {
+      if (rows.isNotEmpty) {
+        final int cellsPerRow = rows.first.children.length;
+        if (rows.any((RenderTableRow row) => row.children.length != cellsPerRow)) {
+          throw FlutterError.fromParts(<DiagnosticsNode>[
+            ErrorSummary('RenderTablePane contains irregular row lengths.'),
+            ErrorDescription('Every TableRow in a TablePane must have the same number of '
+                'children, so that every table cell is filled. Otherwise, the table will '
+                'contain holes.'),
+            ErrorSpacer(),
+            DiagnosticsProperty<Object>(
+                'The RenderTablePane in question was created by', debugCreator,
+                style: DiagnosticsTreeStyle.errorProperty),
+          ]);
+        }
+        if (cellsPerRow != columns.length) {
+          throw FlutterError.fromParts(<DiagnosticsNode>[
+            ErrorSummary('RenderTablePane cells do not match columns.'),
+            ErrorDescription('The number of children inside every TableRow must match the '
+                'number of columns specified for the TablePane.'),
+            ErrorSpacer(),
+            IntProperty('The number of cells in each row was', cellsPerRow,
+                style: DiagnosticsTreeStyle.errorProperty),
+            IntProperty('The number of columns was', columns.length,
+                style: DiagnosticsTreeStyle.errorProperty),
+            ErrorSpacer(),
+            DiagnosticsProperty<Object>(
+                'The RenderTablePane in question was created by', debugCreator,
+                style: DiagnosticsTreeStyle.errorProperty),
+          ]);
+        }
+      }
+      return true;
+    }());
+
     double childY = 0;
     for (int i = 0; i < rows.length; i++) {
       final RenderTableRow row = rows[i];
@@ -1412,12 +1551,11 @@ class TablePaneMetrics with Diagnosticable {
   const TablePaneMetrics._(this.constraints, this.columnWidths, this.rowHeights);
 
   factory TablePaneMetrics(RenderTablePane tablePane) {
-    // TODO: support non-tight constraints
-    BoxConstraints constraints = tablePane.constraints;
-    assert(constraints.isTight);
-    Size size = constraints.smallest;
-    List<double> columnWidths = tablePane._computeActualColumnWidths(size.width);
-    List<double> rowHeights = tablePane._computeActualRowHeights(size.height, columnWidths);
+    final BoxConstraints constraints = tablePane.constraints;
+    final LinearConstraints widthConstraints = LinearConstraints.width(constraints);
+    final LinearConstraints heightConstraints = LinearConstraints.height(constraints);
+    List<double> columnWidths = tablePane._computeActualColumnWidths(widthConstraints);
+    List<double> rowHeights = tablePane._computeActualRowHeights(heightConstraints, columnWidths);
     return TablePaneMetrics._(constraints, columnWidths, rowHeights);
   }
 

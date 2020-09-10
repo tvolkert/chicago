@@ -14,6 +14,7 @@
 // limitations under the License.
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
 typedef Predicate<T> = bool Function(T item);
@@ -94,4 +95,44 @@ class Vote {
 
   @override
   String toString() => _name;
+}
+
+class LinearConstraints extends Constraints {
+  const LinearConstraints({
+    this.min = 0,
+    this.max = double.infinity,
+  })  : assert(min != null),
+        assert(max != null);
+
+  const LinearConstraints.tight(double value)
+      : assert(value != null),
+        min = value,
+        max = value;
+
+  LinearConstraints.width(BoxConstraints constraints)
+      : min = constraints.minWidth,
+        max = constraints.maxWidth;
+
+  LinearConstraints.height(BoxConstraints constraints)
+      : min = constraints.minHeight,
+        max = constraints.maxHeight;
+
+  final double min;
+  final double max;
+
+  double constrainMainAxisSize(MainAxisSize mainAxisSize) {
+    switch (mainAxisSize) {
+      case MainAxisSize.min:
+        return min;
+      case MainAxisSize.max:
+        return max;
+    }
+    throw StateError('Unreachable');
+  }
+
+  @override
+  bool get isNormalized => min >= 0 && min <= max;
+
+  @override
+  bool get isTight => min >= max;
 }
