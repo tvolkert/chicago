@@ -182,7 +182,9 @@ abstract class TablePaneColumnWidth with Diagnosticable {
 }
 
 class IntrinsicTablePaneColumnWidth extends TablePaneColumnWidth {
-  const IntrinsicTablePaneColumnWidth() : super._();
+  const IntrinsicTablePaneColumnWidth([this.mainAxisSize = MainAxisSize.max]) : super._();
+
+  final MainAxisSize mainAxisSize;
 
   @override
   @protected
@@ -233,7 +235,9 @@ abstract class TablePaneRowHeight {
 }
 
 class IntrinsicTablePaneRowHeight extends TablePaneRowHeight {
-  const IntrinsicTablePaneRowHeight() : super._();
+  const IntrinsicTablePaneRowHeight([this.mainAxisSize = MainAxisSize.max]) : super._();
+
+  final MainAxisSize mainAxisSize;
 
   @override
   @protected
@@ -850,10 +854,10 @@ class RenderTablePane extends RenderBox
         rowHeights[i] = -rowHeight;
         totalRelativeWeight += rowHeight;
       } else {
-        if (rowHeight < 0) {
+        if (rowHeightSpec is IntrinsicTablePaneRowHeight) {
           // Default height row; we must calculate the height
           defaultHeightRows[i] = true;
-          switch (verticalSize) {
+          switch (rowHeightSpec.mainAxisSize) {
             case MainAxisSize.min:
               rowHeight = computeMinIntrinsicRowHeight(i, columnWidths);
               break;
@@ -1171,10 +1175,10 @@ class RenderTablePane extends RenderBox
         columnWidths[j] = -columnWidth;
         totalRelativeWeight += columnWidth;
       } else {
-        if (columnWidth < 0) {
+        if (columnWidthSpec is IntrinsicTablePaneColumnWidth) {
           // Default width column; we must calculate the width
           defaultWidthColumns[j] = true;
-          switch (horizontalSize) {
+          switch (columnWidthSpec.mainAxisSize) {
             case MainAxisSize.min:
               columnWidth = computeMinIntrinsicColumnWidth(j);
               break;
