@@ -36,7 +36,7 @@ void main() {
               IntrinsicWidth(
                 child: IntrinsicHeight(
                   child: TablePane(
-                    verticalSize: MainAxisSize.min,
+                    verticalIntrinsicSize: MainAxisSize.min,
                     horizontalSpacing: 5,
                     verticalSpacing: 20,
                     columns: <TablePaneColumn>[
@@ -337,20 +337,26 @@ class TablePane extends MultiChildRenderObjectWidget {
     @required this.columns,
     this.horizontalSpacing = 0,
     this.verticalSpacing = 0,
-    this.horizontalSize = MainAxisSize.min,
-    this.verticalSize = MainAxisSize.min,
+    this.horizontalIntrinsicSize = MainAxisSize.max,
+    this.horizontalRelativeSize = MainAxisSize.min,
+    this.verticalIntrinsicSize = MainAxisSize.max,
+    this.verticalRelativeSize = MainAxisSize.min,
     @required List<Widget> children,
   })  : assert(horizontalSpacing != null),
         assert(verticalSpacing != null),
-        assert(horizontalSize != null),
-        assert(verticalSize != null),
+        assert(horizontalIntrinsicSize != null),
+        assert(horizontalRelativeSize != null),
+        assert(verticalIntrinsicSize != null),
+        assert(verticalRelativeSize != null),
         super(key: key, children: children);
 
   final List<TablePaneColumn> columns;
   final double horizontalSpacing;
   final double verticalSpacing;
-  final MainAxisSize horizontalSize;
-  final MainAxisSize verticalSize;
+  final MainAxisSize horizontalIntrinsicSize;
+  final MainAxisSize horizontalRelativeSize;
+  final MainAxisSize verticalIntrinsicSize;
+  final MainAxisSize verticalRelativeSize;
 
   @override
   List<Widget> get children => super.children;
@@ -361,8 +367,10 @@ class TablePane extends MultiChildRenderObjectWidget {
       columns: columns,
       horizontalSpacing: horizontalSpacing,
       verticalSpacing: verticalSpacing,
-      horizontalSize: horizontalSize,
-      verticalSize: verticalSize,
+      horizontalIntrinsicSize: horizontalIntrinsicSize,
+      horizontalRelativeSize: horizontalRelativeSize,
+      verticalIntrinsicSize: verticalIntrinsicSize,
+      verticalRelativeSize: verticalRelativeSize,
     );
   }
 
@@ -372,8 +380,10 @@ class TablePane extends MultiChildRenderObjectWidget {
       ..columns = columns
       ..horizontalSpacing = horizontalSpacing
       ..verticalSpacing = verticalSpacing
-      ..horizontalSize = horizontalSize
-      ..verticalSize = verticalSize;
+      ..horizontalIntrinsicSize = horizontalIntrinsicSize
+      ..horizontalRelativeSize = horizontalRelativeSize
+      ..verticalIntrinsicSize = verticalIntrinsicSize
+      ..verticalRelativeSize = verticalRelativeSize;
   }
 }
 
@@ -597,14 +607,18 @@ class RenderTablePane extends RenderBox
     @required List<TablePaneColumn> columns,
     double horizontalSpacing = 0,
     double verticalSpacing = 0,
-    MainAxisSize horizontalSize = MainAxisSize.max,
-    MainAxisSize verticalSize = MainAxisSize.max,
+    MainAxisSize horizontalIntrinsicSize = MainAxisSize.max,
+    MainAxisSize horizontalRelativeSize = MainAxisSize.min,
+    MainAxisSize verticalIntrinsicSize = MainAxisSize.max,
+    MainAxisSize verticalRelativeSize = MainAxisSize.min,
   }) {
     this.columns = columns;
     this.horizontalSpacing = horizontalSpacing;
     this.verticalSpacing = verticalSpacing;
-    this.horizontalSize = horizontalSize;
-    this.verticalSize = verticalSize;
+    this.horizontalIntrinsicSize = horizontalIntrinsicSize;
+    this.horizontalRelativeSize = horizontalRelativeSize;
+    this.verticalIntrinsicSize = verticalIntrinsicSize;
+    this.verticalRelativeSize = verticalRelativeSize;
   }
 
   List<TablePaneColumn> _columns;
@@ -637,22 +651,42 @@ class RenderTablePane extends RenderBox
     }
   }
 
-  MainAxisSize _horizontalSize;
-  MainAxisSize get horizontalSize => _horizontalSize;
-  set horizontalSize(MainAxisSize value) {
+  MainAxisSize _horizontalIntrinsicSize;
+  MainAxisSize get horizontalIntrinsicSize => _horizontalIntrinsicSize;
+  set horizontalIntrinsicSize(MainAxisSize value) {
     assert(value != null);
-    if (value != _horizontalSize) {
-      _horizontalSize = value;
+    if (value != _horizontalIntrinsicSize) {
+      _horizontalIntrinsicSize = value;
       markNeedsMetrics();
     }
   }
 
-  MainAxisSize _verticalSize;
-  MainAxisSize get verticalSize => _verticalSize;
-  set verticalSize(MainAxisSize value) {
+  MainAxisSize _horizontalRelativeSize;
+  MainAxisSize get horizontalRelativeSize => _horizontalRelativeSize;
+  set horizontalRelativeSize(MainAxisSize value) {
     assert(value != null);
-    if (value != _verticalSize) {
-      _verticalSize = value;
+    if (value != _horizontalRelativeSize) {
+      _horizontalRelativeSize = value;
+      markNeedsMetrics();
+    }
+  }
+
+  MainAxisSize _verticalIntrinsicSize;
+  MainAxisSize get verticalIntrinsicSize => _verticalIntrinsicSize;
+  set verticalIntrinsicSize(MainAxisSize value) {
+    assert(value != null);
+    if (value != _verticalIntrinsicSize) {
+      _verticalIntrinsicSize = value;
+      markNeedsMetrics();
+    }
+  }
+
+  MainAxisSize _verticalRelativeSize;
+  MainAxisSize get verticalRelativeSize => _verticalRelativeSize;
+  set verticalRelativeSize(MainAxisSize value) {
+    assert(value != null);
+    if (value != _verticalRelativeSize) {
+      _verticalRelativeSize = value;
       markNeedsMetrics();
     }
   }
@@ -917,7 +951,7 @@ class RenderTablePane extends RenderBox
             double childWidth = columnWidths.skip(j).take(columnSpan).fold<double>(0, _sum);
             childWidth += math.max(columnSpan - 1, 0) * horizontalSpacing;
             double childIntrinsicHeight;
-            switch (verticalSize) {
+            switch (verticalIntrinsicSize) {
               case MainAxisSize.min:
                 childIntrinsicHeight = child.getMinIntrinsicHeight(childWidth);
                 break;
@@ -948,7 +982,7 @@ class RenderTablePane extends RenderBox
 
     // Finally, we allocate the heights of the relative rows by divvying
     // up the remaining height
-    final double height = heightConstraints.constrainMainAxisSize(verticalSize);
+    final double height = heightConstraints.constrainMainAxisSize(verticalRelativeSize);
     final double remainingHeight = math.max(height - reservedHeight, 0);
     if (totalRelativeWeight > 0) {
       assert(() {
@@ -1194,7 +1228,7 @@ class RenderTablePane extends RenderBox
 
     // Next, we we account for default-width columns containing spanning
     // cells, which have been ignored thus far. We ensure that the sum of
-    // the widths of the spanned cells is enough to satisfy the preferred
+    // the widths of the spanned cells is enough to satisfy the intrinsic
     // width of the spanning content.
     for (int i = 0; i < rows.length; i++) {
       final RenderTableRow row = rows[i];
@@ -1235,7 +1269,7 @@ class RenderTablePane extends RenderBox
           // default-width columns if we don't span any relative-width columns
           if (!didSpanRelativeColumns && spannedDefaultWidthCellCount > 0) {
             double childIntrinsicWidth;
-            switch (horizontalSize) {
+            switch (horizontalIntrinsicSize) {
               case MainAxisSize.min:
                 childIntrinsicWidth = child.getMinIntrinsicWidth(double.infinity);
                 break;
@@ -1265,7 +1299,7 @@ class RenderTablePane extends RenderBox
 
     // Finally, we allocate the widths of the relative columns by divvying up
     // the remaining width
-    final double width = widthConstraints.constrainMainAxisSize(horizontalSize);
+    final double width = widthConstraints.constrainMainAxisSize(horizontalRelativeSize);
     final double remainingWidth = math.max(width - reservedWidth, 0);
     if (totalRelativeWeight > 0) {
       assert(() {
@@ -1544,8 +1578,10 @@ class RenderTablePane extends RenderBox
     super.debugFillProperties(properties);
     properties.add(DoubleProperty('horizontalSpacing', horizontalSpacing));
     properties.add(DoubleProperty('verticalSpacing', verticalSpacing));
-    properties.add(EnumProperty<MainAxisSize>('horizontalSize', horizontalSize));
-    properties.add(EnumProperty<MainAxisSize>('verticalSize', verticalSize));
+    properties.add(EnumProperty<MainAxisSize>('horizontalIntrinsicSize', horizontalIntrinsicSize));
+    properties.add(EnumProperty<MainAxisSize>('horizontalRelativeSize', horizontalRelativeSize));
+    properties.add(EnumProperty<MainAxisSize>('verticalIntrinsicSize', verticalIntrinsicSize));
+    properties.add(EnumProperty<MainAxisSize>('verticalRelativeSize', verticalRelativeSize));
     properties.add(DiagnosticsProperty<TablePaneMetrics>('metrics', metrics));
   }
 }
