@@ -120,6 +120,8 @@ class LinearConstraints extends Constraints {
   final double min;
   final double max;
 
+  static const LinearConstraints zero = LinearConstraints(max: 0);
+
   double constrainMainAxisSize(MainAxisSize mainAxisSize) {
     switch (mainAxisSize) {
       case MainAxisSize.min:
