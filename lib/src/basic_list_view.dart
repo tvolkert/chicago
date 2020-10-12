@@ -585,6 +585,12 @@ class RenderBasicListView extends RenderSegment {
 
   int getItemAt(double dy) => itemHeight ~/ dy;
 
+  Rect getItemBounds(int index) {
+    assert(index != null);
+    assert(index >= 0 && index < length);
+    return Rect.fromLTWH(0, index * itemHeight, size.width, itemHeight);
+  }
+
   @override
   bool hitTestChildren(BoxHitTestResult result, {Offset position}) {
     assert(position != null);
