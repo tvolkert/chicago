@@ -583,7 +583,7 @@ class RenderBasicListView extends RenderSegment {
     });
   }
 
-  int getItemAt(double dy) => itemHeight ~/ dy;
+  int getItemAt(double dy) => dy ~/ itemHeight;
 
   Rect getItemBounds(int index) {
     assert(index != null);
@@ -610,6 +610,12 @@ class RenderBasicListView extends RenderSegment {
         return child.hitTest(result, position: transformed);
       },
     );
+  }
+
+  @override
+  bool hitTestSelf(Offset position) {
+    int index = getItemAt(position.dy);
+    return index >= 0 && index < length;
   }
 
   @override
