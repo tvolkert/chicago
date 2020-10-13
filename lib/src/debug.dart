@@ -40,7 +40,7 @@ HSVColor debugCurrentTableCellColor = _kDebugDefaultRepaintColor;
 ///    repaints.
 ///  * [BasicListView] and [ListView], which look for this flag when running in
 ///    debug mode.
-bool debugPaintListItemBuilds = true;
+bool debugPaintListItemBuilds = false;
 
 /// The current color to overlay when repainting a list item build.
 HSVColor debugCurrentListItemColor = _kDebugDefaultRepaintColor;
