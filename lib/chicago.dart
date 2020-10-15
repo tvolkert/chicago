@@ -14,12 +14,16 @@
 // limitations under the License.
 
 export 'src/activity_indicator.dart';
+export 'src/basic_list_view.dart';
 export 'src/basic_table_view.dart';
 export 'src/border.dart';
 export 'src/checkbox.dart';
 export 'src/colors.dart';
+export 'src/foundation.dart';
 export 'src/hover_builder.dart';
 export 'src/link_button.dart';
+export 'src/list_button.dart' hide main;
+export 'src/list_view.dart' hide main;
 export 'src/listener_list.dart';
 export 'src/navigator_listener.dart';
 export 'src/push_button.dart';
@@ -28,6 +32,6 @@ export 'src/scroll_pane.dart';
 export 'src/sheet.dart';
 export 'src/sorting.dart';
 export 'src/tab_pane.dart';
-export 'src/table_pane.dart';
-export 'src/table_view.dart';
+export 'src/table_pane.dart' hide main;
+export 'src/table_view.dart' hide main;
 export 'src/text_input.dart';

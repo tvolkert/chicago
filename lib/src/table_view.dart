@@ -335,12 +335,6 @@ class TableColumnController extends BasicTableColumn with ChangeNotifier {
   }
 }
 
-enum SelectMode {
-  none,
-  single,
-  multi,
-}
-
 class TableViewSelectionController with ChangeNotifier {
   TableViewSelectionController({
     this.selectMode = SelectMode.single,

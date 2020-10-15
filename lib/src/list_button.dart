@@ -221,9 +221,11 @@ class _ListButtonState extends State<ListButton> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                child: widget.builder(context: context, index: _selectedIndex),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                  child: widget.builder(context: context, index: _selectedIndex),
+                ),
               ),
               SizedBox(
                 width: 1,
@@ -277,21 +279,17 @@ class _PopupListRoute<T> extends PopupRoute<T> {
   @override
   Widget buildPage(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
     return SafeArea(
-      child: Builder(
-        builder: (BuildContext context) {
-          return CustomSingleChildLayout(
-            delegate: _PopupListRouteLayout(position),
-            child: InheritedTheme.captureAll(
-              showMenuContext,
-              _PopupList(
-                length: length,
-                itemBuilder: itemBuilder,
-                selectionController: selectionController,
-                disabledItemFilter: disabledItemFilter,
-              ),
-            ),
-          );
-        },
+      child: CustomSingleChildLayout(
+        delegate: _PopupListRouteLayout(position),
+        child: InheritedTheme.captureAll(
+          showMenuContext,
+          _PopupList(
+            length: length,
+            itemBuilder: itemBuilder,
+            selectionController: selectionController,
+            disabledItemFilter: disabledItemFilter,
+          ),
+        ),
       ),
     );
   }
@@ -367,9 +365,12 @@ class _PopupListState extends State<_PopupList> {
     return GestureDetector(
       onTap: _handleTap,
       child: DecoratedBox(
-        decoration: BoxDecoration(border: Border.all()),
+        decoration: const BoxDecoration(
+          color: Color(0xffffffff),
+          border: Border.fromBorderSide(BorderSide(color: Color(0xff999999))),
+        ),
         child: Padding(
-          padding: EdgeInsets.all(1),
+          padding: const EdgeInsets.all(1),
           child: SizedBox(
             width: 200,
             child: ScrollableListView(

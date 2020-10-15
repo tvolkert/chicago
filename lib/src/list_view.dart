@@ -60,12 +60,6 @@ typedef ListItemBuilder = Widget Function({
   bool isDisabled,
 });
 
-enum SelectMode {
-  none,
-  single,
-  multi,
-}
-
 class ListViewSelectionController with ChangeNotifier {
   ListViewSelectionController({
     this.selectMode = SelectMode.single,

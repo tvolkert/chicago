@@ -42,6 +42,12 @@ int binarySearch<T>(
   return -(min + 1);
 }
 
+enum SelectMode {
+  none,
+  single,
+  multi,
+}
+
 /// Returns a [Comparator] that asserts that its first argument is comparable.
 Comparator<T> _defaultCompare<T>() {
   return (T value1, T value2) => (value1 as Comparable<T>).compareTo(value2);
