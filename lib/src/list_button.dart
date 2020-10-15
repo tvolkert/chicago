@@ -122,10 +122,17 @@ class _ListButtonState extends State<ListButton> {
   void showPopup() {
     final RenderBox button = context.findRenderObject() as RenderBox;
     final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
-    final Rect buttonPosition = Rect.fromPoints(
-      button.localToGlobal(Offset.zero, ancestor: overlay),
-      button.localToGlobal(button.size.bottomRight(Offset.zero), ancestor: overlay),
-    );
+    final Offset buttonGlobalOffset = button.localToGlobal(Offset.zero, ancestor: overlay);
+    // TODO: Why do we need to ceil here?
+    final Rect buttonPosition = Offset(buttonGlobalOffset.dx.ceilToDouble(), buttonGlobalOffset.dy.ceilToDouble()) & button.size;
+    assert(() {
+      BoxParentData buttonParentData = button.parentData as BoxParentData;
+      print('button local position is ${buttonParentData.offset & button.size}');
+      print('overlay local position is ${Offset.zero & overlay.size}');
+      print('button global offset is $buttonGlobalOffset');
+      print('button global position is $buttonPosition');
+      return true;
+    }());
     Navigator.of(context).push<int>(_PopupListRoute<int>(
       position: RelativeRect.fromRect(buttonPosition, Offset.zero & overlay.size),
       length: widget.length,
@@ -268,6 +275,9 @@ class _PopupListRoute<T> extends PopupRoute<T> {
   Duration get transitionDuration => Duration.zero;
 
   @override
+  Duration get reverseTransitionDuration => const Duration(milliseconds: 250);
+
+  @override
   bool get barrierDismissible => true;
 
   @override
@@ -283,7 +293,8 @@ class _PopupListRoute<T> extends PopupRoute<T> {
         delegate: _PopupListRouteLayout(position),
         child: InheritedTheme.captureAll(
           showMenuContext,
-          _PopupList(
+          _PopupList<T>(
+            route: this,
             length: length,
             itemBuilder: itemBuilder,
             selectionController: selectionController,
@@ -323,24 +334,26 @@ class _PopupListRouteLayout extends SingleChildLayoutDelegate {
   bool shouldRelayout(_PopupListRouteLayout oldDelegate) => position != oldDelegate.position;
 }
 
-class _PopupList extends StatefulWidget {
+class _PopupList<T> extends StatefulWidget {
   const _PopupList({
     this.length,
     this.itemBuilder,
     this.selectionController,
     this.disabledItemFilter,
+    this.route,
   });
 
   final int length;
   final ListItemBuilder itemBuilder;
   final ListViewSelectionController selectionController;
   final Predicate<int> disabledItemFilter;
+  final _PopupListRoute<T> route;
 
   @override
-  _PopupListState createState() => _PopupListState();
+  _PopupListState<T> createState() => _PopupListState<T>();
 }
 
-class _PopupListState extends State<_PopupList> {
+class _PopupListState<T> extends State<_PopupList<T>> {
   ListViewSelectionController _selectionController;
 
   void _handleTap() {
@@ -362,29 +375,64 @@ class _PopupListState extends State<_PopupList> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: _handleTap,
-      child: DecoratedBox(
-        decoration: const BoxDecoration(
-          color: Color(0xffffffff),
-          border: Border.fromBorderSide(BorderSide(color: Color(0xff999999))),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(1),
-          child: SizedBox(
-            width: 200,
-            child: ScrollableListView(
-              itemHeight: 20,
-              length: widget.length,
-              itemBuilder: widget.itemBuilder,
-              selectionController: _selectionController,
-              // itemDisabledController: disabledItemFilter,
+    const BoxShadow shadow = BoxShadow(
+      color: Color(0x40000000),
+      blurRadius: 3,
+      offset: Offset(3, 3),
+    );
+
+    final CurveTween opacity = CurveTween(curve: Curves.linear);
+
+    return AnimatedBuilder(
+      animation: widget.route.animation,
+      builder: (BuildContext context, Widget child) {
+        return Opacity(
+          opacity: opacity.evaluate(widget.route.animation),
+          child: GestureDetector(
+            onTap: _handleTap,
+            child: ClipRect(
+              clipper: const _ShadowClipper(shadow),
+              child: DecoratedBox(
+                decoration: const BoxDecoration(
+                  color: Color(0xffffffff),
+                  border: Border.fromBorderSide(BorderSide(color: Color(0xff999999))),
+                  boxShadow: [shadow],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(1),
+                  child: SizedBox(
+                    width: 200,
+                    child: ScrollableListView(
+                      itemHeight: 20,
+                      length: widget.length,
+                      itemBuilder: widget.itemBuilder,
+                      selectionController: _selectionController,
+                      // itemDisabledController: disabledItemFilter,
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      }
     );
   }
+}
+
+class _ShadowClipper extends CustomClipper<Rect> {
+  const _ShadowClipper(this.shadow) : assert(shadow != null);
+
+  final BoxShadow shadow;
+
+  @override
+  Rect getClip(Size size) {
+    final double shadowRadius = shadow.blurRadius * 2 + shadow.spreadRadius;
+    return Offset.zero & (size + Offset(shadowRadius, shadowRadius));
+  }
+
+  @override
+  bool shouldReclip(_ShadowClipper oldClipper) => false;
 }
 
 class _ArrowPainter extends CustomPainter {
