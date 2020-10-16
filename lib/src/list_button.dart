@@ -125,14 +125,6 @@ class _ListButtonState extends State<ListButton> {
     final Offset buttonGlobalOffset = button.localToGlobal(Offset.zero, ancestor: overlay);
     // TODO: Why do we need to ceil here?
     final Rect buttonPosition = Offset(buttonGlobalOffset.dx.ceilToDouble(), buttonGlobalOffset.dy.ceilToDouble()) & button.size;
-    assert(() {
-      BoxParentData buttonParentData = button.parentData as BoxParentData;
-      print('button local position is ${buttonParentData.offset & button.size}');
-      print('overlay local position is ${Offset.zero & overlay.size}');
-      print('button global offset is $buttonGlobalOffset');
-      print('button global position is $buttonPosition');
-      return true;
-    }());
     Navigator.of(context).push<int>(_PopupListRoute<int>(
       position: RelativeRect.fromRect(buttonPosition, Offset.zero & overlay.size),
       length: widget.length,
@@ -142,6 +134,9 @@ class _ListButtonState extends State<ListButton> {
       showMenuContext: context,
     )).then((int selectedIndex) {
       if (mounted) {
+        setState(() {
+          _pressed = false;
+        });
         if (selectedIndex != null) {
           selectionController.selectedIndex = selectedIndex;
         }
@@ -191,6 +186,24 @@ class _ListButtonState extends State<ListButton> {
     super.dispose();
   }
 
+  static const BoxDecoration _decoration = BoxDecoration(
+    border: Border.fromBorderSide(BorderSide(color: Color(0xff999999))),
+    gradient: LinearGradient(
+      begin: Alignment.bottomCenter,
+      end: Alignment.topCenter,
+      colors: <Color>[Color(0xffdddcd5), Color(0xfff3f1fa)],
+    ),
+  );
+
+  static const BoxDecoration _pressedDecoration = BoxDecoration(
+    border: Border.fromBorderSide(BorderSide(color: Color(0xff999999))),
+    gradient: LinearGradient(
+      begin: Alignment.bottomCenter,
+      end: Alignment.topCenter,
+      colors: <Color>[Color(0xffdddcd5), Color(0xffc8c7c0)],
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
     return MouseRegion(
@@ -198,32 +211,21 @@ class _ListButtonState extends State<ListButton> {
       child: GestureDetector(
         onTapDown: (TapDownDetails details) {
           setState(() {
-            print('onTapDown');
             _pressed = true;
           });
         },
         onTapCancel: () {
           setState(() {
-            print('onTapCancel');
             _pressed = false;
           });
         },
         onTap: () {
           setState(() {
-            print('onTap');
-            _pressed = false;
             showPopup();
           });
         },
         child: DecoratedBox(
-          decoration: const BoxDecoration(
-            border: Border.fromBorderSide(BorderSide(color: Color(0xff999999))),
-            gradient: LinearGradient(
-              begin: Alignment.bottomCenter,
-              end: Alignment.topCenter,
-              colors: <Color>[Color(0xffdddcd5), Color(0xfff3f1fa)],
-            ),
-          ),
+          decoration: _pressed ? _pressedDecoration : _decoration,
           child: Row(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
