@@ -19,6 +19,7 @@ export 'src/basic_table_view.dart';
 export 'src/border.dart';
 export 'src/checkbox.dart';
 export 'src/colors.dart';
+export 'src/form.dart' hide main;
 export 'src/foundation.dart';
 export 'src/hover_builder.dart';
 export 'src/link_button.dart';
