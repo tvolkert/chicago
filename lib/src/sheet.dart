@@ -18,13 +18,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'push_button.dart';
-
-enum MessageType {
-  error,
-  warning,
-  question,
-  info,
-}
+import 'foundation.dart';
 
 class Sheet extends StatelessWidget {
   const Sheet({
@@ -105,20 +99,6 @@ class Prompt extends StatelessWidget {
     Navigator.of(context).pop<int>(index);
   }
 
-  static String _messageTypeToAsset(MessageType messageType) {
-    switch (messageType) {
-      case MessageType.error:
-        return 'message_type-error-32x32.png';
-      case MessageType.warning:
-        return 'message_type-warning-32x32.png';
-      case MessageType.question:
-        return 'message_type-question-32x32.png';
-      case MessageType.info:
-        return 'message_type-info-32x32.png';
-    }
-    throw StateError('Unreachable code');
-  }
-
   @override
   Widget build(BuildContext context) {
     return Sheet(
@@ -140,7 +120,7 @@ class Prompt extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Image.asset('assets/${_messageTypeToAsset(messageType)}'),
+                    messageType.toImage(),
                     Expanded(
                       child: Padding(
                         padding: EdgeInsets.only(left: 12),

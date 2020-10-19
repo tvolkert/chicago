@@ -16,6 +16,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 
 typedef Predicate<T> = bool Function(T item);
 
@@ -143,4 +144,23 @@ class LinearConstraints extends Constraints {
 
   @override
   bool get isTight => min >= max;
+}
+
+class MessageType {
+  const MessageType._(this._assetKey);
+
+  final String _assetKey;
+
+  static const MessageType error = MessageType._('error');
+  static const MessageType warning = MessageType._('warning');
+  static const MessageType question = MessageType._('question');
+  static const MessageType info = MessageType._('info');
+
+  Widget toImage() {
+    return Image.asset('assets/message_type-$_assetKey-32x32.png');
+  }
+
+  Widget toSmallImage() {
+    return Image.asset('assets/message_type-$_assetKey-16x16.png');
+  }
 }
