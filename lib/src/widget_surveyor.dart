@@ -17,52 +17,67 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 /// Class that allows callers to measure the size of arbitrary widgets when
-/// layed out with specific constraints.
+/// laid out with specific constraints.
+///
+/// The widget surveyor creates synthetic widget trees to hold the widgets it
+/// measures. This is important because if the widgets (or any widgets in their
+/// subtrees) depend on any inherited widgets (e.g. [Directionality]) that they
+/// assume exist in their ancestry, those assumptions may hold true when the
+/// widget is rendered by the application but prove false when the widget is
+/// rendered via the widget surveyor. Due to this, callers are advised to
+/// either:
+///
+///  1. pass in widgets that don't depend on inherited widgets, or
+///  1. ensure all inherited widget dependencies exist in the widget tree
+///     that's passed to the widget surveyor's measure methods.
 class WidgetSurveyor {
-  WidgetSurveyor()
-      : _pipelineOwner = _newPipelineOwner(),
-        _buildOwner = _newBuildOwner();
+  const WidgetSurveyor();
 
-  final PipelineOwner _pipelineOwner;
-  final BuildOwner _buildOwner;
+  /// Builds a widget from the specified builder, inserts the widget into a
+  /// synthetic widget tree, lays out the resulting render tree, and returns
+  /// the size of the laid-out render tree.
+  ///
+  /// The build context that's passed to the `builder` argument will represent
+  /// the root of the synthetic tree.
+  ///
+  /// The `constraints` argument specify the constraints that will be passed
+  /// to the render tree during layout. If unspecified, the widget will be laid
+  /// out unconstrained.
+  Size measureBuilder(
+    WidgetBuilder builder, {
+    BoxConstraints constraints = const BoxConstraints(),
+  }) {
+    return measureWidget(Builder(builder: builder), constraints: constraints);
+  }
 
-  _MeasurementView get _rootView => _pipelineOwner.rootNode;
-
-  static PipelineOwner _newPipelineOwner() {
+  /// Inserts the specified widget into a synthetic widget tree, lays out the
+  /// resulting render tree, and returns the size of the laid-out render tree.
+  ///
+  /// The `constraints` argument specify the constraints that will be passed
+  /// to the render tree during layout. If unspecified, the widget will be laid
+  /// out unconstrained.
+  Size measureWidget(
+    Widget widget, {
+    BoxConstraints constraints = const BoxConstraints(),
+  }) {
     PipelineOwner pipelineOwner = PipelineOwner(
       onNeedVisualUpdate: () {},
       onSemanticsOwnerCreated: () {},
       onSemanticsOwnerDisposed: () {},
     );
     pipelineOwner.rootNode = _MeasurementView();
-    return pipelineOwner;
-  }
-
-  static BuildOwner _newBuildOwner() {
-    return BuildOwner(
-      onBuildScheduled: () {},
-    );
-  }
-
-  /// Builds the specified widget, lays out the resulting render tree, and
-  /// returns the size of the laid-out render tree.
-  ///
-  /// The `constraints` argument specify the constraints that will be passed
-  /// to the render tree during layout. If unspecified, the widget will be laid
-  /// out unconstrained.
-  Size measure(
-    Widget widget, {
-    BoxConstraints constraints = const BoxConstraints(),
-  }) {
+    BuildOwner buildOwner = BuildOwner(onBuildScheduled: () {});
     RenderObjectToWidgetAdapter<RenderBox>(
-      container: _pipelineOwner.rootNode,
+      container: pipelineOwner.rootNode,
       debugShortDescription: '[root]',
       child: widget,
-    ).attachToRenderTree(_buildOwner);
-    _rootView.scheduleInitialLayout();
-    _rootView.childConstraints = constraints;
-    _pipelineOwner.flushLayout();
-    return _rootView.size;
+    ).attachToRenderTree(buildOwner);
+    _MeasurementView rootView = pipelineOwner.rootNode;
+    rootView.scheduleInitialLayout();
+    rootView.childConstraints = constraints;
+    pipelineOwner.flushLayout();
+    assert(rootView.size != null);
+    return rootView.size;
   }
 }
 
