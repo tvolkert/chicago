@@ -13,6 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import 'dart:math' as math;
 import 'dart:ui' show window;
 
 import 'package:flutter/foundation.dart';
@@ -23,6 +24,7 @@ import 'package:flutter/widgets.dart';
 import 'basic_list_view.dart';
 import 'foundation.dart';
 import 'list_view.dart';
+import 'widget_surveyor.dart';
 
 void main() {
   runApp(
@@ -46,26 +48,42 @@ void main() {
                       textDirection: TextDirection.ltr,
                       child: DefaultTextStyle(
                         style: TextStyle(fontFamily: 'Verdana', color: const Color(0xff000000)),
-                        child: Center(
-                          child: ListButton(
-                            length: 5,
-                            builder: ({BuildContext context, int index}) {
-                              return Text('$index');
-                            },
-                            itemBuilder: ({
-                              BuildContext context,
-                              int index,
-                              bool isSelected,
-                              bool isHighlighted,
-                              bool isDisabled,
-                            }) {
-                              TextStyle style = DefaultTextStyle.of(context).style;
-                              if (isSelected) {
-                                style = style.copyWith(color: const Color(0xffffffff));
-                              }
-                              return Text('$index', style: style);
-                            },
-                          ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ListButton(
+                              length: 5,
+                              builder: ({BuildContext context, int index}) {
+                                String value = '$index';
+                                if (index == 0) {
+                                  value = 'Please select a value';
+                                }
+                                TextStyle style = DefaultTextStyle.of(context).style;
+                                TextDirection textDirection = Directionality.of(context);
+                                return Text(
+                                  value,
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  textDirection: textDirection,
+                                  style: style,
+                                );
+                              },
+                              itemBuilder: ({
+                                BuildContext context,
+                                int index,
+                                bool isSelected,
+                                bool isHighlighted,
+                                bool isDisabled,
+                              }) {
+                                TextStyle style = DefaultTextStyle.of(context).style;
+                                if (isSelected) {
+                                  style = style.copyWith(color: const Color(0xffffffff));
+                                }
+                                return Text('$index', style: style);
+                              },
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -80,12 +98,125 @@ void main() {
   );
 }
 
+/// Class that specifies how a [ListButton] will calculate its width.
+@immutable
+abstract class ListButtonWidth {
+  const ListButtonWidth._();
+
+  /// Calculates the width of the content area of the specified list button.
+  double _measureWidth(BuildContext context, ListButton listButton);
+
+  Widget _build(double width, EdgeInsetsGeometry padding, Widget child);
+}
+
+/// Specification of [ListButton] width that causes the button to adopt the
+/// intrinsic width of the currently selected item.
+///
+/// This specification will cause the button width to change as different items
+/// are selected, if those items have different intrinsic widths.
+///
+/// Along with [ExpandedListButtonWidth], this specification is the fastest in
+/// runtime efficiency because it doesn't need to pre-calculate the intrinsic
+/// widths of the list button's items.
+class ShrinkWrappedListButtonWidth extends ListButtonWidth {
+  const ShrinkWrappedListButtonWidth() : super._();
+
+  @override
+  double _measureWidth(BuildContext context, ListButton listButton) => null;
+
+  @override
+  Widget _build(double width, EdgeInsetsGeometry padding, Widget child) {
+    assert(width == null);
+    return Padding(
+      padding: padding,
+      child: child,
+    );
+  }
+}
+
+/// Specification of [ListButton] width that causes the button to adopt the
+/// widest possible width given the constraints passed to the list button.
+///
+/// This specification will cause the button width to remain stable as long as
+/// the input constraints remain stable.
+///
+/// Along with [ShrinkWrappedListButtonWidth], this specification is the
+/// fastest in runtime efficiency because it doesn't need to pre-calculate the
+/// intrinsic widths of the list button's items.
+class ExpandedListButtonWidth extends ListButtonWidth {
+  const ExpandedListButtonWidth() : super._();
+
+  @override
+  double _measureWidth(BuildContext context, ListButton listButton) => null;
+
+  @override
+  Widget _build(double width, EdgeInsetsGeometry padding, Widget child) {
+    assert(width == null);
+    return Expanded(
+      child: Padding(
+        padding: padding,
+        child: child,
+      ),
+    );
+  }
+}
+
+/// Specification of [ListButton] width that causes the button to adopt the
+/// largest intrinsic width of all the button's items.
+///
+/// This specification will yield a stable button width. As the selected item
+/// changes, the button width will always be at least as wide as it needs to
+/// be, sometimes wider.
+///
+/// This specification is relatively expensive in runtime efficiency, because
+/// it requires pre-calculating the unconstrained widths of the list button's
+/// items.
+///
+/// This will call the list button's [ListButton.builder] for every one of the
+/// button's list items, passing the list button element as the build context.
+/// It will then render those widgets in a synthetic tree that doesn't contain
+/// the normal application widget ancestry. If any of those widgets depend on
+/// inherited widgets in their ancestry, callers should specify an
+/// [ancestryBuilder], which allows callers to place required inherited widgets
+/// in the synthetic widget ancestry of the list items for measurement.
+class MaximumListButtonWidth extends ListButtonWidth {
+  const MaximumListButtonWidth({this.ancestryBuilder}) : super._();
+
+  final Widget Function(BuildContext context, Widget child) ancestryBuilder;
+
+  @override
+  double _measureWidth(BuildContext context, ListButton listButton) {
+    const WidgetSurveyor surveyor = WidgetSurveyor();
+    double maxWidth = 0;
+    for (int i = -1; i < listButton.length; i++) {
+      Widget item = listButton.builder(context: context, index: i);
+      if (ancestryBuilder != null) {
+        item = ancestryBuilder(context, item);
+      }
+      maxWidth = math.max(maxWidth, surveyor.measureWidget(item).width);
+    }
+    return maxWidth;
+  }
+
+  @override
+  Widget _build(double width, EdgeInsetsGeometry padding, Widget child) {
+    return Padding(
+      padding: padding,
+      child: SizedBox(
+        width: width,
+        child: child,
+      ),
+    );
+  }
+}
+
 class ListButton extends StatefulWidget {
   ListButton({
     Key key,
     @required this.length,
     @required this.builder,
     @required this.itemBuilder,
+    this.width = const ShrinkWrappedListButtonWidth(),
     this.selectionController,
     this.disabledItemFilter,
   })  : assert(selectionController == null || selectionController.selectMode == SelectMode.single),
@@ -96,6 +227,7 @@ class ListButton extends StatefulWidget {
   final int length;
   final BasicListItemBuilder builder;
   final ListItemBuilder itemBuilder;
+  final ListButtonWidth width;
   final ListViewSelectionController selectionController;
   final Predicate<int> disabledItemFilter;
 
@@ -108,11 +240,16 @@ class _ListButtonState extends State<ListButton> {
 
   int _selectedIndex = -1;
   bool _pressed = false;
+  double _buttonWidth;
 
   void _handleSelectionChanged() {
     setState(() {
       _selectedIndex = _selectionController.selectedIndex;
     });
+  }
+
+  void _updateButtonWidth() {
+    _buttonWidth = widget.width._measureWidth(context, widget);
   }
 
   ListViewSelectionController get selectionController {
@@ -124,15 +261,19 @@ class _ListButtonState extends State<ListButton> {
     final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
     final Offset buttonGlobalOffset = button.localToGlobal(Offset.zero, ancestor: overlay);
     // TODO: Why do we need to ceil here?
-    final Rect buttonPosition = Offset(buttonGlobalOffset.dx.ceilToDouble(), buttonGlobalOffset.dy.ceilToDouble()) & button.size;
-    Navigator.of(context).push<int>(_PopupListRoute<int>(
-      position: RelativeRect.fromRect(buttonPosition, Offset.zero & overlay.size),
+    final Offset buttonPosition = Offset(
+      buttonGlobalOffset.dx.ceilToDouble(),
+      buttonGlobalOffset.dy.ceilToDouble(),
+    );
+    final _PopupListRoute<int> popupListRoute = _PopupListRoute<int>(
+      position: RelativeRect.fromRect(buttonPosition & button.size, Offset.zero & overlay.size),
       length: widget.length,
       itemBuilder: widget.itemBuilder,
       selectionController: selectionController,
       disabledItemFilter: widget.disabledItemFilter,
       showMenuContext: context,
-    )).then((int selectedIndex) {
+    );
+    Navigator.of(context).push<int>(popupListRoute).then((int selectedIndex) {
       if (mounted) {
         setState(() {
           _pressed = false;
@@ -147,6 +288,7 @@ class _ListButtonState extends State<ListButton> {
   @override
   void didUpdateWidget(covariant ListButton oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _updateButtonWidth();
     if (oldWidget.selectionController != widget.selectionController) {
       if (oldWidget.selectionController == null) {
         assert(_selectionController != null);
@@ -173,6 +315,12 @@ class _ListButtonState extends State<ListButton> {
       _selectionController = ListViewSelectionController();
     }
     selectionController.addListener(_handleSelectionChanged);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _updateButtonWidth();
   }
 
   @override
@@ -230,11 +378,10 @@ class _ListButtonState extends State<ListButton> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                  child: widget.builder(context: context, index: _selectedIndex),
-                ),
+              widget.width._build(
+                _buttonWidth,
+                const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                widget.builder(context: context, index: _selectedIndex),
               ),
               SizedBox(
                 width: 1,
@@ -289,7 +436,11 @@ class _PopupListRoute<T> extends PopupRoute<T> {
   String get barrierLabel => 'Dismiss';
 
   @override
-  Widget buildPage(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
+  Widget buildPage(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+  ) {
     return SafeArea(
       child: CustomSingleChildLayout(
         delegate: _PopupListRouteLayout(position),
@@ -316,9 +467,9 @@ class _PopupListRouteLayout extends SingleChildLayoutDelegate {
 
   @override
   BoxConstraints getConstraintsForChild(BoxConstraints constraints) {
-    const double _kMenuScreenPadding = 8.0;
+    const double padding = 8.0;
     return BoxConstraints.loose(
-      constraints.biggest - const Offset(_kMenuScreenPadding * 2.0, _kMenuScreenPadding * 2.0) as Size,
+      constraints.biggest - const Offset(padding * 2.0, padding * 2.0) as Size,
     );
   }
 
@@ -417,7 +568,7 @@ class _PopupListState<T> extends State<_PopupList<T>> {
             ),
           ),
         );
-      }
+      },
     );
   }
 }
