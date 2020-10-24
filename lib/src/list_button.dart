@@ -52,36 +52,13 @@ void main() {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            ListButton(
-                              length: 5,
-                              builder: ({BuildContext context, int index}) {
-                                String value = '$index';
-                                if (index == 0) {
-                                  value = 'Please select a value';
+                            ListButton<String>(
+                              items: List<String>.generate(5, (int index) {
+                                if (index % 2 == 0) {
+                                  return 'Even steven $index';
                                 }
-                                TextStyle style = DefaultTextStyle.of(context).style;
-                                TextDirection textDirection = Directionality.of(context);
-                                return Text(
-                                  value,
-                                  maxLines: 1,
-                                  softWrap: false,
-                                  textDirection: textDirection,
-                                  style: style,
-                                );
-                              },
-                              itemBuilder: ({
-                                BuildContext context,
-                                int index,
-                                bool isSelected,
-                                bool isHighlighted,
-                                bool isDisabled,
-                              }) {
-                                TextStyle style = DefaultTextStyle.of(context).style;
-                                if (isSelected) {
-                                  style = style.copyWith(color: const Color(0xffffffff));
-                                }
-                                return Text('$index', style: style);
-                              },
+                                return '$index';
+                              }),
                             ),
                           ],
                         ),
@@ -104,7 +81,7 @@ abstract class ListButtonWidth {
   const ListButtonWidth._();
 
   /// Calculates the width of the content area of the specified list button.
-  double _measureWidth(BuildContext context, ListButton listButton);
+  double _measureWidth<T>(BuildContext context, ListButton<T> listButton);
 
   Widget _build(double width, EdgeInsetsGeometry padding, Widget child);
 }
@@ -122,7 +99,7 @@ class ShrinkWrappedListButtonWidth extends ListButtonWidth {
   const ShrinkWrappedListButtonWidth() : super._();
 
   @override
-  double _measureWidth(BuildContext context, ListButton listButton) => null;
+  double _measureWidth<T>(BuildContext context, ListButton<T> listButton) => null;
 
   @override
   Widget _build(double width, EdgeInsetsGeometry padding, Widget child) {
@@ -147,7 +124,7 @@ class ExpandedListButtonWidth extends ListButtonWidth {
   const ExpandedListButtonWidth() : super._();
 
   @override
-  double _measureWidth(BuildContext context, ListButton listButton) => null;
+  double _measureWidth<T>(BuildContext context, ListButton<T> listButton) => null;
 
   @override
   Widget _build(double width, EdgeInsetsGeometry padding, Widget child) {
@@ -185,15 +162,16 @@ class MaximumListButtonWidth extends ListButtonWidth {
   final Widget Function(BuildContext context, Widget child) ancestryBuilder;
 
   @override
-  double _measureWidth(BuildContext context, ListButton listButton) {
+  double _measureWidth<T>(BuildContext context, ListButton<T> listButton) {
     const WidgetSurveyor surveyor = WidgetSurveyor();
     double maxWidth = 0;
-    for (int i = -1; i < listButton.length; i++) {
-      Widget item = listButton.builder(context: context, index: i);
+    for (int i = -1; i < listButton.items.length; i++) {
+      final T item = i == -1 ? null : listButton.items[i];
+      Widget built = listButton.builder(context: context, item: item);
       if (ancestryBuilder != null) {
-        item = ancestryBuilder(context, item);
+        built = ancestryBuilder(context, built);
       }
-      maxWidth = math.max(maxWidth, surveyor.measureWidget(item).width);
+      maxWidth = math.max(maxWidth, surveyor.measureWidget(built).width);
     }
     return maxWidth;
   }
@@ -210,32 +188,109 @@ class MaximumListButtonWidth extends ListButtonWidth {
   }
 }
 
-class ListButton extends StatefulWidget {
+typedef ListButtonBuilder<T> = Widget Function({
+  BuildContext context,
+  T item,
+});
+
+typedef ListButtonItemBuilder<T> = Widget Function({
+  BuildContext context,
+  T item,
+  bool isSelected,
+  bool isHighlighted,
+  bool isDisabled,
+});
+
+class ListButton<T> extends StatefulWidget {
   ListButton({
     Key key,
-    @required this.length,
-    @required this.builder,
-    @required this.itemBuilder,
-    this.width = const ShrinkWrappedListButtonWidth(),
+    @required this.items,
+    this.builder = defaultBuilder,
+    this.itemBuilder = defaultItemBuilder,
+    this.width = const MaximumListButtonWidth(),
     this.selectionController,
     this.disabledItemFilter,
-  })  : assert(selectionController == null || selectionController.selectMode == SelectMode.single),
+  })  : assert(items != null),
         assert(builder != null),
         assert(itemBuilder != null),
+        assert(width != null),
+        assert(selectionController == null || selectionController.selectMode == SelectMode.single),
         super(key: key);
 
-  final int length;
-  final BasicListItemBuilder builder;
-  final ListItemBuilder itemBuilder;
+  final List<T> items;
+  final ListButtonBuilder<T> builder;
+  final ListButtonItemBuilder<T> itemBuilder;
   final ListButtonWidth width;
   final ListViewSelectionController selectionController;
-  final Predicate<int> disabledItemFilter;
+  final Predicate<T> disabledItemFilter;
+
+  static Widget defaultBuilder({BuildContext context, Object item}) {
+    if (item == null) {
+      return Container();
+    }
+    final TextStyle style = DefaultTextStyle.of(context).style;
+    final TextDirection textDirection = Directionality.of(context);
+    return Text(
+      '$item',
+      maxLines: 1,
+      softWrap: false,
+      textDirection: textDirection,
+      style: style,
+    );
+  }
+
+  static Widget defaultItemBuilder({
+    BuildContext context,
+    Object item,
+    bool isSelected,
+    bool isHighlighted,
+    bool isDisabled,
+  }) {
+    TextStyle style = DefaultTextStyle.of(context).style;
+    if (isSelected) {
+      style = style.copyWith(color: const Color(0xffffffff));
+    }
+    return ConstrainedBox(
+      constraints: BoxConstraints(minWidth: 75),
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 3, vertical: 2),
+        child: Text('$item', style: style),
+      ),
+    );
+  }
+
+  static ListButtonBuilder<Map<K, V>> mapBuilderFor<K, V>(K key) {
+    return ({BuildContext context, Map<K, V> item}) {
+      return defaultBuilder(
+        context: context,
+        item: item == null ? null : item[key],
+      );
+    };
+  }
+
+  static ListButtonItemBuilder<Map<K, V>> mapItemBuilderFor<K, V>(K key) {
+    return ({
+      BuildContext context,
+      Map<K, V> item,
+      bool isSelected,
+      bool isHighlighted,
+      bool isDisabled,
+    }) {
+      return defaultItemBuilder(
+        context: context,
+        item: item[key],
+        isSelected: isSelected,
+        isHighlighted: isHighlighted,
+        isDisabled: isDisabled,
+      );
+    };
+  }
 
   @override
-  _ListButtonState createState() => _ListButtonState();
+  _ListButtonState<T> createState() => _ListButtonState<T>();
 }
 
-class _ListButtonState extends State<ListButton> {
+class _ListButtonState<T> extends State<ListButton<T>> {
   ListViewSelectionController _selectionController;
 
   int _selectedIndex = -1;
@@ -249,7 +304,42 @@ class _ListButtonState extends State<ListButton> {
   }
 
   void _updateButtonWidth() {
-    _buttonWidth = widget.width._measureWidth(context, widget);
+    _buttonWidth = widget.width._measureWidth<T>(context, widget);
+  }
+
+  BasicListItemBuilder _adaptBuilder(ListButtonBuilder<T> builder) {
+    return ({BuildContext context, int index}) {
+      final T item = index == -1 ? null : widget.items[index];
+      return builder(context: context, item: item);
+    };
+  }
+
+  ListItemBuilder _adaptItemBuilder(ListButtonItemBuilder<T> itemBuilder) {
+    assert(itemBuilder != null);
+    return ({
+      BuildContext context,
+      int index,
+      bool isSelected,
+      bool isHighlighted,
+      bool isDisabled,
+    }) {
+      return itemBuilder(
+        context: context,
+        item: widget.items[index],
+        isSelected: isSelected,
+        isHighlighted: isHighlighted,
+        isDisabled: isDisabled,
+      );
+    };
+  }
+
+  Predicate<int> _adaptDisabledItemFilter(Predicate<T> predicate) {
+    if (predicate == null) {
+      return null;
+    }
+    return (int index) {
+      return predicate(widget.items[index]);
+    };
   }
 
   ListViewSelectionController get selectionController {
@@ -267,10 +357,10 @@ class _ListButtonState extends State<ListButton> {
     );
     final _PopupListRoute<int> popupListRoute = _PopupListRoute<int>(
       position: RelativeRect.fromRect(buttonPosition & button.size, Offset.zero & overlay.size),
-      length: widget.length,
-      itemBuilder: widget.itemBuilder,
+      length: widget.items.length,
+      itemBuilder: _adaptItemBuilder(widget.itemBuilder),
       selectionController: selectionController,
-      disabledItemFilter: widget.disabledItemFilter,
+      disabledItemFilter: _adaptDisabledItemFilter(widget.disabledItemFilter),
       showMenuContext: context,
     );
     Navigator.of(context).push<int>(popupListRoute).then((int selectedIndex) {
@@ -283,6 +373,32 @@ class _ListButtonState extends State<ListButton> {
         }
       }
     });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.selectionController == null) {
+      _selectionController = ListViewSelectionController();
+    }
+    selectionController.addListener(_handleSelectionChanged);
+  }
+
+  @override
+  void dispose() {
+    selectionController.removeListener(_handleSelectionChanged);
+    if (_selectionController != null) {
+      assert(widget.selectionController == null);
+      _selectionController.dispose();
+      _selectionController = null;
+    }
+    super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _updateButtonWidth();
   }
 
   @override
@@ -308,32 +424,6 @@ class _ListButtonState extends State<ListButton> {
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    if (widget.selectionController == null) {
-      _selectionController = ListViewSelectionController();
-    }
-    selectionController.addListener(_handleSelectionChanged);
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _updateButtonWidth();
-  }
-
-  @override
-  void dispose() {
-    selectionController.removeListener(_handleSelectionChanged);
-    if (_selectionController != null) {
-      assert(widget.selectionController == null);
-      _selectionController.dispose();
-      _selectionController = null;
-    }
-    super.dispose();
-  }
-
   static const BoxDecoration _decoration = BoxDecoration(
     border: Border.fromBorderSide(BorderSide(color: Color(0xff999999))),
     gradient: LinearGradient(
@@ -354,6 +444,8 @@ class _ListButtonState extends State<ListButton> {
 
   @override
   Widget build(BuildContext context) {
+    final BasicListItemBuilder builder = _adaptBuilder(widget.builder);
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
@@ -381,7 +473,7 @@ class _ListButtonState extends State<ListButton> {
               widget.width._build(
                 _buttonWidth,
                 const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                widget.builder(context: context, index: _selectedIndex),
+                builder(context: context, index: _selectedIndex),
               ),
               SizedBox(
                 width: 1,
@@ -508,9 +600,35 @@ class _PopupList<T> extends StatefulWidget {
 
 class _PopupListState<T> extends State<_PopupList<T>> {
   ListViewSelectionController _selectionController;
+  double _popupWidth;
+  double _itemHeight;
 
   void _handleTap() {
     Navigator.of(context).pop(_selectionController.selectedIndex);
+  }
+
+  void _updateListViewMetrics() {
+    final TextDirection textDirection = Directionality.of(context);
+    const WidgetSurveyor surveyor = WidgetSurveyor();
+    double maxWidth = 0;
+    double maxHeight = 0;
+    for (int i = 0; i < widget.length; i++) {
+      final Widget item = Directionality(
+        textDirection: textDirection,
+        child: widget.itemBuilder(
+          context: context,
+          index: i,
+          isSelected: false,
+          isHighlighted: false,
+          isDisabled: false,
+        ),
+      );
+      final Size itemSize = surveyor.measureWidget(item);
+      maxWidth = math.max(maxWidth, itemSize.width);
+      maxHeight = math.max(maxHeight, itemSize.height);
+    }
+    _popupWidth = maxWidth;
+    _itemHeight = maxHeight;
   }
 
   @override
@@ -524,6 +642,12 @@ class _PopupListState<T> extends State<_PopupList<T>> {
   void dispose() {
     _selectionController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _updateListViewMetrics();
   }
 
   @override
@@ -554,9 +678,9 @@ class _PopupListState<T> extends State<_PopupList<T>> {
                 child: Padding(
                   padding: const EdgeInsets.all(1),
                   child: SizedBox(
-                    width: 200,
+                    width: _popupWidth,
                     child: ScrollableListView(
-                      itemHeight: 20,
+                      itemHeight: _itemHeight,
                       length: widget.length,
                       itemBuilder: widget.itemBuilder,
                       selectionController: _selectionController,
