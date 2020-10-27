@@ -299,7 +299,7 @@ class _ListButtonState<T> extends State<ListButton<T>> {
 
   void _handleSelectionChanged() {
     setState(() {
-      _selectedIndex = _selectionController.selectedIndex;
+      _selectedIndex = selectionController.selectedIndex;
     });
   }
 
