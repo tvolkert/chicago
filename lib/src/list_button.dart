@@ -561,7 +561,7 @@ class _PopupListRouteLayout extends SingleChildLayoutDelegate {
   BoxConstraints getConstraintsForChild(BoxConstraints constraints) {
     const double padding = 8.0;
     return BoxConstraints.loose(
-      constraints.biggest - const Offset(padding * 2.0, padding * 2.0) as Size,
+      constraints.biggest - const Offset(padding, padding) as Size,
     );
   }
 
