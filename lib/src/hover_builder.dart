@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// @dart=2.9
-
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
@@ -23,10 +21,10 @@ typedef HoverWidgetBuilder(BuildContext context, bool hover);
 
 class HoverBuilder extends StatefulWidget {
   const HoverBuilder({
-    Key key,
-    this.builder,
+    Key? key,
+    required this.builder,
     this.cursor = MouseCursor.defer,
-  }) : assert(cursor != null), super(key: key);
+  }) : super(key: key);
 
   final HoverWidgetBuilder builder;
   final MouseCursor cursor;
@@ -44,7 +42,7 @@ class _HoverBuilderState extends State<HoverBuilder> {
       onEnter: (PointerEnterEvent event) => setState(() => hover = true),
       onExit: (PointerExitEvent event) => setState(() => hover = false),
       cursor: widget.cursor,
-      child: widget.builder != null ? widget.builder(context, hover) : null,
+      child: widget.builder(context, hover),
     );
   }
 }

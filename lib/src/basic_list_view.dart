@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// @dart=2.9
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
@@ -35,10 +33,11 @@ void main() {
             length: 1000,
             itemHeight: 20,
             itemBuilder: ({
-              BuildContext context,
-              int index,
+              BuildContext? context,
+              required int index,
             }) {
-              return Padding(padding: EdgeInsets.only(left: index.toDouble()), child: Text('$index'));
+              return Padding(
+                  padding: EdgeInsets.only(left: index.toDouble()), child: Text('$index'));
             },
           ),
         ),
@@ -54,24 +53,22 @@ typedef ListItemChildVisitor = void Function(RenderBox child, int index);
 typedef ListItemHost = void Function(ListItemVisitor visitor);
 
 typedef ListViewLayoutCallback = void Function({
-  ListItemHost visitChildrenToRemove,
-  ListItemHost visitChildrenToBuild,
+  required ListItemHost visitChildrenToRemove,
+  required ListItemHost visitChildrenToBuild,
 });
 
 typedef BasicListItemBuilder = Widget Function({
-  BuildContext context,
-  int index,
+  required BuildContext context,
+  required int index,
 });
 
 class BasicListView extends RenderObjectWidget {
   const BasicListView({
-    Key key,
-    @required this.length,
-    @required this.itemHeight,
-    @required this.itemBuilder,
-  })  : assert(length != null),
-        assert(itemHeight != null),
-        assert(length >= 0),
+    Key? key,
+    required this.length,
+    required this.itemHeight,
+    required this.itemBuilder,
+  })   : assert(length >= 0),
         super(key: key);
 
   final int length;
@@ -87,7 +84,6 @@ class BasicListView extends RenderObjectWidget {
     return RenderBasicListView(
       itemHeight: itemHeight,
       length: length,
-      itemBuilder: itemBuilder,
     );
   }
 
@@ -96,8 +92,7 @@ class BasicListView extends RenderObjectWidget {
   void updateRenderObject(BuildContext context, covariant RenderBasicListView renderObject) {
     renderObject
       ..itemHeight = itemHeight
-      ..length = length
-      ..itemBuilder = itemBuilder;
+      ..length = length;
   }
 }
 
@@ -217,8 +212,7 @@ class ProxyListItemRange extends ListItemRange {
 class UnionListItemRange extends ListItemRange {
   UnionListItemRange([
     List<ListItemRange> ranges = const <ListItemRange>[],
-  ])  : assert(ranges != null),
-        _ranges = List<ListItemRange>.from(ranges);
+  ]) : _ranges = List<ListItemRange>.from(ranges);
 
   final List<ListItemRange> _ranges;
 
@@ -270,16 +264,11 @@ class ListViewSlot with Diagnosticable {
   }
 }
 
-class BasicListViewElement extends RenderObjectElement {
-  BasicListViewElement(BasicListView listView) : super(listView);
-
-  @override
-  BasicListView get widget => super.widget as BasicListView;
+mixin ListViewElementMixin on RenderObjectElement {
+  Map<int, Element>? _children;
 
   @override
   RenderBasicListView get renderObject => super.renderObject as RenderBasicListView;
-
-  Map<int, Element> _children;
 
   @override
   void update(BasicListView newWidget) {
@@ -290,30 +279,24 @@ class BasicListViewElement extends RenderObjectElement {
   }
 
   @protected
-  Widget renderItem(int index) {
-    return widget.itemBuilder(
-      context: this,
-      index: index,
-    );
-  }
+  Widget renderItem(int index);
 
   void _layout({
-    ListItemHost visitChildrenToRemove,
-    ListItemHost visitChildrenToBuild,
+    required ListItemHost visitChildrenToRemove,
+    required ListItemHost visitChildrenToBuild,
   }) {
-    owner.buildScope(this, () {
+    owner!.buildScope(this, () {
       visitChildrenToRemove((int index) {
         assert(_children != null);
-        assert(_children.containsKey(index));
-        final Element child = _children[index];
-        assert(child != null);
-        final Element newChild = updateChild(child, null, null /* unused for remove */);
+        assert(_children!.containsKey(index));
+        final Element child = _children![index]!;
+        final Element? newChild = updateChild(child, null, null /* unused for remove */);
         assert(newChild == null);
-        _children.remove(index);
+        _children!.remove(index);
       });
       visitChildrenToBuild((int index) {
         assert(_children != null);
-        Widget built;
+        late Widget built;
         try {
           built = renderItem(index);
           assert(() {
@@ -341,11 +324,10 @@ class BasicListViewElement extends RenderObjectElement {
             ),
           );
         }
-        Element child;
+        late final Element child;
         final ListViewSlot slot = ListViewSlot(index);
         try {
-          child = updateChild(_children[index], built, slot);
-          assert(child != null);
+          child = updateChild(_children![index], built, slot)!;
         } catch (e, stack) {
           built = ErrorWidget.builder(
             _debugReportException(
@@ -357,9 +339,9 @@ class BasicListViewElement extends RenderObjectElement {
               },
             ),
           );
-          child = updateChild(null, built, slot);
+          child = updateChild(null, built, slot)!;
         }
-        _children[index] = child;
+        _children![index] = child;
       });
     });
   }
@@ -368,7 +350,7 @@ class BasicListViewElement extends RenderObjectElement {
     DiagnosticsNode context,
     dynamic exception,
     StackTrace stack, {
-    InformationCollector informationCollector,
+    required InformationCollector informationCollector,
   }) {
     final FlutterErrorDetails details = FlutterErrorDetails(
       exception: exception,
@@ -394,7 +376,7 @@ class BasicListViewElement extends RenderObjectElement {
   }
 
   @override
-  void mount(Element parent, dynamic newSlot) {
+  void mount(Element? parent, dynamic newSlot) {
     super.mount(parent, newSlot);
     _children = <int, Element>{};
     renderObject.updateLayoutCallback(_layout);
@@ -408,61 +390,72 @@ class BasicListViewElement extends RenderObjectElement {
 
   @override
   void visitChildren(ElementVisitor visitor) {
-    for (final Element child in _children.values) {
-      assert(child != null);
+    for (final Element child in _children!.values) {
       visitor(child);
     }
   }
 
   @override
   void forgetChild(Element child) {
-    assert(child != null);
     assert(child.slot is ListViewSlot);
     final ListViewSlot slot = child.slot;
     assert(_children != null);
-    assert(_children.containsKey(slot.index));
-    assert(_children[slot.index] == child);
-    _children.remove(slot.index);
+    assert(_children!.containsKey(slot.index));
+    assert(_children![slot.index] == child);
+    _children!.remove(slot.index);
     super.forgetChild(child);
   }
 
   @override
-  void insertRenderObjectChild(RenderObject child, ListViewSlot slot) {
+  void insertRenderObjectChild(RenderBox child, ListViewSlot slot) {
     assert(child.parent == null);
     renderObject.insert(child, index: slot.index);
     assert(child.parent == renderObject);
   }
 
   @override
-  void moveRenderObjectChild(RenderObject child, ListViewSlot oldSlot, ListViewSlot newSlot) {
+  void moveRenderObjectChild(RenderBox child, ListViewSlot? oldSlot, ListViewSlot newSlot) {
     assert(child.parent == renderObject);
     renderObject.move(child, index: newSlot.index);
     assert(child.parent == renderObject);
   }
 
   @override
-  void removeRenderObjectChild(RenderObject child, ListViewSlot slot) {
+  void removeRenderObjectChild(RenderBox child, ListViewSlot? slot) {
     assert(child.parent == renderObject);
     renderObject.remove(child);
     assert(child.parent == null);
   }
 }
 
+class BasicListViewElement extends RenderObjectElement with ListViewElementMixin {
+  BasicListViewElement(BasicListView listView) : super(listView);
+
+  @override
+  BasicListView get widget => super.widget as BasicListView;
+
+  @override
+  @protected
+  Widget renderItem(int index) {
+    return widget.itemBuilder(
+      context: this,
+      index: index,
+    );
+  }
+}
+
 class RenderBasicListView extends RenderSegment {
   RenderBasicListView({
-    double itemHeight,
-    int length,
-    BasicListItemBuilder itemBuilder,
+    required double itemHeight,
+    required int length,
   }) {
     this.itemHeight = itemHeight;
     this.length = length;
-    this.itemBuilder = itemBuilder;
   }
 
-  double _itemHeight;
+  late double _itemHeight;
   double get itemHeight => _itemHeight;
   set itemHeight(double value) {
-    assert(value != null);
     if (_itemHeight == value) return;
     _itemHeight = value;
     // The fact that the cell constraints changed could affect the built
@@ -470,10 +463,9 @@ class RenderBasicListView extends RenderSegment {
     markNeedsBuild();
   }
 
-  int _length;
+  late int _length;
   int get length => _length;
   set length(int value) {
-    assert(value != null);
     assert(value >= 0);
     if (_length == value) return;
     _length = value;
@@ -482,57 +474,40 @@ class RenderBasicListView extends RenderSegment {
     markNeedsBuild();
   }
 
-  BasicListItemBuilder _itemBuilder;
-  BasicListItemBuilder get itemBuilder => _itemBuilder;
-  set itemBuilder(BasicListItemBuilder value) {
-    assert(value != null);
-    if (_itemBuilder == value) return;
-    _itemBuilder = value;
-    markNeedsBuild();
-  }
-
   Map<int, RenderBox> _children = <int, RenderBox>{};
 
-  void insert(
-    RenderBox child, {
-    @required int index,
-  }) {
-    assert(child != null);
-    final RenderBox oldChild = _children.remove(index);
+  void insert(RenderBox child, {required int index}) {
+    final RenderBox? oldChild = _children.remove(index);
     if (oldChild != null) dropChild(oldChild);
     _children[index] = child;
-    child.parentData = ListViewParentData()..index = index;
+    child.parentData = ListViewParentData(index: index);
     adoptChild(child);
   }
 
-  void move(
-    RenderBox child, {
-    @required int index,
-  }) {
+  void move(RenderBox child, {required int index}) {
     remove(child);
     insert(child, index: index);
   }
 
   void remove(RenderBox child) {
-    assert(child != null);
     assert(child.parentData is ListViewParentData);
-    final ListViewParentData parentData = child.parentData;
+    final ListViewParentData parentData = child.parentData as ListViewParentData;
     assert(_children[parentData.index] == child);
     _children.remove(parentData.index);
     dropChild(child);
   }
 
-  ListViewLayoutCallback _layoutCallback;
+  ListViewLayoutCallback? _layoutCallback;
 
   /// Change the layout callback.
   @protected
-  void updateLayoutCallback(ListViewLayoutCallback value) {
+  void updateLayoutCallback(ListViewLayoutCallback? value) {
     if (value == _layoutCallback) return;
     _layoutCallback = value;
     markNeedsBuild();
   }
 
-  /// Whether the whole table view is in need of being built.
+  /// Whether the whole list view is in need of being built.
   bool _needsBuild = true;
 
   /// Marks this list view as needing to rebuild.
@@ -547,7 +522,7 @@ class RenderBasicListView extends RenderSegment {
   }
 
   /// Specific items in need of building.
-  UnionListItemRange _dirtyItems;
+  UnionListItemRange? _dirtyItems;
 
   /// Marks specific items as needing to rebuild.
   ///
@@ -557,9 +532,8 @@ class RenderBasicListView extends RenderSegment {
   ///    rebuild.
   @protected
   void markItemsDirty(ListItemRange items) {
-    assert(items != null);
     _dirtyItems ??= UnionListItemRange();
-    _dirtyItems.add(items);
+    _dirtyItems!.add(items);
     markNeedsLayout();
   }
 
@@ -586,7 +560,6 @@ class RenderBasicListView extends RenderSegment {
     for (MapEntry<int, RenderBox> item in items) {
       final int index = item.key;
       final RenderBox child = item.value;
-      assert(child != null);
       visitor(child, index);
     }
   }
@@ -601,22 +574,20 @@ class RenderBasicListView extends RenderSegment {
   int getItemAt(double dy) => dy ~/ itemHeight;
 
   Rect getItemBounds(int index) {
-    assert(index != null);
     assert(index >= 0 && index < length);
     return Rect.fromLTWH(0, index * itemHeight, size.width, itemHeight);
   }
 
   @override
-  bool hitTestChildren(BoxHitTestResult result, {Offset position}) {
-    assert(position != null);
+  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
     final int index = getItemAt(position.dy);
     if (!_children.containsKey(index)) {
       // No list item at the given position.
       return false;
     }
     assert(index >= 0);
-    final RenderBox child = _children[index];
-    final BoxParentData parentData = child.parentData;
+    final RenderBox child = _children[index]!;
+    final BoxParentData parentData = child.parentData as BoxParentData;
     return result.addWithPaintOffset(
       offset: parentData.offset,
       position: position,
@@ -675,7 +646,7 @@ class RenderBasicListView extends RenderSegment {
     });
   }
 
-  Rect _viewport;
+  Rect? _viewport;
 
   bool _isInBounds(int index) {
     return index < length;
@@ -699,7 +670,6 @@ class RenderBasicListView extends RenderSegment {
   }
 
   ListItemSequence _getIntersectingItems(Rect rect) {
-    assert(rect != null);
     if (rect.isEmpty) {
       return ListItemSequence.empty;
     }
@@ -715,13 +685,13 @@ class RenderBasicListView extends RenderSegment {
   void rebuildIfNecessary() {
     assert(_layoutCallback != null);
     assert(debugDoingThisLayout);
-    final Rect previousViewport = _viewport;
+    final Rect? previousViewport = _viewport;
     _viewport = constraints.viewportResolver.resolve(size);
     if (!_needsBuild && _dirtyItems == null && _viewport == previousViewport) {
       return;
     }
 
-    final ListItemSequence viewportItemSequence = _getIntersectingItems(_viewport);
+    final ListItemSequence viewportItemSequence = _getIntersectingItems(_viewport!);
     ListItemRange removeCells = builtCells().subtract(viewportItemSequence);
     ListItemRange buildCells;
 
@@ -731,14 +701,14 @@ class RenderBasicListView extends RenderSegment {
       _dirtyItems = null;
     } else if (_dirtyItems != null) {
       buildCells = UnionListItemRange(<ListItemRange>[
-        _dirtyItems.intersect(viewportItemSequence),
+        _dirtyItems!.intersect(viewportItemSequence),
         viewportItemSequence.where(_isNotBuilt),
       ]);
       _dirtyItems = null;
     } else {
       assert(previousViewport != null);
-      if (_viewport.overlaps(previousViewport)) {
-        final Rect overlap = _viewport.intersect(previousViewport);
+      if (_viewport!.overlaps(previousViewport!)) {
+        final Rect overlap = _viewport!.intersect(previousViewport);
         final ListItemSequence overlapItemSequence = _getIntersectingItems(overlap);
         removeCells = _getIntersectingItems(previousViewport).subtract(overlapItemSequence);
         buildCells = viewportItemSequence.subtract(overlapItemSequence);
@@ -748,7 +718,7 @@ class RenderBasicListView extends RenderSegment {
     }
 
     invokeLayoutCallback<SegmentConstraints>((SegmentConstraints _) {
-      _layoutCallback(
+      _layoutCallback!(
         visitChildrenToRemove: removeCells.where(_isInBounds).where(_isBuilt).visitItems,
         visitChildrenToBuild: buildCells.where(_isInBounds).visitItems,
       );
@@ -781,12 +751,9 @@ class RenderBasicListView extends RenderSegment {
 }
 
 class ListViewParentData extends BoxParentData {
-  int _index;
-  int get index => _index;
-  set index(int value) {
-    assert(value != null);
-    _index = value;
-  }
+  ListViewParentData({required this.index});
+
+  final int index;
 
   @override
   String toString() => '${super.toString()}, index=$index';

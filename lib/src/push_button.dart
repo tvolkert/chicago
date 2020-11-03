@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// @dart=2.9
-
 import 'dart:math' as math;
 
 import 'package:flutter/gestures.dart';
@@ -31,13 +29,13 @@ const Color _defaultBackgroundColor = Color(0xffdddcd5);
 const Color _defaultBorderColor = Color(0xff999999);
 const Color _defaultDisabledBackgroundColor = Color(0xffdddcd5);
 const Color _defaultDisabledBorderColor = Color(0xff999999);
-const EdgeInsetsGeometry _defaultPadding = EdgeInsets.symmetric(horizontal: 4, vertical: 4);
+const EdgeInsets _defaultPadding = EdgeInsets.symmetric(horizontal: 4, vertical: 4);
 const bool _defaultIsToolbar = false;
 const bool _defaultShowTooltip = true;
 
-class PushButton<T> extends StatefulWidget {
+class PushButton<T extends Object> extends StatefulWidget {
   const PushButton({
-    Key key,
+    Key? key,
     this.icon,
     this.label,
     this.axis = _defaultAxis,
@@ -55,14 +53,14 @@ class PushButton<T> extends StatefulWidget {
     this.showTooltip = _defaultShowTooltip,
   }) : super(key: key);
 
-  final String icon;
-  final String label;
+  final String? icon;
+  final String? label;
   final Axis axis;
   final bool isToolbar;
-  final VoidCallback onPressed;
-  final List<PopupMenuEntry<T>> menuItems;
-  final PopupMenuItemSelected<T> onMenuItemSelected;
-  final double minimumAspectRatio;
+  final VoidCallback? onPressed;
+  final List<PopupMenuEntry<T>>? menuItems;
+  final PopupMenuItemSelected<T?>? onMenuItemSelected;
+  final double? minimumAspectRatio;
   final Color color;
   final Color backgroundColor;
   final Color borderColor;
@@ -75,10 +73,10 @@ class PushButton<T> extends StatefulWidget {
   _PushButtonState<T> createState() => _PushButtonState<T>();
 }
 
-class _PushButtonState<T> extends State<PushButton<T>> {
-  bool hover;
-  bool pressed;
-  bool menuActive;
+class _PushButtonState<T extends Object> extends State<PushButton<T>> {
+  bool hover = false;
+  bool pressed = false;
+  bool menuActive = false;
 
   LinearGradient get highlightGradient {
     return LinearGradient(
@@ -97,21 +95,13 @@ class _PushButtonState<T> extends State<PushButton<T>> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    hover = false;
-    pressed = false;
-    menuActive = false;
-  }
-
-  @override
   void didUpdateWidget(PushButton<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.onPressed == null) {
       hover = false;
       pressed = false;
       if (menuActive) {
-        Navigator.of(context).pop();
+        Navigator.of(context)!.pop();
         menuActive = false;
       }
     }
@@ -123,7 +113,7 @@ class _PushButtonState<T> extends State<PushButton<T>> {
 
     final List<Widget> buttonData = <Widget>[];
     if (widget.icon != null) {
-      Widget iconImage = Image(image: AssetImage(widget.icon));
+      Widget iconImage = Image(image: AssetImage(widget.icon!));
       if (!enabled) {
         iconImage = Opacity(
           opacity: 0.5,
@@ -134,13 +124,13 @@ class _PushButtonState<T> extends State<PushButton<T>> {
     }
 
     if (widget.label != null) {
-      TextStyle style = Theme.of(context).textTheme.bodyText2;
+      TextStyle style = Theme.of(context).textTheme.bodyText2!;
       if (enabled) {
         style = style.copyWith(color: widget.color);
       } else {
         style = style.copyWith(color: const Color(0xff999999));
       }
-      buttonData.add(Text(widget.label, style: style));
+      buttonData.add(Text(widget.label!, style: style));
     }
 
     Widget button = Center(
@@ -188,17 +178,17 @@ class _PushButtonState<T> extends State<PushButton<T>> {
       button = DecoratedBox(decoration: decoration, child: button);
     }
 
-    GestureTapCallback callback = widget.onPressed;
+    GestureTapCallback? callback = widget.onPressed;
     if (widget.menuItems != null) {
       callback = () {
         if (widget.onPressed != null) {
-          widget.onPressed();
+          widget.onPressed!();
         }
         setState(() {
           menuActive = true;
         });
         final RenderBox button = context.findRenderObject() as RenderBox;
-        final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+        final RenderBox overlay = Overlay.of(context)!.context.findRenderObject() as RenderBox;
         final RelativeRect position = RelativeRect.fromRect(
           Rect.fromPoints(
             button.localToGlobal(button.size.bottomLeft(Offset.zero), ancestor: overlay),
@@ -210,14 +200,14 @@ class _PushButtonState<T> extends State<PushButton<T>> {
           context: context,
           position: position,
           elevation: 4,
-          items: widget.menuItems,
-        ).then((T value) {
+          items: widget.menuItems!,
+        ).then((T? value) {
           if (mounted) {
             setState(() {
               menuActive = false;
             });
             if (widget.onMenuItemSelected != null) {
-              widget.onMenuItemSelected(value);
+              widget.onMenuItemSelected!(value);
             }
           }
         });
@@ -225,9 +215,9 @@ class _PushButtonState<T> extends State<PushButton<T>> {
     }
 
     if (enabled) {
-      if (widget.showTooltip) {
+      if (widget.showTooltip && widget.label != null) {
         button = Tooltip(
-          message: widget.label,
+          message: widget.label!,
           waitDuration: Duration(seconds: 1, milliseconds: 500),
           child: button,
         );
@@ -269,11 +259,10 @@ class _PushButtonState<T> extends State<PushButton<T>> {
 
 class _MinimumAspectRatio extends SingleChildRenderObjectWidget {
   const _MinimumAspectRatio({
-    Key key,
-    Widget child,
-    @required this.minimumAspectRatio,
-  })  : assert(minimumAspectRatio != null),
-        super(key: key, child: child);
+    Key? key,
+    required Widget child,
+    required this.minimumAspectRatio,
+  })  : super(key: key, child: child);
 
   final double minimumAspectRatio;
 
@@ -290,16 +279,15 @@ class _MinimumAspectRatio extends SingleChildRenderObjectWidget {
 
 class _RenderMinimumAspectRatio extends RenderProxyBox {
   _RenderMinimumAspectRatio({
-    RenderBox child,
-    double minimumAspectRatio,
-  })  : assert(minimumAspectRatio != null),
-        _minimumAspectRatio = minimumAspectRatio,
-        super(child);
+    RenderBox? child,
+    required double minimumAspectRatio,
+  })  : super(child) {
+    this.minimumAspectRatio = minimumAspectRatio;
+  }
 
-  double _minimumAspectRatio;
-  double get minimumAspectRatio => _minimumAspectRatio;
+  double? _minimumAspectRatio;
+  double get minimumAspectRatio => _minimumAspectRatio!;
   set minimumAspectRatio(double value) {
-    assert(value != null);
     if (value == _minimumAspectRatio) return;
     _minimumAspectRatio = value;
     markNeedsLayout();
@@ -311,10 +299,10 @@ class _RenderMinimumAspectRatio extends RenderProxyBox {
       return 0.0;
     }
     if (!height.isFinite) {
-      height = child.getMaxIntrinsicHeight(double.infinity);
+      height = child!.getMaxIntrinsicHeight(double.infinity);
     }
     assert(height.isFinite);
-    return math.max(height * _minimumAspectRatio, child.getMinIntrinsicWidth(height));
+    return math.max(height * minimumAspectRatio, child!.getMinIntrinsicWidth(height));
   }
 
   @override
@@ -323,10 +311,10 @@ class _RenderMinimumAspectRatio extends RenderProxyBox {
       return 0.0;
     }
     if (!height.isFinite) {
-      height = child.getMaxIntrinsicHeight(double.infinity);
+      height = child!.getMaxIntrinsicHeight(double.infinity);
     }
     assert(height.isFinite);
-    return math.max(height * _minimumAspectRatio, child.getMaxIntrinsicWidth(height));
+    return math.max(height * minimumAspectRatio, child!.getMaxIntrinsicWidth(height));
   }
 
   @override
@@ -339,35 +327,34 @@ class _RenderMinimumAspectRatio extends RenderProxyBox {
     if (child != null) {
       BoxConstraints childConstraints = constraints;
       if (!childConstraints.hasTightHeight) {
-        final double height = child.getMaxIntrinsicHeight(childConstraints.maxWidth);
+        final double height = child!.getMaxIntrinsicHeight(childConstraints.maxWidth);
         assert(height.isFinite);
         childConstraints = childConstraints.tighten(height: height);
       }
       childConstraints = childConstraints.copyWith(
-        minWidth: childConstraints.constrainWidth(childConstraints.maxHeight * _minimumAspectRatio),
+        minWidth: childConstraints.constrainWidth(childConstraints.maxHeight * minimumAspectRatio),
       );
-      child.layout(childConstraints, parentUsesSize: true);
-      size = child.size;
+      child!.layout(childConstraints, parentUsesSize: true);
+      size = child!.size;
     } else {
       performResize();
     }
   }
 }
 
-class CommandPushButton<T> extends StatelessWidget {
+class CommandPushButton extends StatelessWidget {
   const CommandPushButton({
-    Key key,
-    @required this.label,
-    @required this.onPressed,
-  })  : assert(label != null),
-        super(key: key);
+    Key? key,
+    required this.label,
+    required this.onPressed,
+  })  : super(key: key);
 
   final String label;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return PushButton<T>(
+    return PushButton(
       color: Colors.white,
       backgroundColor: const Color(0xff3c77b2),
       borderColor: const Color(0xff2b5580),
@@ -382,8 +369,8 @@ class CommandPushButton<T> extends StatelessWidget {
 
 class ActionPushButton<T extends Intent> extends StatefulWidget {
   const ActionPushButton({
-    Key key,
-    @required this.intent,
+    Key? key,
+    required this.intent,
     this.icon,
     this.label,
     this.axis = _defaultAxis,
@@ -394,15 +381,14 @@ class ActionPushButton<T extends Intent> extends StatefulWidget {
     this.borderColor = _defaultBorderColor,
     this.padding = _defaultPadding,
     this.showTooltip = _defaultShowTooltip,
-  })  : assert(intent != null),
-        super(key: key);
+  })  : super(key: key);
 
   final T intent;
-  final String icon;
-  final String label;
+  final String? icon;
+  final String? label;
   final Axis axis;
   final bool isToolbar;
-  final double minimumAspectRatio;
+  final double? minimumAspectRatio;
   final Color color;
   final Color backgroundColor;
   final Color borderColor;
@@ -414,38 +400,38 @@ class ActionPushButton<T extends Intent> extends StatefulWidget {
 }
 
 class _ActionPushButtonState<T extends Intent> extends State<ActionPushButton<T>> {
-  Action<T> action;
-  bool enabled;
+  Action<T>? _action;
+  bool _enabled = false;
 
   void _attachToAction() {
     setState(() {
-      action = Actions.find<T>(context);
-      enabled = action.isEnabled(widget.intent);
+      _action = Actions.find<T>(context);
+      _enabled = _action!.isEnabled(widget.intent);
     });
-    action.addActionListener(_actionUpdated);
+    _action!.addActionListener(_actionUpdated as void Function(Action<Intent>));
   }
 
   void _detachFromAction() {
-    if (action != null) {
-      action.removeActionListener(_actionUpdated);
+    if (_action != null) {
+      _action!.removeActionListener(_actionUpdated as void Function(Action<Intent>));
       setState(() {
-        action = null;
-        enabled = false;
+        _action = null;
+        _enabled = false;
       });
     }
   }
 
   void _actionUpdated(Action<T> action) {
     setState(() {
-      enabled = action.isEnabled(widget.intent);
+      _enabled = action.isEnabled(widget.intent);
     });
   }
 
   void _handlePress() {
-    assert(action != null);
-    assert(enabled);
-    assert(action.isEnabled(widget.intent));
-    Actions.of(context).invokeAction(action, widget.intent, context);
+    assert(_action != null);
+    assert(_enabled);
+    assert(_action!.isEnabled(widget.intent));
+    Actions.of(context).invokeAction(_action!, widget.intent, context);
   }
 
   @override
@@ -462,7 +448,7 @@ class _ActionPushButtonState<T extends Intent> extends State<ActionPushButton<T>
       label: widget.label,
       axis: widget.axis,
       isToolbar: widget.isToolbar,
-      onPressed: enabled ? _handlePress : null,
+      onPressed: _enabled ? _handlePress : null,
       minimumAspectRatio: widget.minimumAspectRatio,
       color: widget.color,
       backgroundColor: widget.backgroundColor,

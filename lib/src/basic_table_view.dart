@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// @dart=2.9
-
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
@@ -32,9 +30,9 @@ const double _kDoublePrecisionTolerance = 0.001;
 /// Cell renderers are properties of the [BasicTableColumn], so each column
 /// specifies the cell renderer for cells in that column.
 typedef BasicTableCellRenderer = Widget Function({
-  BuildContext context,
-  int rowIndex,
-  int columnIndex,
+  required BuildContext context,
+  required int rowIndex,
+  required int columnIndex,
 });
 
 typedef TableCellVisitor = void Function(int rowIndex, int columnIndex);
@@ -44,21 +42,14 @@ typedef TableCellChildVisitor = void Function(RenderBox child, int rowIndex, int
 typedef TableCellHost = void Function(TableCellVisitor visitor);
 
 typedef TableViewLayoutCallback = void Function({
-  TableCellHost visitChildrenToRemove,
-  TableCellHost visitChildrenToBuild,
+  required TableCellHost visitChildrenToRemove,
+  required TableCellHost visitChildrenToBuild,
 });
 
-class BasicTableColumn with Diagnosticable {
-  const BasicTableColumn({
-    this.width = const FlexTableColumnWidth(),
-    @required this.cellRenderer,
-  });
+abstract class TableColumn with Diagnosticable {
+  const TableColumn();
 
-  /// The width specification for this column.
-  final TableColumnWidth width;
-
-  /// The renderer responsible for the look & feel of cells in this column.
-  final BasicTableCellRenderer cellRenderer;
+  TableColumnWidth get width;
 
   @override
   @protected
@@ -68,19 +59,42 @@ class BasicTableColumn with Diagnosticable {
   }
 
   @override
-  int get hashCode => hashValues(width, cellRenderer);
+  int get hashCode => width.hashCode;
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (runtimeType != other.runtimeType) return false;
-    return other is BasicTableColumn && width == other.width && cellRenderer == other.cellRenderer;
+    return other is TableColumn && width == other.width;
+  }
+}
+
+class BasicTableColumn extends TableColumn {
+  const BasicTableColumn({
+    this.width = const FlexTableColumnWidth(),
+    required this.cellRenderer,
+  });
+
+  /// The width specification for this column.
+  @override
+  final TableColumnWidth width;
+
+  /// The renderer responsible for the look & feel of cells in this column.
+  final BasicTableCellRenderer cellRenderer;
+
+  @override
+  int get hashCode => hashValues(super.hashCode, cellRenderer);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return super == other && other is BasicTableColumn && cellRenderer == other.cellRenderer;
   }
 }
 
 @immutable
 abstract class TableColumnWidth with Diagnosticable {
-  const TableColumnWidth(this.width) : assert(width != null);
+  const TableColumnWidth(this.width);
 
   final double width;
 
@@ -114,8 +128,7 @@ class FixedTableColumnWidth extends TableColumnWidth {
 
 class FlexTableColumnWidth extends TableColumnWidth {
   const FlexTableColumnWidth({double flex = 1})
-      : assert(flex != null),
-        assert(flex > 0),
+      : assert(flex > 0),
         super(flex);
 
   @override
@@ -124,23 +137,20 @@ class FlexTableColumnWidth extends TableColumnWidth {
 
 class BasicTableView extends RenderObjectWidget {
   const BasicTableView({
-    Key key,
-    @required this.length,
-    @required this.columns,
-    @required this.rowHeight,
+    Key? key,
+    required this.length,
+    required this.columns,
+    required this.rowHeight,
     this.roundColumnWidthsToWholePixel = false,
     this.metricsController,
-  })  : assert(length != null),
-        assert(columns != null),
-        assert(rowHeight != null),
-        assert(length >= 0),
+  })  : assert(length >= 0),
         super(key: key);
 
   final int length;
   final List<BasicTableColumn> columns;
   final double rowHeight;
   final bool roundColumnWidthsToWholePixel;
-  final TableViewMetricsController metricsController;
+  final TableViewMetricsController? metricsController;
 
   @override
   BasicTableViewElement createElement() => BasicTableViewElement(this);
@@ -322,8 +332,7 @@ class ProxyTableCellRange extends TableCellRange {
 class UnionTableCellRange extends TableCellRange {
   UnionTableCellRange([
     List<TableCellRange> ranges = const <TableCellRange>[],
-  ])  : assert(ranges != null),
-        _ranges = List<TableCellRange>.from(ranges);
+  ]) : _ranges = List<TableCellRange>.from(ranges);
 
   final List<TableCellRange> _ranges;
 
@@ -353,9 +362,7 @@ class UnionTableCellRange extends TableCellRange {
 
 @immutable
 class TableCellOffset with Diagnosticable {
-  const TableCellOffset(this.rowIndex, this.columnIndex)
-      : assert(rowIndex != null),
-        assert(columnIndex != null);
+  const TableCellOffset(this.rowIndex, this.columnIndex);
 
   final int rowIndex;
   final int columnIndex;
@@ -381,47 +388,34 @@ class TableCellOffset with Diagnosticable {
   }
 }
 
-class BasicTableViewElement extends RenderObjectElement {
-  BasicTableViewElement(BasicTableView tableView) : super(tableView);
+mixin TableViewElementMixin on RenderObjectElement {
+  @override
+  RenderTableViewMixin get renderObject => super.renderObject as RenderTableViewMixin;
+
+  @protected
+  Widget renderCell(int rowIndex, int columnIndex);
+
+  late Map<int, Map<int, Element>> _children;
 
   @override
-  BasicTableView get widget => super.widget as BasicTableView;
-
-  @override
-  RenderBasicTableView get renderObject => super.renderObject as RenderBasicTableView;
-
-  Map<int, Map<int, Element>> _children;
-
-  @override
-  void update(BasicTableView newWidget) {
+  void update(RenderObjectWidget newWidget) {
     assert(widget != newWidget);
     super.update(newWidget);
     assert(widget == newWidget);
     renderObject.updateLayoutCallback(_layout);
   }
 
-  @protected
-  Widget renderCell(covariant BasicTableColumn column, int rowIndex, int columnIndex) {
-    return column.cellRenderer(
-      context: this,
-      rowIndex: rowIndex,
-      columnIndex: columnIndex,
-    );
-  }
-
   void _layout({
-    TableCellHost visitChildrenToRemove,
-    TableCellHost visitChildrenToBuild,
+    required TableCellHost visitChildrenToRemove,
+    required TableCellHost visitChildrenToBuild,
   }) {
-    owner.buildScope(this, () {
+    owner!.buildScope(this, () {
       visitChildrenToRemove((int rowIndex, int columnIndex) {
-        assert(_children != null);
         assert(_children.containsKey(rowIndex));
-        final Map<int, Element> row = _children[rowIndex];
+        final Map<int, Element> row = _children[rowIndex]!;
         assert(row.containsKey(columnIndex));
-        final Element child = row[columnIndex];
-        assert(child != null);
-        final Element newChild = updateChild(child, null, null /* unused for remove */);
+        final Element child = row[columnIndex]!;
+        final Element? newChild = updateChild(child, null, null /* unused for remove */);
         assert(newChild == null);
         row.remove(columnIndex);
         if (row.isEmpty) {
@@ -429,11 +423,9 @@ class BasicTableViewElement extends RenderObjectElement {
         }
       });
       visitChildrenToBuild((int rowIndex, int columnIndex) {
-        assert(_children != null);
-        final BasicTableColumn column = widget.columns[columnIndex];
         Widget built;
         try {
-          built = renderCell(column, rowIndex, columnIndex);
+          built = renderCell(rowIndex, columnIndex);
           assert(() {
             if (debugPaintTableCellBuilds) {
               debugCurrentTableCellColor =
@@ -459,12 +451,11 @@ class BasicTableViewElement extends RenderObjectElement {
             ),
           );
         }
-        Element child;
+        late final Element child;
         final TableViewSlot slot = TableViewSlot(rowIndex, columnIndex);
         final Map<int, Element> row = _children.putIfAbsent(rowIndex, () => <int, Element>{});
         try {
-          child = updateChild(row[columnIndex], built, slot);
-          assert(child != null);
+          child = updateChild(row[columnIndex], built, slot)!;
         } catch (e, stack) {
           built = ErrorWidget.builder(
             _debugReportException(
@@ -476,7 +467,7 @@ class BasicTableViewElement extends RenderObjectElement {
               },
             ),
           );
-          child = updateChild(null, built, slot);
+          child = updateChild(null, built, slot)!;
         }
         row[columnIndex] = child;
       });
@@ -487,7 +478,7 @@ class BasicTableViewElement extends RenderObjectElement {
     DiagnosticsNode context,
     dynamic exception,
     StackTrace stack, {
-    InformationCollector informationCollector,
+    required InformationCollector informationCollector,
   }) {
     final FlutterErrorDetails details = FlutterErrorDetails(
       exception: exception,
@@ -513,7 +504,7 @@ class BasicTableViewElement extends RenderObjectElement {
   }
 
   @override
-  void mount(Element parent, dynamic newSlot) {
+  void mount(Element? parent, dynamic newSlot) {
     super.mount(parent, newSlot);
     _children = <int, Map<int, Element>>{};
     renderObject.updateLayoutCallback(_layout);
@@ -529,7 +520,6 @@ class BasicTableViewElement extends RenderObjectElement {
   void visitChildren(ElementVisitor visitor) {
     for (final Map<int, Element> row in _children.values) {
       for (final Element child in row.values) {
-        assert(child != null);
         visitor(child);
       }
     }
@@ -537,12 +527,10 @@ class BasicTableViewElement extends RenderObjectElement {
 
   @override
   void forgetChild(Element child) {
-    assert(child != null);
     assert(child.slot is TableViewSlot);
     final TableViewSlot slot = child.slot;
-    assert(_children != null);
     assert(_children.containsKey(slot.rowIndex));
-    final Map<int, Element> row = _children[slot.rowIndex];
+    final Map<int, Element> row = _children[slot.rowIndex]!;
     assert(row.containsKey(slot.columnIndex));
     assert(row[slot.columnIndex] == child);
     row.remove(slot.columnIndex);
@@ -553,47 +541,58 @@ class BasicTableViewElement extends RenderObjectElement {
   }
 
   @override
-  void insertRenderObjectChild(RenderObject child, TableViewSlot slot) {
+  void insertRenderObjectChild(RenderBox child, TableViewSlot slot) {
     assert(child.parent == null);
     renderObject.insert(child, rowIndex: slot.rowIndex, columnIndex: slot.columnIndex);
     assert(child.parent == renderObject);
   }
 
   @override
-  void moveRenderObjectChild(RenderObject child, TableViewSlot oldSlot, TableViewSlot newSlot) {
+  void moveRenderObjectChild(RenderBox child, TableViewSlot? oldSlot, TableViewSlot newSlot) {
     assert(child.parent == renderObject);
     renderObject.move(child, rowIndex: newSlot.rowIndex, columnIndex: newSlot.columnIndex);
     assert(child.parent == renderObject);
   }
 
   @override
-  void removeRenderObjectChild(RenderObject child, TableViewSlot slot) {
+  void removeRenderObjectChild(RenderBox child, TableViewSlot? slot) {
     assert(child.parent == renderObject);
     renderObject.remove(child);
     assert(child.parent == null);
   }
 }
 
-class RenderBasicTableView extends RenderSegment {
-  RenderBasicTableView({
-    double rowHeight,
-    int length,
-    List<BasicTableColumn> columns,
-    bool roundColumnWidthsToWholePixel = false,
-    TableViewMetricsController metricsController,
-  }) {
-    // Set in constructor body instead of initializers to trigger setters.
-    this.rowHeight = rowHeight;
-    this.length = length;
-    this.columns = columns;
-    this.roundColumnWidthsToWholePixel = roundColumnWidthsToWholePixel;
-    this.metricsController = metricsController;
-  }
+class BasicTableViewElement extends RenderObjectElement with TableViewElementMixin {
+  BasicTableViewElement(BasicTableView tableView) : super(tableView);
 
-  double _rowHeight;
-  double get rowHeight => _rowHeight;
+  @override
+  BasicTableView get widget => super.widget as BasicTableView;
+
+  @override
+  RenderBasicTableView get renderObject => super.renderObject as RenderBasicTableView;
+
+  @override
+  @protected
+  Widget renderCell(int rowIndex, int columnIndex) {
+    final BasicTableColumn column = widget.columns[columnIndex];
+    return column.cellRenderer(
+      context: this,
+      rowIndex: rowIndex,
+      columnIndex: columnIndex,
+    );
+  }
+}
+
+mixin RenderTableViewMixin on RenderSegment {
+  List<TableColumn> get columns;
+  set columns(covariant List<TableColumn> value);
+
+  @protected
+  List<TableColumn>? get rawColumns;
+
+  double? _rowHeight;
+  double get rowHeight => _rowHeight!;
   set rowHeight(double value) {
-    assert(value != null);
     if (_rowHeight == value) return;
     _rowHeight = value;
     markNeedsMetrics();
@@ -602,10 +601,9 @@ class RenderBasicTableView extends RenderSegment {
     markNeedsBuild();
   }
 
-  int _length;
-  int get length => _length;
+  int? _length;
+  int get length => _length!;
   set length(int value) {
-    assert(value != null);
     assert(value >= 0);
     if (_length == value) return;
     _length = value;
@@ -615,20 +613,12 @@ class RenderBasicTableView extends RenderSegment {
     markNeedsBuild();
   }
 
-  List<BasicTableColumn> _columns;
-  List<BasicTableColumn> get columns => _columns;
-  set columns(covariant List<BasicTableColumn> value) {
-    assert(value != null);
-    if (_columns == value) return;
-    _columns = value;
-    markNeedsMetrics();
-    markNeedsBuild();
-  }
+  @protected
+  int? get rawLength => _length;
 
-  bool _roundColumnWidthsToWholePixel;
-  bool get roundColumnWidthsToWholePixel => _roundColumnWidthsToWholePixel;
+  bool? _roundColumnWidthsToWholePixel;
+  bool get roundColumnWidthsToWholePixel => _roundColumnWidthsToWholePixel!;
   set roundColumnWidthsToWholePixel(bool value) {
-    assert(value != null);
     if (_roundColumnWidthsToWholePixel == value) return;
     _roundColumnWidthsToWholePixel = value;
     markNeedsMetrics();
@@ -637,13 +627,13 @@ class RenderBasicTableView extends RenderSegment {
     markNeedsBuild();
   }
 
-  TableViewMetricsController _metricsController;
-  TableViewMetricsController get metricsController => _metricsController;
-  set metricsController(TableViewMetricsController value) {
+  TableViewMetricsController? _metricsController;
+  TableViewMetricsController? get metricsController => _metricsController;
+  set metricsController(TableViewMetricsController? value) {
     if (value == _metricsController) return;
     _metricsController = value;
     if (_metricsController != null && !_needsMetrics) {
-      _metricsController._setMetrics(_metrics);
+      _metricsController!._setMetrics(_metrics!);
     }
   }
 
@@ -651,12 +641,11 @@ class RenderBasicTableView extends RenderSegment {
 
   void insert(
     RenderBox child, {
-    @required int rowIndex,
-    @required int columnIndex,
+    required int rowIndex,
+    required int columnIndex,
   }) {
-    assert(child != null);
     final Map<int, RenderBox> row = _children.putIfAbsent(rowIndex, () => <int, RenderBox>{});
-    final RenderBox oldChild = row.remove(columnIndex);
+    final RenderBox? oldChild = row.remove(columnIndex);
     if (oldChild != null) dropChild(oldChild);
     row[columnIndex] = child;
     child.parentData = _TableViewParentData()
@@ -667,18 +656,17 @@ class RenderBasicTableView extends RenderSegment {
 
   void move(
     RenderBox child, {
-    @required int rowIndex,
-    @required int columnIndex,
+    required int rowIndex,
+    required int columnIndex,
   }) {
     remove(child);
     insert(child, rowIndex: rowIndex, columnIndex: columnIndex);
   }
 
   void remove(RenderBox child) {
-    assert(child != null);
     assert(child.parentData is _TableViewParentData);
-    final _TableViewParentData parentData = child.parentData;
-    final Map<int, RenderBox> row = _children[parentData.rowIndex];
+    final _TableViewParentData parentData = child.parentData as _TableViewParentData;
+    final Map<int, RenderBox> row = _children[parentData.rowIndex]!;
     row.remove(parentData.columnIndex);
     if (row.isEmpty) {
       _children.remove(parentData.rowIndex);
@@ -686,11 +674,11 @@ class RenderBasicTableView extends RenderSegment {
     dropChild(child);
   }
 
-  TableViewLayoutCallback _layoutCallback;
+  TableViewLayoutCallback? _layoutCallback;
 
   /// Change the layout callback.
   @protected
-  void updateLayoutCallback(TableViewLayoutCallback value) {
+  void updateLayoutCallback(TableViewLayoutCallback? value) {
     if (value == _layoutCallback) return;
     _layoutCallback = value;
     markNeedsBuild();
@@ -711,7 +699,7 @@ class RenderBasicTableView extends RenderSegment {
   }
 
   /// Specific cells in need of building.
-  UnionTableCellRange _dirtyCells;
+  UnionTableCellRange? _dirtyCells;
 
   /// Marks specific cells as needing to rebuild.
   ///
@@ -721,9 +709,8 @@ class RenderBasicTableView extends RenderSegment {
   ///    rebuild.
   @protected
   void markCellsDirty(TableCellRange cells) {
-    assert(cells != null);
     _dirtyCells ??= UnionTableCellRange();
-    _dirtyCells.add(cells);
+    _dirtyCells!.add(cells);
     markNeedsLayout();
   }
 
@@ -754,7 +741,6 @@ class RenderBasicTableView extends RenderSegment {
       for (MapEntry<int, RenderBox> cell in cells) {
         final int columnIndex = cell.key;
         final RenderBox child = cell.value;
-        assert(child != null);
         visitor(child, rowIndex, columnIndex);
       }
     }
@@ -768,18 +754,16 @@ class RenderBasicTableView extends RenderSegment {
   }
 
   @override
-  bool hitTestChildren(BoxHitTestResult result, {Offset position}) {
-    assert(position != null);
-    assert(metrics != null);
-    final TableCellOffset cellOffset = metrics.getCellAt(position);
+  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
+    final TableCellOffset? cellOffset = metrics.getCellAt(position);
     if (cellOffset == null ||
         !_children.containsKey(cellOffset.rowIndex) ||
-        !_children[cellOffset.rowIndex].containsKey(cellOffset.columnIndex)) {
+        !_children[cellOffset.rowIndex]!.containsKey(cellOffset.columnIndex)) {
       // No table cell at the given position.
       return false;
     }
-    final RenderBox child = _children[cellOffset.rowIndex][cellOffset.columnIndex];
-    final BoxParentData parentData = child.parentData;
+    final RenderBox child = _children[cellOffset.rowIndex]![cellOffset.columnIndex]!;
+    final BoxParentData parentData = child.parentData as BoxParentData;
     return result.addWithPaintOffset(
       offset: parentData.offset,
       position: position,
@@ -801,7 +785,7 @@ class RenderBasicTableView extends RenderSegment {
   @override
   double computeMinIntrinsicWidth(double height) {
     return columns
-        .map<TableColumnWidth>((BasicTableColumn column) => column.width)
+        .map<TableColumnWidth>((TableColumn column) => column.width)
         .where((TableColumnWidth width) => !width.isFlex)
         .map<double>((TableColumnWidth width) => width.width)
         .map<double>((double w) => roundColumnWidthsToWholePixel ? w.roundToDouble() : w)
@@ -820,11 +804,11 @@ class RenderBasicTableView extends RenderSegment {
   double computeMaxIntrinsicHeight(double width) => computeMinIntrinsicHeight(width);
 
   bool _needsMetrics = true;
-  TableViewMetricsResolver _metrics;
-  Rect _viewport;
+  TableViewMetricsResolver? _metrics;
+  Rect? _viewport;
 
   @protected
-  TableViewMetricsResolver get metrics => _metrics;
+  TableViewMetricsResolver get metrics => _metrics!;
 
   @protected
   void markNeedsMetrics() {
@@ -836,7 +820,7 @@ class RenderBasicTableView extends RenderSegment {
   void calculateMetricsIfNecessary() {
     assert(debugDoingThisLayout);
     final BoxConstraints boxConstraints = constraints.asBoxConstraints();
-    if (_needsMetrics || _metrics.constraints != boxConstraints) {
+    if (_needsMetrics || _metrics!.constraints != boxConstraints) {
       _metrics = TableViewMetricsResolver.of(
         columns,
         rowHeight,
@@ -846,7 +830,7 @@ class RenderBasicTableView extends RenderSegment {
       );
       _needsMetrics = false;
       if (_metricsController != null) {
-        _metricsController._setMetrics(_metrics);
+        _metricsController!._setMetrics(_metrics!);
       }
     }
   }
@@ -874,11 +858,11 @@ class RenderBasicTableView extends RenderSegment {
   }
 
   bool _isBuilt(int rowIndex, int columnIndex) {
-    return _children.containsKey(rowIndex) && _children[rowIndex].containsKey(columnIndex);
+    return _children.containsKey(rowIndex) && _children[rowIndex]!.containsKey(columnIndex);
   }
 
   bool _isNotBuilt(int rowIndex, int columnIndex) {
-    return !_children.containsKey(rowIndex) || !_children[rowIndex].containsKey(columnIndex);
+    return !_children.containsKey(rowIndex) || !_children[rowIndex]!.containsKey(columnIndex);
   }
 
   @protected
@@ -894,13 +878,13 @@ class RenderBasicTableView extends RenderSegment {
   void rebuildIfNecessary() {
     assert(_layoutCallback != null);
     assert(debugDoingThisLayout);
-    final Rect previousViewport = _viewport;
+    final Rect? previousViewport = _viewport;
     _viewport = constraints.viewportResolver.resolve(size);
     if (!_needsBuild && _dirtyCells == null && _viewport == previousViewport) {
       return;
     }
 
-    final TableCellRect viewportCellRect = metrics.intersect(_viewport);
+    final TableCellRect viewportCellRect = metrics.intersect(_viewport!);
     TableCellRange removeCells = builtCells().subtract(viewportCellRect);
     TableCellRange buildCells;
 
@@ -910,14 +894,14 @@ class RenderBasicTableView extends RenderSegment {
       _dirtyCells = null;
     } else if (_dirtyCells != null) {
       buildCells = UnionTableCellRange(<TableCellRange>[
-        _dirtyCells.intersect(viewportCellRect),
+        _dirtyCells!.intersect(viewportCellRect),
         viewportCellRect.where(_isNotBuilt),
       ]);
       _dirtyCells = null;
     } else {
       assert(previousViewport != null);
-      if (_viewport.overlaps(previousViewport)) {
-        final Rect overlap = _viewport.intersect(previousViewport);
+      if (_viewport!.overlaps(previousViewport!)) {
+        final Rect overlap = _viewport!.intersect(previousViewport);
         final TableCellRect overlapCellRect = metrics.intersect(overlap);
         removeCells = metrics.intersect(previousViewport).subtract(overlapCellRect);
         buildCells = viewportCellRect.subtract(overlapCellRect);
@@ -928,7 +912,7 @@ class RenderBasicTableView extends RenderSegment {
 
     // TODO: lowering length causes stranded built cells - figure out why...
     invokeLayoutCallback<SegmentConstraints>((SegmentConstraints _) {
-      _layoutCallback(
+      _layoutCallback!(
         visitChildrenToRemove: removeCells.where(_isInBounds).where(_isBuilt).visitCells,
         visitChildrenToBuild: buildCells.where(_isInBounds).visitCells,
       );
@@ -960,20 +944,42 @@ class RenderBasicTableView extends RenderSegment {
   }
 }
 
-class _TableViewParentData extends BoxParentData {
-  int _rowIndex;
-  int get rowIndex => _rowIndex;
-  set rowIndex(int value) {
-    assert(value != null);
-    _rowIndex = value;
+class RenderBasicTableView extends RenderSegment with RenderTableViewMixin {
+  RenderBasicTableView({
+    required double rowHeight,
+    required int length,
+    required List<BasicTableColumn> columns,
+    bool roundColumnWidthsToWholePixel = false,
+    TableViewMetricsController? metricsController,
+  }) {
+    this.rowHeight = rowHeight;
+    this.length = length;
+    this.columns = columns;
+    this.roundColumnWidthsToWholePixel = roundColumnWidthsToWholePixel;
+    this.metricsController = metricsController;
   }
 
-  int _columnIndex;
-  int get columnIndex => _columnIndex;
-  set columnIndex(int value) {
-    assert(value != null);
-    _columnIndex = value;
+  List<BasicTableColumn>? _columns;
+
+  @override
+  List<BasicTableColumn>? get rawColumns => _columns;
+
+  @override
+  List<BasicTableColumn> get columns => _columns!;
+
+  @override
+  set columns(List<BasicTableColumn> value) {
+    if (_columns == value) return;
+    _columns = value;
+    markNeedsMetrics();
+    markNeedsBuild();
   }
+}
+
+class _TableViewParentData extends BoxParentData {
+  late int rowIndex;
+
+  late int columnIndex;
 
   @override
   String toString() => '${super.toString()}, rowIndex=$rowIndex, columnIndex=$columnIndex';
@@ -1004,7 +1010,7 @@ abstract class TableViewMetrics {
   /// coordinate space of the table view.
   ///
   /// Returns null if the offset doesn't overlap with a cell in the table view.
-  TableCellOffset getCellAt(Offset position);
+  TableCellOffset? getCellAt(Offset position);
 
   /// Gets the bounding [Rect] of the specified row in the table view.
   ///
@@ -1037,24 +1043,23 @@ abstract class TableViewMetrics {
 
 typedef TableViewMetricsChangedHandler = void Function(
   TableViewMetricsController controller,
-  TableViewMetrics oldMetrics,
+  TableViewMetrics? oldMetrics,
 );
 
 class TableViewMetricsListener {
   const TableViewMetricsListener({
-    @required this.onChanged,
-  }) : assert(onChanged != null);
+    required this.onChanged,
+  });
 
   final TableViewMetricsChangedHandler onChanged;
 }
 
 class TableViewMetricsController with ListenerNotifier<TableViewMetricsListener> {
-  TableViewMetrics _metrics;
-  TableViewMetrics get metrics => _metrics;
+  TableViewMetrics? _metrics;
+  TableViewMetrics get metrics => _metrics!;
   void _setMetrics(TableViewMetrics value) {
-    assert(value != null);
     if (value == _metrics) return;
-    final TableViewMetrics oldValue = _metrics;
+    final TableViewMetrics? oldValue = _metrics;
     _metrics = value;
     notifyListeners((TableViewMetricsListener listener) {
       listener.onChanged(this, oldValue);
@@ -1087,10 +1092,10 @@ class TableViewMetricsResolver implements TableViewMetrics {
 
   /// The columns of the table view.
   ///
-  /// Each column's [BasicTableColumn.width] specification is the source (when
+  /// Each column's [TableColumn.width] specification is the source (when
   /// combined with [constraints]) of the resolved column widths in
   /// [columnWidth].
-  final List<BasicTableColumn> columns;
+  final List<TableColumn> columns;
 
   /// The [BoxConstraints] against which the width specifications of the
   /// [columns] were resolved.
@@ -1108,7 +1113,7 @@ class TableViewMetricsResolver implements TableViewMetrics {
   final List<Range> columnBounds;
 
   static TableViewMetricsResolver of(
-    List<BasicTableColumn> columns,
+    List<TableColumn> columns,
     double rowHeight,
     int length,
     BoxConstraints constraints, {
@@ -1118,13 +1123,13 @@ class TableViewMetricsResolver implements TableViewMetrics {
     double totalFlexWidth = 0;
     double totalFixedWidth = 0;
     final List<double> resolvedWidths = List<double>.filled(columns.length, 0);
-    final Map<int, BasicTableColumn> flexColumns = <int, BasicTableColumn>{};
+    final Map<int, TableColumn> flexColumns = <int, TableColumn>{};
 
     // Reserve space for the fixed-width columns first.
     for (int i = 0; i < columns.length; i++) {
-      final BasicTableColumn column = columns[i];
+      final TableColumn column = columns[i];
       if (column.width.isFlex) {
-        final FlexTableColumnWidth widthSpecification = column.width;
+        final FlexTableColumnWidth widthSpecification = column.width as FlexTableColumnWidth;
         totalFlexWidth += widthSpecification.width;
         flexColumns[i] = column;
       } else {
@@ -1172,8 +1177,9 @@ class TableViewMetricsResolver implements TableViewMetrics {
         flexAllocation = constraints.minWidth - totalFixedWidth;
       }
       if (flexAllocation > 0) {
-        for (MapEntry<int, BasicTableColumn> flexColumn in flexColumns.entries) {
-          final FlexTableColumnWidth widthSpecification = flexColumn.value.width;
+        for (MapEntry<int, TableColumn> flexColumn in flexColumns.entries) {
+          final FlexTableColumnWidth widthSpecification =
+              flexColumn.value.width as FlexTableColumnWidth;
           final double allocationPercentage = widthSpecification.width / totalFlexWidth;
           double columnWidth = flexAllocation * allocationPercentage;
           if (roundWidths) {
@@ -1207,7 +1213,6 @@ class TableViewMetricsResolver implements TableViewMetrics {
   double get totalHeight => length * rowHeight;
 
   TableCellRect intersect(Rect rect) {
-    assert(rect != null);
     if (rect.isEmpty) {
       return TableCellRect.empty;
     }
@@ -1232,14 +1237,12 @@ class TableViewMetricsResolver implements TableViewMetrics {
 
   @override
   Rect getRowBounds(int rowIndex) {
-    assert(rowIndex != null);
     assert(rowIndex >= 0 && rowIndex < length);
     return Rect.fromLTWH(0, rowIndex * rowHeight, totalWidth, rowHeight);
   }
 
   @override
   Rect getColumnBounds(int columnIndex) {
-    assert(columnIndex != null);
     assert(columnIndex >= 0 && columnIndex < columnBounds.length);
     final Range columnRange = columnBounds[columnIndex];
     return Rect.fromLTRB(columnRange.start, 0, columnRange.end, length * rowHeight);
@@ -1254,7 +1257,6 @@ class TableViewMetricsResolver implements TableViewMetrics {
 
   @override
   int getRowAt(double dy) {
-    assert(dy != null);
     assert(dy.isFinite);
     if (dy.isNegative) {
       return -1;
@@ -1268,7 +1270,6 @@ class TableViewMetricsResolver implements TableViewMetrics {
 
   @override
   int getColumnAt(double dx) {
-    assert(dx != null);
     assert(dx.isFinite);
     int columnIndex = columnBounds.indexWhere((Range range) => range.start <= dx);
     if (columnIndex >= 0) {
@@ -1278,8 +1279,7 @@ class TableViewMetricsResolver implements TableViewMetrics {
   }
 
   @override
-  TableCellOffset getCellAt(Offset position) {
-    assert(position != null);
+  TableCellOffset? getCellAt(Offset position) {
     final int rowIndex = getRowAt(position.dy);
     final int columnIndex = getColumnAt(position.dx);
     if (rowIndex == -1 || columnIndex == -1) {
@@ -1290,10 +1290,7 @@ class TableViewMetricsResolver implements TableViewMetrics {
 }
 
 class Range with Diagnosticable {
-  const Range(this.start, this.end)
-      : assert(start != null),
-        assert(end != null),
-        assert(start <= end);
+  const Range(this.start, this.end) : assert(start <= end);
 
   final double start;
   final double end;

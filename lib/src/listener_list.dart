@@ -13,25 +13,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// @dart=2.9
-
 import 'dart:collection';
 
 import 'package:flutter/foundation.dart';
 
 typedef ListenerVisitor<T> = void Function(T listener);
 
-class _ListenerEntry<T> extends LinkedListEntry<_ListenerEntry<T>> {
+class _ListenerEntry<T extends Object> extends LinkedListEntry<_ListenerEntry<T>> {
   _ListenerEntry(this.listener);
   final T listener;
 }
 
-mixin ListenerNotifier<T> {
+mixin ListenerNotifier<T extends Object> {
   LinkedList<_ListenerEntry<T>> _listeners = LinkedList<_ListenerEntry<T>>();
+  bool _debugDisposed = false;
 
   bool _debugAssertNotDisposed() {
     assert(() {
-      if (_listeners == null) {
+      if (_debugDisposed) {
         throw FlutterError(
             'A $runtimeType was used after being disposed.\n'
                 'Once you have called dispose() on a $runtimeType, it can no longer be used.'
@@ -60,7 +59,8 @@ mixin ListenerNotifier<T> {
   @mustCallSuper
   void dispose() {
     assert(_debugAssertNotDisposed());
-    _listeners = null;
+    _listeners.clear();
+    _debugDisposed = true;
   }
 
   @protected

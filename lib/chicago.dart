@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// @dart=2.9
-
 export 'src/activity_indicator.dart';
 export 'src/basic_list_view.dart';
 export 'src/basic_table_view.dart';
@@ -36,5 +34,5 @@ export 'src/sheet.dart';
 export 'src/sorting.dart';
 export 'src/tab_pane.dart';
 export 'src/table_pane.dart' hide main;
-export 'src/table_view.dart' hide main;
+export 'src/table_view.dart';
 export 'src/text_input.dart';

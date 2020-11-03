@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// @dart=2.9
-
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -24,8 +22,8 @@ import 'foundation.dart';
 
 class Sheet extends StatelessWidget {
   const Sheet({
-    Key key,
-    @required this.content,
+    Key? key,
+    required this.content,
     this.padding = const EdgeInsets.all(8),
   }) : super(key: key);
 
@@ -61,8 +59,8 @@ class Sheet extends StatelessWidget {
   }
 
   static Future<T> open<T>({
-    BuildContext context,
-    Widget content,
+    required BuildContext context,
+    required Widget content,
     EdgeInsetsGeometry padding = const EdgeInsets.all(8),
     Color barrierColor = const Color(0x80000000),
     bool barrierDismissible = false,
@@ -81,24 +79,22 @@ class Sheet extends StatelessWidget {
 
 class Prompt extends StatelessWidget {
   const Prompt({
-    Key key,
-    @required this.messageType,
-    @required this.message,
-    this.body,
+    Key? key,
+    required this.messageType,
+    required this.message,
+    required this.body,
     this.options = const <String>[],
     this.selectedOption,
-  })  : assert(messageType != null),
-        assert(message != null),
-        super(key: key);
+  }) : super(key: key);
 
   final MessageType messageType;
   final String message;
   final Widget body;
   final List<String> options;
-  final int selectedOption;
+  final int? selectedOption;
 
   void _setSelectedOption(BuildContext context, int index) {
-    Navigator.of(context).pop<int>(index);
+    Navigator.of(context)!.pop<int>(index);
   }
 
   @override
@@ -133,7 +129,7 @@ class Prompt extends StatelessWidget {
                               message,
                               style: Theme.of(context)
                                   .textTheme
-                                  .bodyText2
+                                  .bodyText2!
                                   .copyWith(fontWeight: FontWeight.bold),
                             ),
                             Padding(
@@ -171,15 +167,13 @@ class Prompt extends StatelessWidget {
   }
 
   static Future<int> open({
-    BuildContext context,
-    @required MessageType messageType,
-    @required String message,
-    Widget body,
+    required BuildContext context,
+    required MessageType messageType,
+    required String message,
+    required Widget body,
     List<String> options = const <String>[],
-    int selectedOption,
+    int? selectedOption,
   }) {
-    assert(messageType != null);
-    assert(message != null);
     return DialogTracker<int>().open(
       context: context,
       barrierDismissible: false,
@@ -202,16 +196,16 @@ class Prompt extends StatelessWidget {
 class DialogTracker<T> {
   final Completer<T> _completer = Completer<T>();
 
-  Animation<double> _animation;
+  Animation<double>? _animation;
   bool _isDialogClosing = false;
-  _AsyncResult<T> _result;
+  _AsyncResult<T>? _result;
 
   Future<T> open({
-    BuildContext context,
+    required BuildContext context,
     bool barrierDismissible = true,
     String barrierLabel = 'Dismiss',
     Color barrierColor = const Color(0x80000000),
-    Widget child,
+    required Widget child,
   }) {
     final ThemeData theme = Theme.of(context);
     showGeneralDialog<T>(
@@ -224,14 +218,10 @@ class DialogTracker<T> {
         Animation<double> animation,
         Animation<double> secondaryAnimation,
       ) {
-        Widget result = child;
-        if (theme != null) {
-          result = Theme(
-            data: theme,
-            child: result,
-          );
-        }
-        return result;
+        return Theme(
+          data: theme,
+          child: child,
+        );
       },
       transitionDuration: const Duration(milliseconds: 300),
       transitionBuilder: (
@@ -242,7 +232,6 @@ class DialogTracker<T> {
       ) {
         assert(_animation == null || _animation == animation);
         if (_animation == null) {
-          assert(animation != null);
           _animation = animation;
           animation.addStatusListener(_handleAnimationStatusUpdate);
         }
@@ -260,7 +249,7 @@ class DialogTracker<T> {
           ),
         );
       },
-    ).then((T value) {
+    ).then((T? value) {
       _result = _AsyncResult.value(value);
     }).catchError((dynamic error, StackTrace stack) {
       _result = _AsyncResult.error(error, stack);
@@ -276,9 +265,9 @@ class DialogTracker<T> {
       assert(_result != null);
       assert(!_completer.isCompleted);
       _isDialogClosing = false;
-      _animation.removeStatusListener(_handleAnimationStatusUpdate);
+      _animation!.removeStatusListener(_handleAnimationStatusUpdate);
       _animation = null;
-      _result.complete(_completer);
+      _result!.complete(_completer);
     }
   }
 }
@@ -288,18 +277,15 @@ class _AsyncResult<T> {
       : error = null,
         stack = null;
 
-  const _AsyncResult.error(this.error, this.stack)
-      : assert(error != null),
-        assert(stack != null),
-        value = null;
+  const _AsyncResult.error(Object this.error, StackTrace this.stack) : value = null;
 
-  final FutureOr<T> value;
-  final dynamic error;
-  final StackTrace stack;
+  final FutureOr<T>? value;
+  final Object? error;
+  final StackTrace? stack;
 
   void complete(Completer<T> completer) {
     if (error != null) {
-      completer.completeError(error, stack);
+      completer.completeError(error!, stack);
     } else {
       completer.complete(value);
     }

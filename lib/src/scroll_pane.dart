@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// @dart=2.9
-
 import 'dart:math' show min, max;
 
 import 'package:flutter/foundation.dart';
@@ -262,8 +260,8 @@ typedef ScrollOffsetChangedHandler = void Function(
 
 class ScrollPaneListener {
   const ScrollPaneListener({
-    @required this.onScrollOffsetChanged,
-  }) : assert(onScrollOffsetChanged != null);
+    required this.onScrollOffsetChanged,
+  });
 
   final ScrollOffsetChangedHandler onScrollOffsetChanged;
 }
@@ -271,13 +269,11 @@ class ScrollPaneListener {
 class ScrollController with ListenerNotifier<ScrollPaneListener> {
   ScrollController({
     Offset scrollOffset = Offset.zero,
-  })  : assert(scrollOffset != null),
-        _scrollOffset = scrollOffset;
+  })  : _scrollOffset = scrollOffset;
 
   Offset _scrollOffset;
   Offset get scrollOffset => _scrollOffset;
   set scrollOffset(Offset value) {
-    assert(value != null);
     value = _boundsCheckScrollOffset(value);
     if (value == _scrollOffset) return;
     final Offset previousOffset = _scrollOffset;
@@ -291,13 +287,10 @@ class ScrollController with ListenerNotifier<ScrollPaneListener> {
   Size _viewSize = Size.zero;
 
   void _setRenderValues({
-    @required Size viewSize,
-    @required Size viewportSize,
-    @required Offset scrollOffset,
+    required Size viewSize,
+    required Size viewportSize,
+    required Offset scrollOffset,
   }) {
-    assert(viewSize != null);
-    assert(viewportSize != null);
-    assert(scrollOffset != null);
     _viewSize = viewSize;
     _viewportSize = viewportSize;
     this.scrollOffset = scrollOffset;
@@ -322,7 +315,7 @@ class ScrollController with ListenerNotifier<ScrollPaneListener> {
   /// If the [animation] argument is non-null, the scroll offset will be
   /// animated to its destination value. Otherwise, the scroll offset will
   /// jump to its destination.
-  void scrollToVisible(Rect rect, {AnimationController animation}) {
+  void scrollToVisible(Rect rect, {AnimationController? animation}) {
     final Rect viewport = scrollOffset & _viewportSize;
 
     double deltaX = 0;
@@ -389,7 +382,7 @@ class ScrollController with ListenerNotifier<ScrollPaneListener> {
 
 class ScrollPane extends StatefulWidget {
   const ScrollPane({
-    Key key,
+    Key? key,
     this.horizontalScrollBarPolicy = ScrollBarPolicy.auto,
     this.verticalScrollBarPolicy = ScrollBarPolicy.auto,
     this.clipBehavior = Clip.hardEdge,
@@ -400,11 +393,8 @@ class ScrollPane extends StatefulWidget {
     this.bottomLeftCorner = const _EmptyCorner(),
     this.bottomRightCorner = const _EmptyCorner(),
     this.topRightCorner = const _EmptyCorner(),
-    @required this.view,
-  })  : assert(horizontalScrollBarPolicy != null),
-        assert(verticalScrollBarPolicy != null),
-        assert(view != null),
-        super(key: key);
+    required this.view,
+  })  : super(key: key);
 
   /// The policy for how to lay the view out and show a scroll bar in the
   /// horizontal axis.
@@ -433,7 +423,7 @@ class ScrollPane extends StatefulWidget {
   ///
   /// If this is not provided, one will be created and maintained automatically
   /// by this widget's [State] object.
-  final ScrollController scrollController;
+  final ScrollController? scrollController;
 
   /// Optional widget that will be laid out to the left of the view, vertically
   /// aligned with the top of the view.
@@ -441,7 +431,7 @@ class ScrollPane extends StatefulWidget {
   /// The row header will scroll vertically with the scroll pane, but it will
   /// remain fixed in place in the horizontal axis, even when the view is
   /// scrolled horizontally.
-  final Widget rowHeader;
+  final Widget? rowHeader;
 
   /// Optional widget that will be laid out to the top of the view,
   /// horizontally aligned with the left of the view.
@@ -449,7 +439,7 @@ class ScrollPane extends StatefulWidget {
   /// The column header will scroll horizontally with the scroll pane, but it
   /// will remain fixed in place in the vertical axis, even when the view is
   /// scrolled vertically.
-  final Widget columnHeader;
+  final Widget? columnHeader;
 
   /// Optional widget that will be laid out in the top left corner (above the
   /// row header and to the left of the column header).
@@ -506,7 +496,7 @@ class ScrollPane extends StatefulWidget {
 }
 
 class _ScrollPaneState extends State<ScrollPane> {
-  ScrollController _scrollController;
+  ScrollController? _scrollController;
 
   @override
   void initState() {
@@ -522,7 +512,7 @@ class _ScrollPaneState extends State<ScrollPane> {
     if (oldWidget.scrollController != widget.scrollController) {
       if (oldWidget.scrollController == null) {
         assert(_scrollController != null);
-        _scrollController.dispose();
+        _scrollController!.dispose();
         _scrollController = null;
       } else {
         assert(_scrollController == null);
@@ -558,13 +548,13 @@ class _ScrollPaneState extends State<ScrollPane> {
       horizontalScrollBarPolicy: widget.horizontalScrollBarPolicy,
       verticalScrollBarPolicy: widget.verticalScrollBarPolicy,
       clipBehavior: widget.clipBehavior,
-      scrollController: widget.scrollController ?? _scrollController,
+      scrollController: widget.scrollController ?? _scrollController!,
     );
   }
 }
 
 class _EmptyCorner extends LeafRenderObjectWidget {
-  const _EmptyCorner({Key key}) : super(key: key);
+  const _EmptyCorner({Key? key}) : super(key: key);
 
   @override
   RenderObject createRenderObject(BuildContext context) => _RenderEmptyCorner();
@@ -587,36 +577,25 @@ class _RenderEmptyCorner extends RenderBox {
 
 class _ScrollPane extends RenderObjectWidget {
   const _ScrollPane({
-    Key key,
-    @required this.view,
-    @required this.rowHeader,
-    @required this.columnHeader,
-    @required this.topLeftCorner,
-    @required this.bottomLeftCorner,
-    @required this.bottomRightCorner,
-    @required this.topRightCorner,
-    @required this.horizontalScrollBar,
-    @required this.verticalScrollBar,
-    @required this.horizontalScrollBarPolicy,
-    @required this.verticalScrollBarPolicy,
-    @required this.clipBehavior,
-    @required this.scrollController,
-  })  : assert(view != null),
-        assert(topLeftCorner != null),
-        assert(bottomLeftCorner != null),
-        assert(bottomRightCorner != null),
-        assert(topRightCorner != null),
-        assert(horizontalScrollBar != null),
-        assert(verticalScrollBar != null),
-        assert(horizontalScrollBarPolicy != null),
-        assert(verticalScrollBarPolicy != null),
-        assert(clipBehavior != null),
-        assert(scrollController != null),
-        super(key: key);
+    Key? key,
+    required this.view,
+    required this.rowHeader,
+    required this.columnHeader,
+    required this.topLeftCorner,
+    required this.bottomLeftCorner,
+    required this.bottomRightCorner,
+    required this.topRightCorner,
+    required this.horizontalScrollBar,
+    required this.verticalScrollBar,
+    required this.horizontalScrollBarPolicy,
+    required this.verticalScrollBarPolicy,
+    required this.clipBehavior,
+    required this.scrollController,
+  })  : super(key: key);
 
   final Widget view;
-  final Widget rowHeader;
-  final Widget columnHeader;
+  final Widget? rowHeader;
+  final Widget? columnHeader;
   final Widget topLeftCorner;
   final Widget bottomLeftCorner;
   final Widget bottomRightCorner;
@@ -666,15 +645,15 @@ enum _ScrollPaneSlot {
 class _ScrollPaneElement extends RenderObjectElement {
   _ScrollPaneElement(_ScrollPane widget) : super(widget);
 
-  Element _view;
-  Element _rowHeader;
-  Element _columnHeader;
-  Element _topLeftCorner;
-  Element _bottomLeftCorner;
-  Element _bottomRightCorner;
-  Element _topRightCorner;
-  Element _horizontalScrollBar;
-  Element _verticalScrollBar;
+  Element? _view;
+  Element? _rowHeader;
+  Element? _columnHeader;
+  Element? _topLeftCorner;
+  Element? _bottomLeftCorner;
+  Element? _bottomRightCorner;
+  Element? _topRightCorner;
+  Element? _horizontalScrollBar;
+  Element? _verticalScrollBar;
 
   @override
   _ScrollPane get widget => super.widget as _ScrollPane;
@@ -690,7 +669,7 @@ class _ScrollPaneElement extends RenderObjectElement {
   }
 
   @override
-  void mount(Element parent, dynamic newSlot) {
+  void mount(Element? parent, dynamic newSlot) {
     super.mount(parent, newSlot);
     _updateChildren(widget);
   }
@@ -745,21 +724,19 @@ class _ScrollPaneElement extends RenderObjectElement {
 
   @override
   void visitChildren(ElementVisitor visitor) {
-    visitor(_view);
-    if (_rowHeader != null) visitor(_rowHeader);
-    if (_columnHeader != null) visitor(_columnHeader);
-    if (_topLeftCorner != null) visitor(_topLeftCorner);
-    if (_bottomLeftCorner != null) visitor(_bottomLeftCorner);
-    if (_bottomRightCorner != null) visitor(_bottomRightCorner);
-    if (_topRightCorner != null) visitor(_topRightCorner);
-    if (_horizontalScrollBar != null) visitor(_horizontalScrollBar);
-    if (_verticalScrollBar != null) visitor(_verticalScrollBar);
+    if (_view != null) visitor(_view!);
+    if (_rowHeader != null) visitor(_rowHeader!);
+    if (_columnHeader != null) visitor(_columnHeader!);
+    if (_topLeftCorner != null) visitor(_topLeftCorner!);
+    if (_bottomLeftCorner != null) visitor(_bottomLeftCorner!);
+    if (_bottomRightCorner != null) visitor(_bottomRightCorner!);
+    if (_topRightCorner != null) visitor(_topRightCorner!);
+    if (_horizontalScrollBar != null) visitor(_horizontalScrollBar!);
+    if (_verticalScrollBar != null) visitor(_verticalScrollBar!);
   }
 
   @override
   void insertRenderObjectChild(RenderBox child, _ScrollPaneSlot slot) {
-    assert(child != null);
-    assert(slot != null);
     _updateChildSlot(slot, child);
   }
 
@@ -774,7 +751,7 @@ class _ScrollPaneElement extends RenderObjectElement {
     _updateChildSlot(slot, null);
   }
 
-  void _updateChildSlot(_ScrollPaneSlot slot, RenderBox child) {
+  void _updateChildSlot(_ScrollPaneSlot slot, RenderBox? child) {
     switch (slot) {
       case _ScrollPaneSlot.view:
         renderObject.view = child;
@@ -798,10 +775,10 @@ class _ScrollPaneElement extends RenderObjectElement {
         renderObject.topRightCorner = child;
         break;
       case _ScrollPaneSlot.horizontalScrollBar:
-        renderObject.horizontalScrollBar = child;
+        renderObject.horizontalScrollBar = child as RenderScrollBar?;
         break;
       case _ScrollPaneSlot.verticalScrollBar:
-        renderObject.verticalScrollBar = child;
+        renderObject.verticalScrollBar = child as RenderScrollBar?;
         break;
     }
   }
@@ -809,9 +786,9 @@ class _ScrollPaneElement extends RenderObjectElement {
 
 class ScrollPaneViewportResolver implements ViewportResolver {
   const ScrollPaneViewportResolver({
-    @required this.viewportOffset,
-    @required this.sizeAdjustment,
-    @required this.viewportConstraints,
+    required this.viewportOffset,
+    required this.sizeAdjustment,
+    required this.viewportConstraints,
   });
 
   final Offset viewportOffset;
@@ -820,7 +797,7 @@ class ScrollPaneViewportResolver implements ViewportResolver {
 
   @override
   Rect resolve(Size size) {
-    Size viewportSize = viewportConstraints.constrain(size + sizeAdjustment) - sizeAdjustment;
+    Size viewportSize = viewportConstraints.constrain(size + sizeAdjustment) - sizeAdjustment as Size;
     viewportSize = Size(
       max(viewportSize.width, 0),
       max(viewportSize.height, 0),
@@ -857,11 +834,8 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
     ScrollBarPolicy horizontalScrollBarPolicy = ScrollBarPolicy.auto,
     ScrollBarPolicy verticalScrollBarPolicy = ScrollBarPolicy.auto,
     Clip clipBehavior = Clip.hardEdge,
-    ScrollController scrollController,
-  })  : assert(horizontalScrollBarPolicy != null),
-        assert(verticalScrollBarPolicy != null),
-        assert(clipBehavior != null),
-        _horizontalScrollBarPolicy = horizontalScrollBarPolicy,
+    required ScrollController scrollController,
+  })  : _horizontalScrollBarPolicy = horizontalScrollBarPolicy,
         _verticalScrollBarPolicy = verticalScrollBarPolicy,
         _clipBehavior = clipBehavior {
     _scrollBarValueListener = ScrollBarValueListener(valueChanged: _onScrollBarValueChanged);
@@ -869,8 +843,8 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
     this.scrollController = scrollController;
   }
 
-  ScrollBarValueListener _scrollBarValueListener;
-  ScrollPaneListener _scrollPaneListener;
+  late final ScrollBarValueListener _scrollBarValueListener;
+  late final ScrollPaneListener _scrollPaneListener;
 
   static const double _horizontalReveal = 30;
   static const double _verticalReveal = 30;
@@ -879,7 +853,6 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
   ScrollBarPolicy _horizontalScrollBarPolicy;
   ScrollBarPolicy get horizontalScrollBarPolicy => _horizontalScrollBarPolicy;
   set horizontalScrollBarPolicy(ScrollBarPolicy value) {
-    assert(value != null);
     if (_horizontalScrollBarPolicy == value) return;
     _horizontalScrollBarPolicy = value;
     markNeedsLayout();
@@ -888,7 +861,6 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
   ScrollBarPolicy _verticalScrollBarPolicy;
   ScrollBarPolicy get verticalScrollBarPolicy => _verticalScrollBarPolicy;
   set verticalScrollBarPolicy(ScrollBarPolicy value) {
-    assert(value != null);
     if (_verticalScrollBarPolicy == value) return;
     _verticalScrollBarPolicy = value;
     markNeedsLayout();
@@ -897,115 +869,113 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
   Clip _clipBehavior = Clip.hardEdge;
   Clip get clipBehavior => _clipBehavior;
   set clipBehavior(Clip value) {
-    assert(value != null);
     if (_clipBehavior == value) return;
     _clipBehavior = value;
     markNeedsPaint();
   }
 
-  ScrollController _scrollController;
-  ScrollController get scrollController => _scrollController;
+  ScrollController? _scrollController;
+  ScrollController get scrollController => _scrollController!;
   set scrollController(ScrollController value) {
-    assert(value != null);
     if (value == _scrollController) return;
     if (_scrollController != null) {
-      _scrollController.removeListener(_scrollPaneListener);
+      _scrollController!.removeListener(_scrollPaneListener);
     }
     _scrollController = value;
-    _scrollController.addListener(_scrollPaneListener);
+    _scrollController!.addListener(_scrollPaneListener);
     markNeedsLayout();
   }
 
-  RenderBox _view;
-  RenderBox get view => _view;
-  set view(RenderBox value) {
+  RenderBox? _view;
+  RenderBox? get view => _view;
+  set view(RenderBox? value) {
     if (value == _view) return;
-    if (_view != null) dropChild(_view);
+    if (_view != null) dropChild(_view!);
     _view = value;
-    if (_view != null) adoptChild(_view);
+    if (_view != null) adoptChild(_view!);
   }
 
-  RenderBox _rowHeader;
-  RenderBox get rowHeader => _rowHeader;
-  set rowHeader(RenderBox value) {
+  RenderBox? _rowHeader;
+  RenderBox? get rowHeader => _rowHeader;
+  set rowHeader(RenderBox? value) {
     if (value == _rowHeader) return;
-    if (_rowHeader != null) dropChild(_rowHeader);
+    if (_rowHeader != null) dropChild(_rowHeader!);
     _rowHeader = value;
-    if (_rowHeader != null) adoptChild(_rowHeader);
+    if (_rowHeader != null) adoptChild(_rowHeader!);
   }
 
-  RenderBox _columnHeader;
-  RenderBox get columnHeader => _columnHeader;
-  set columnHeader(RenderBox value) {
+  RenderBox? _columnHeader;
+  RenderBox? get columnHeader => _columnHeader;
+  set columnHeader(RenderBox? value) {
     if (value == _columnHeader) return;
-    if (_columnHeader != null) dropChild(_columnHeader);
+    if (_columnHeader != null) dropChild(_columnHeader!);
     _columnHeader = value;
-    if (_columnHeader != null) adoptChild(_columnHeader);
+    if (_columnHeader != null) adoptChild(_columnHeader!);
   }
 
-  RenderBox _topLeftCorner;
-  RenderBox get topLeftCorner => _topLeftCorner;
-  set topLeftCorner(RenderBox value) {
+  RenderBox? _topLeftCorner;
+  RenderBox? get topLeftCorner => _topLeftCorner;
+  set topLeftCorner(RenderBox? value) {
     if (value == _topLeftCorner) return;
-    if (_topLeftCorner != null) dropChild(_topLeftCorner);
+    if (_topLeftCorner != null) dropChild(_topLeftCorner!);
     _topLeftCorner = value;
-    if (_topLeftCorner != null) adoptChild(_topLeftCorner);
+    if (_topLeftCorner != null) adoptChild(_topLeftCorner!);
   }
 
-  RenderBox _bottomLeftCorner;
-  RenderBox get bottomLeftCorner => _bottomLeftCorner;
-  set bottomLeftCorner(RenderBox value) {
+  RenderBox? _bottomLeftCorner;
+  RenderBox? get bottomLeftCorner => _bottomLeftCorner;
+  set bottomLeftCorner(RenderBox? value) {
     if (value == _bottomLeftCorner) return;
-    if (_bottomLeftCorner != null) dropChild(_bottomLeftCorner);
+    if (_bottomLeftCorner != null) dropChild(_bottomLeftCorner!);
     _bottomLeftCorner = value;
-    if (_bottomLeftCorner != null) adoptChild(_bottomLeftCorner);
+    if (_bottomLeftCorner != null) adoptChild(_bottomLeftCorner!);
   }
 
-  RenderBox _bottomRightCorner;
-  RenderBox get bottomRightCorner => _bottomRightCorner;
-  set bottomRightCorner(RenderBox value) {
+  RenderBox? _bottomRightCorner;
+  RenderBox? get bottomRightCorner => _bottomRightCorner;
+  set bottomRightCorner(RenderBox? value) {
     if (value == _bottomRightCorner) return;
-    if (_bottomRightCorner != null) dropChild(_bottomRightCorner);
+    if (_bottomRightCorner != null) dropChild(_bottomRightCorner!);
     _bottomRightCorner = value;
-    if (_bottomRightCorner != null) adoptChild(_bottomRightCorner);
+    if (_bottomRightCorner != null) adoptChild(_bottomRightCorner!);
   }
 
-  RenderBox _topRightCorner;
-  RenderBox get topRightCorner => _topRightCorner;
-  set topRightCorner(RenderBox value) {
+  RenderBox? _topRightCorner;
+  RenderBox? get topRightCorner => _topRightCorner;
+  set topRightCorner(RenderBox? value) {
     if (value == _topRightCorner) return;
-    if (_topRightCorner != null) dropChild(_topRightCorner);
+    if (_topRightCorner != null) dropChild(_topRightCorner!);
     _topRightCorner = value;
-    if (_topRightCorner != null) adoptChild(_topRightCorner);
+    if (_topRightCorner != null) adoptChild(_topRightCorner!);
   }
 
-  RenderScrollBar _horizontalScrollBar;
-  RenderScrollBar get horizontalScrollBar => _horizontalScrollBar;
-  set horizontalScrollBar(RenderScrollBar value) {
+  RenderScrollBar? _horizontalScrollBar;
+  RenderScrollBar? get horizontalScrollBar => _horizontalScrollBar;
+  set horizontalScrollBar(RenderScrollBar? value) {
     if (value == _horizontalScrollBar) return;
     if (_horizontalScrollBar != null) {
-      _horizontalScrollBar.removeListener(_scrollBarValueListener);
-      dropChild(_horizontalScrollBar);
+      _horizontalScrollBar!.removeListener(_scrollBarValueListener);
+      dropChild(_horizontalScrollBar!);
     }
     _horizontalScrollBar = value;
     if (_horizontalScrollBar != null) {
-      adoptChild(_horizontalScrollBar);
-      value.addListener(_scrollBarValueListener);
+      adoptChild(_horizontalScrollBar!);
+      value!.addListener(_scrollBarValueListener);
     }
   }
 
-  RenderScrollBar _verticalScrollBar;
-  RenderScrollBar get verticalScrollBar => _verticalScrollBar;
-  set verticalScrollBar(RenderScrollBar value) {
+  RenderScrollBar? _verticalScrollBar;
+  RenderScrollBar? get verticalScrollBar => _verticalScrollBar;
+  set verticalScrollBar(RenderScrollBar? value) {
     if (value == _verticalScrollBar) return;
     if (_verticalScrollBar != null) {
-      _verticalScrollBar.removeListener(_scrollBarValueListener);
-      dropChild(_verticalScrollBar);
+      _verticalScrollBar!.removeListener(_scrollBarValueListener);
+      dropChild(_verticalScrollBar!);
     }
     _verticalScrollBar = value;
     if (_verticalScrollBar != null) {
-      adoptChild(_verticalScrollBar);
-      value.addListener(_scrollBarValueListener);
+      adoptChild(_verticalScrollBar!);
+      value!.addListener(_scrollBarValueListener);
     }
   }
 
@@ -1032,13 +1002,12 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
   void _onScrollOffsetChanged(ScrollController controller, Offset previousScrollOffset) {
     if (_ignoreScrollControllerEvents) return;
     assert(controller == scrollController);
-    assert(controller.scrollOffset != null);
     assert(controller.scrollOffset != previousScrollOffset);
     final Offset value = controller.scrollOffset;
     assert(value.dx <= controller._maxScrollLeft);
     assert(value.dy <= controller._maxScrollTop);
-    horizontalScrollBar.value = value.dx;
-    verticalScrollBar.value = value.dy;
+    horizontalScrollBar!.value = value.dx;
+    verticalScrollBar!.value = value.dy;
     markNeedsLayoutDeferred();
   }
 
@@ -1050,35 +1019,35 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
   void handleEvent(PointerEvent event, HitTestEntry entry) {
     assert(debugHandleEvent(event, entry));
     if (event is PointerScrollEvent) return _onPointerScroll(event);
-    super.handleEvent(event, entry);
+    super.handleEvent(event, entry as BoxHitTestEntry);
   }
 
   @override
   void attach(PipelineOwner owner) {
     super.attach(owner);
-    if (view != null) view.attach(owner);
-    if (rowHeader != null) rowHeader.attach(owner);
-    if (columnHeader != null) columnHeader.attach(owner);
-    if (topLeftCorner != null) topLeftCorner.attach(owner);
-    if (bottomLeftCorner != null) bottomLeftCorner.attach(owner);
-    if (bottomRightCorner != null) bottomRightCorner.attach(owner);
-    if (topRightCorner != null) topRightCorner.attach(owner);
-    if (horizontalScrollBar != null) horizontalScrollBar.attach(owner);
-    if (verticalScrollBar != null) verticalScrollBar.attach(owner);
+    view?.attach(owner);
+    rowHeader?.attach(owner);
+    columnHeader?.attach(owner);
+    topLeftCorner?.attach(owner);
+    bottomLeftCorner?.attach(owner);
+    bottomRightCorner?.attach(owner);
+    topRightCorner?.attach(owner);
+    horizontalScrollBar?.attach(owner);
+    verticalScrollBar?.attach(owner);
   }
 
   @override
   void detach() {
     super.detach();
-    if (view != null) view.detach();
-    if (rowHeader != null) rowHeader.detach();
-    if (columnHeader != null) columnHeader.detach();
-    if (topLeftCorner != null) topLeftCorner.detach();
-    if (bottomLeftCorner != null) bottomLeftCorner.detach();
-    if (bottomRightCorner != null) bottomRightCorner.detach();
-    if (topRightCorner != null) topRightCorner.detach();
-    if (horizontalScrollBar != null) horizontalScrollBar.detach();
-    if (verticalScrollBar != null) verticalScrollBar.detach();
+    view?.detach();
+    rowHeader?.detach();
+    columnHeader?.detach();
+    topLeftCorner?.detach();
+    bottomLeftCorner?.detach();
+    bottomRightCorner?.detach();
+    topRightCorner?.detach();
+    horizontalScrollBar?.detach();
+    verticalScrollBar?.detach();
     scrollController._setRenderValues(
       scrollOffset: Offset.zero,
       viewportSize: Size.zero,
@@ -1088,20 +1057,20 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
 
   @override
   void visitChildren(RenderObjectVisitor visitor) {
-    if (view != null) visitor(view);
-    if (rowHeader != null) visitor(rowHeader);
-    if (columnHeader != null) visitor(columnHeader);
-    if (topLeftCorner != null) visitor(topLeftCorner);
-    if (bottomLeftCorner != null) visitor(bottomLeftCorner);
-    if (bottomRightCorner != null) visitor(bottomRightCorner);
-    if (topRightCorner != null) visitor(topRightCorner);
-    if (horizontalScrollBar != null) visitor(horizontalScrollBar);
-    if (verticalScrollBar != null) visitor(verticalScrollBar);
+    if (view != null) visitor(view!);
+    if (rowHeader != null) visitor(rowHeader!);
+    if (columnHeader != null) visitor(columnHeader!);
+    if (topLeftCorner != null) visitor(topLeftCorner!);
+    if (bottomLeftCorner != null) visitor(bottomLeftCorner!);
+    if (bottomRightCorner != null) visitor(bottomRightCorner!);
+    if (topRightCorner != null) visitor(topRightCorner!);
+    if (horizontalScrollBar != null) visitor(horizontalScrollBar!);
+    if (verticalScrollBar != null) visitor(verticalScrollBar!);
   }
 
   @override
-  bool hitTestChildren(BoxHitTestResult result, {Offset position}) {
-    final List<RenderBox> children = <RenderBox>[
+  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
+    final List<RenderBox?> children = <RenderBox?>[
       verticalScrollBar,
       horizontalScrollBar,
       topRightCorner,
@@ -1113,9 +1082,9 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
       view,
     ];
 
-    for (RenderBox child in children) {
+    for (RenderBox? child in children) {
       if (child != null) {
-        final _ScrollPaneParentData parentData = child.parentData;
+        final _ScrollPaneParentData parentData = child.parentData as _ScrollPaneParentData;
         if (parentData.visible) {
           final bool isHit = result.addWithPaintOffset(
             offset: parentData.offset,
@@ -1142,7 +1111,7 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
   @override
   bool hitTestSelf(Offset position) => true;
 
-  _ScrollPaneParentData parentDataFor(RenderBox child) => child.parentData;
+  _ScrollPaneParentData parentDataFor(RenderBox child) => child.parentData as _ScrollPaneParentData;
 
   @override
   void setupParentData(RenderBox child) {
@@ -1156,20 +1125,20 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
     if (view != null) {
       double preferredRowHeaderWidth = 0;
       if (rowHeader != null) {
-        preferredRowHeaderWidth = rowHeader.getMinIntrinsicWidth(double.infinity);
+        preferredRowHeaderWidth = rowHeader!.getMinIntrinsicWidth(double.infinity);
       }
 
       double preferredColumnHeaderHeight = 0;
       if (columnHeader != null) {
-        preferredColumnHeaderHeight = columnHeader.getMinIntrinsicHeight(double.infinity);
+        preferredColumnHeaderHeight = columnHeader!.getMinIntrinsicHeight(double.infinity);
       }
 
       ScrollBarPolicy verticalPolicy = verticalScrollBarPolicy;
 
       if (verticalPolicy != ScrollBarPolicy.stretch) {
         // Get the unconstrained preferred size of the view
-        double preferredViewWidth = view.getMinIntrinsicWidth(double.infinity);
-        double preferredViewHeight = view.getMinIntrinsicHeight(double.infinity);
+        double preferredViewWidth = view!.getMinIntrinsicWidth(double.infinity);
+        double preferredViewHeight = view!.getMinIntrinsicHeight(double.infinity);
 
         // If the policy is `expand`, and the sum of the
         // unconstrained preferred heights of the view and the column
@@ -1209,7 +1178,7 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
               (verticalPolicy == ScrollBarPolicy.auto &&
                   height > 0 &&
                   preferredViewHeight + preferredColumnHeaderHeight > height)) {
-            preferredWidth += verticalScrollBar.getMinIntrinsicWidth(double.infinity);
+            preferredWidth += verticalScrollBar!.getMinIntrinsicWidth(double.infinity);
           }
         }
       }
@@ -1225,7 +1194,7 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
           height = max(height - preferredColumnHeaderHeight, 0);
         }
 
-        preferredWidth = view.getMinIntrinsicWidth(height) + preferredRowHeaderWidth;
+        preferredWidth = view!.getMinIntrinsicWidth(height) + preferredRowHeaderWidth;
       }
     }
 
@@ -1242,20 +1211,20 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
     if (view != null) {
       double preferredRowHeaderWidth = 0;
       if (rowHeader != null) {
-        preferredRowHeaderWidth = rowHeader.getMinIntrinsicWidth(double.infinity);
+        preferredRowHeaderWidth = rowHeader!.getMinIntrinsicWidth(double.infinity);
       }
 
       double preferredColumnHeaderHeight = 0;
       if (columnHeader != null) {
-        preferredColumnHeaderHeight = columnHeader.getMinIntrinsicHeight(double.infinity);
+        preferredColumnHeaderHeight = columnHeader!.getMinIntrinsicHeight(double.infinity);
       }
 
       ScrollBarPolicy horizontalPolicy = horizontalScrollBarPolicy;
 
       if (horizontalPolicy != ScrollBarPolicy.stretch) {
         // Get the unconstrained preferred size of the view
-        double preferredViewWidth = view.getMinIntrinsicWidth(double.infinity);
-        double preferredViewHeight = view.getMinIntrinsicHeight(double.infinity);
+        double preferredViewWidth = view!.getMinIntrinsicWidth(double.infinity);
+        double preferredViewHeight = view!.getMinIntrinsicHeight(double.infinity);
 
         // If the policy is `expand`, and the sum of the
         // unconstrained preferred widths of the view and the row
@@ -1295,7 +1264,7 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
               (horizontalPolicy == ScrollBarPolicy.auto &&
                   width > 0 &&
                   preferredViewWidth + preferredRowHeaderWidth > width)) {
-            preferredHeight += horizontalScrollBar.getMinIntrinsicHeight(double.infinity);
+            preferredHeight += horizontalScrollBar!.getMinIntrinsicHeight(double.infinity);
           }
         }
       }
@@ -1311,7 +1280,7 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
           width = max(width - preferredRowHeaderWidth, 0);
         }
 
-        preferredHeight = view.getMinIntrinsicHeight(width) + preferredColumnHeaderHeight;
+        preferredHeight = view!.getMinIntrinsicHeight(width) + preferredColumnHeaderHeight;
       }
     }
 
@@ -1325,20 +1294,20 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
   void performLayout() {
     double rowHeaderWidth = 0;
     if (rowHeader != null) {
-      rowHeaderWidth = rowHeader.getMaxIntrinsicWidth(double.infinity);
+      rowHeaderWidth = rowHeader!.getMaxIntrinsicWidth(double.infinity);
     }
 
     double columnHeaderHeight = 0;
     if (columnHeader != null) {
-      columnHeaderHeight = columnHeader.getMaxIntrinsicHeight(double.infinity);
+      columnHeaderHeight = columnHeader!.getMaxIntrinsicHeight(double.infinity);
     }
 
     double viewWidth = 0;
     double viewHeight = 0;
     double viewportWidth = 0;
     double viewportHeight = 0;
-    double previousVerticalScrollBarWidth;
-    double previousHorizontalScrollBarHeight;
+    late double previousVerticalScrollBarWidth;
+    late double previousHorizontalScrollBarHeight;
     double verticalScrollBarWidth = _cachedVerticalScrollBarWidth;
     double horizontalScrollBarHeight = _cachedHorizontalScrollBarHeight;
     int i = 0;
@@ -1415,9 +1384,9 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
           maxHeight: maxHeight,
           viewportResolver: viewportResolver,
         );
-        view.layout(viewConstraints, parentUsesSize: true);
-        viewWidth = view.size.width;
-        viewHeight = view.size.height;
+        view!.layout(viewConstraints, parentUsesSize: true);
+        viewWidth = view!.size.width;
+        viewHeight = view!.size.height;
       }
 
       final Rect viewportRect = viewportResolver.resolve(Size(viewWidth, viewHeight));
@@ -1427,7 +1396,7 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
       if (horizontalScrollBarPolicy == ScrollBarPolicy.always ||
           (horizontalScrollBarPolicy == ScrollBarPolicy.auto && viewWidth > viewportWidth) ||
           (horizontalScrollBarPolicy == ScrollBarPolicy.expand && viewWidth > viewportWidth)) {
-        horizontalScrollBarHeight = horizontalScrollBar.getMinIntrinsicHeight(double.infinity);
+        horizontalScrollBarHeight = horizontalScrollBar!.getMinIntrinsicHeight(double.infinity);
       } else {
         horizontalScrollBarHeight = 0;
       }
@@ -1435,7 +1404,7 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
       if (verticalScrollBarPolicy == ScrollBarPolicy.always ||
           (verticalScrollBarPolicy == ScrollBarPolicy.auto && viewHeight > viewportHeight) ||
           (verticalScrollBarPolicy == ScrollBarPolicy.expand && viewHeight > viewportHeight)) {
-        verticalScrollBarWidth = verticalScrollBar.getMinIntrinsicWidth(double.infinity);
+        verticalScrollBarWidth = verticalScrollBar!.getMinIntrinsicWidth(double.infinity);
       } else {
         verticalScrollBarWidth = 0;
       }
@@ -1472,7 +1441,7 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
           size: Size(viewportWidth, columnHeaderHeight),
         ),
       );
-      columnHeader.layout(columnHeaderConstraints, parentUsesSize: true);
+      columnHeader!.layout(columnHeaderConstraints, parentUsesSize: true);
     }
 
     if (rowHeader != null) {
@@ -1484,62 +1453,62 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
           size: Size(rowHeaderWidth, viewportHeight),
         ),
       );
-      rowHeader.layout(rowHeaderConstraints, parentUsesSize: true);
+      rowHeader!.layout(rowHeaderConstraints, parentUsesSize: true);
     }
 
     if (columnHeaderHeight > 0 && rowHeaderWidth > 0) {
-      _ScrollPaneParentData parentData = parentDataFor(topLeftCorner);
+      _ScrollPaneParentData parentData = parentDataFor(topLeftCorner!);
       parentData.offset = Offset.zero;
       parentData.visible = true;
-      topLeftCorner.layout(BoxConstraints.tightFor(
+      topLeftCorner!.layout(BoxConstraints.tightFor(
         width: rowHeaderWidth,
         height: columnHeaderHeight,
       ));
     } else {
-      topLeftCorner.layout(BoxConstraints.tight(Size.zero));
-      parentDataFor(topLeftCorner).visible = false;
+      topLeftCorner!.layout(BoxConstraints.tight(Size.zero));
+      parentDataFor(topLeftCorner!).visible = false;
     }
 
     if (rowHeaderWidth > 0 && horizontalScrollBarHeight > 0) {
-      _ScrollPaneParentData parentData = parentDataFor(bottomLeftCorner);
+      _ScrollPaneParentData parentData = parentDataFor(bottomLeftCorner!);
       parentData.offset = Offset(0, height - horizontalScrollBarHeight);
       parentData.visible = true;
-      bottomLeftCorner.layout(BoxConstraints.tightFor(
+      bottomLeftCorner!.layout(BoxConstraints.tightFor(
         width: rowHeaderWidth,
         height: horizontalScrollBarHeight,
       ));
     } else {
-      bottomLeftCorner.layout(BoxConstraints.tight(Size.zero));
-      parentDataFor(bottomLeftCorner).visible = false;
+      bottomLeftCorner!.layout(BoxConstraints.tight(Size.zero));
+      parentDataFor(bottomLeftCorner!).visible = false;
     }
 
     if (verticalScrollBarWidth > 0 && horizontalScrollBarHeight > 0) {
-      _ScrollPaneParentData parentData = parentDataFor(bottomRightCorner);
+      _ScrollPaneParentData parentData = parentDataFor(bottomRightCorner!);
       parentData.offset = Offset(
         width - verticalScrollBarWidth,
         height - horizontalScrollBarHeight,
       );
       parentData.visible = true;
-      bottomRightCorner.layout(BoxConstraints.tightFor(
+      bottomRightCorner!.layout(BoxConstraints.tightFor(
         width: verticalScrollBarWidth,
         height: horizontalScrollBarHeight,
       ));
     } else {
-      bottomRightCorner.layout(BoxConstraints.tight(Size.zero));
-      parentDataFor(bottomRightCorner).visible = false;
+      bottomRightCorner!.layout(BoxConstraints.tight(Size.zero));
+      parentDataFor(bottomRightCorner!).visible = false;
     }
 
     if (columnHeaderHeight > 0 && verticalScrollBarWidth > 0) {
-      _ScrollPaneParentData parentData = parentDataFor(topRightCorner);
+      _ScrollPaneParentData parentData = parentDataFor(topRightCorner!);
       parentData.offset = Offset(width - verticalScrollBarWidth, 0);
       parentData.visible = true;
-      topRightCorner.layout(BoxConstraints.tightFor(
+      topRightCorner!.layout(BoxConstraints.tightFor(
         width: verticalScrollBarWidth,
         height: columnHeaderHeight,
       ));
     } else {
-      topRightCorner.layout(BoxConstraints.tight(Size.zero));
-      parentDataFor(topRightCorner).visible = false;
+      topRightCorner!.layout(BoxConstraints.tight(Size.zero));
+      parentDataFor(topRightCorner!).visible = false;
     }
 
     _ignoreScrollControllerNotifications(() {
@@ -1548,7 +1517,7 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
       // (we do so below when we lay the scroll bars out)
       scrollController._setRenderValues(
         scrollOffset: scrollController.scrollOffset,
-        viewSize: view.size,
+        viewSize: view!.size,
         viewportSize: Size(viewportWidth, viewportHeight),
       );
     });
@@ -1557,7 +1526,7 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
     // scroll controller a chance to bounds-check its scroll offset value.
 
     if (view != null) {
-      _ScrollPaneParentData parentData = parentDataFor(view);
+      _ScrollPaneParentData parentData = parentDataFor(view!);
       parentData.offset = Offset(
         rowHeaderWidth - scrollController.scrollOffset.dx,
         columnHeaderHeight - scrollController.scrollOffset.dy,
@@ -1566,13 +1535,13 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
     }
 
     if (columnHeader != null) {
-      _ScrollPaneParentData parentData = parentDataFor(columnHeader);
+      _ScrollPaneParentData parentData = parentDataFor(columnHeader!);
       parentData.offset = Offset(rowHeaderWidth - scrollController.scrollOffset.dx, 0);
       parentData.visible = true;
     }
 
     if (rowHeader != null) {
-      _ScrollPaneParentData parentData = parentDataFor(rowHeader);
+      _ScrollPaneParentData parentData = parentDataFor(rowHeader!);
       parentData.offset = Offset(0, columnHeaderHeight - scrollController.scrollOffset.dy);
       parentData.visible = true;
     }
@@ -1581,7 +1550,7 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
     // bounds-check the scroll offset; otherwise we might try to set structure
     // values that are out of bounds.
 
-    _ScrollPaneParentData horizontalScrollBarParentData = parentDataFor(horizontalScrollBar);
+    _ScrollPaneParentData horizontalScrollBarParentData = parentDataFor(horizontalScrollBar!);
     if (viewWidth > 0 && horizontalScrollBarHeight > 0) {
       horizontalScrollBarParentData.visible = true;
       horizontalScrollBarParentData.offset = Offset(
@@ -1589,8 +1558,8 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
         height - horizontalScrollBarHeight,
       );
       final double extent = min(viewWidth, viewportWidth);
-      horizontalScrollBar.blockIncrement = max(1, viewportWidth - _horizontalReveal);
-      horizontalScrollBar.layout(
+      horizontalScrollBar!.blockIncrement = max(1, viewportWidth - _horizontalReveal);
+      horizontalScrollBar!.layout(
         ScrollBarConstraints.fromBoxConstraints(
           boxConstraints: BoxConstraints.tightFor(
             width: viewportWidth,
@@ -1606,20 +1575,20 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
       );
     } else {
       horizontalScrollBarParentData.visible = false;
-      horizontalScrollBar.layout(
+      horizontalScrollBar!.layout(
         ScrollBarConstraints.fromBoxConstraints(
           boxConstraints: BoxConstraints.tight(Size.zero),
-          enabled: horizontalScrollBar.enabled,
-          start: horizontalScrollBar.start,
-          end: horizontalScrollBar.end,
-          value: horizontalScrollBar.value,
-          extent: horizontalScrollBar.extent,
+          enabled: horizontalScrollBar!.enabled,
+          start: horizontalScrollBar!.start,
+          end: horizontalScrollBar!.end,
+          value: horizontalScrollBar!.value,
+          extent: horizontalScrollBar!.extent,
         ),
         parentUsesSize: true,
       );
     }
 
-    _ScrollPaneParentData verticalScrollBarParentData = parentDataFor(verticalScrollBar);
+    _ScrollPaneParentData verticalScrollBarParentData = parentDataFor(verticalScrollBar!);
     if (viewHeight > 0 && verticalScrollBarWidth > 0) {
       verticalScrollBarParentData.visible = true;
       verticalScrollBarParentData.offset = Offset(
@@ -1627,8 +1596,8 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
         columnHeaderHeight,
       );
       final double extent = min(viewHeight, viewportHeight);
-      verticalScrollBar.blockIncrement = max(1, viewportHeight - _verticalReveal);
-      verticalScrollBar.layout(
+      verticalScrollBar!.blockIncrement = max(1, viewportHeight - _verticalReveal);
+      verticalScrollBar!.layout(
         ScrollBarConstraints.fromBoxConstraints(
           boxConstraints: BoxConstraints.tightFor(
             width: verticalScrollBarWidth,
@@ -1644,14 +1613,14 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
       );
     } else {
       verticalScrollBarParentData.visible = false;
-      verticalScrollBar.layout(
+      verticalScrollBar!.layout(
         ScrollBarConstraints.fromBoxConstraints(
           boxConstraints: BoxConstraints.tight(Size.zero),
-          enabled: verticalScrollBar.enabled,
-          start: verticalScrollBar.start,
-          end: verticalScrollBar.end,
-          value: verticalScrollBar.value,
-          extent: verticalScrollBar.extent,
+          enabled: verticalScrollBar!.enabled,
+          start: verticalScrollBar!.start,
+          end: verticalScrollBar!.end,
+          value: verticalScrollBar!.value,
+          extent: verticalScrollBar!.extent,
         ),
         parentUsesSize: true,
       );
@@ -1670,15 +1639,15 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
   }
 
   void _paintChildren(PaintingContext context, Offset offset) {
-    double rowHeaderWidth = rowHeader?.size?.width ?? 0;
-    double columnHeaderHeight = columnHeader?.size?.height ?? 0;
-    double viewportWidth = size.width - rowHeaderWidth - verticalScrollBar.size.width;
-    double viewportHeight = size.height - columnHeaderHeight - horizontalScrollBar.size.height;
+    double rowHeaderWidth = rowHeader?.size.width ?? 0;
+    double columnHeaderHeight = columnHeader?.size.height ?? 0;
+    double viewportWidth = size.width - rowHeaderWidth - verticalScrollBar!.size.width;
+    double viewportHeight = size.height - columnHeaderHeight - horizontalScrollBar!.size.height;
 
     if (view != null) {
-      final _ScrollPaneParentData viewParentData = parentDataFor(view);
+      final _ScrollPaneParentData viewParentData = parentDataFor(view!);
       if (_clipBehavior == Clip.none) {
-        context.paintChild(view, offset + viewParentData.offset);
+        context.paintChild(view!, offset + viewParentData.offset);
       } else {
         Rect clipRect = Rect.fromLTWH(
           rowHeaderWidth,
@@ -1687,16 +1656,16 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
           viewportHeight,
         ).shift(offset);
         context.clipRectAndPaint(clipRect, _clipBehavior, clipRect, () {
-          context.paintChild(view, offset + viewParentData.offset);
+          context.paintChild(view!, offset + viewParentData.offset);
         });
       }
     }
 
     if (rowHeader != null) {
-      final _ScrollPaneParentData rowHeaderParentData = parentDataFor(rowHeader);
+      final _ScrollPaneParentData rowHeaderParentData = parentDataFor(rowHeader!);
       if (rowHeaderParentData.visible) {
         if (_clipBehavior == Clip.none) {
-          context.paintChild(rowHeader, offset + rowHeaderParentData.offset);
+          context.paintChild(rowHeader!, offset + rowHeaderParentData.offset);
         } else {
           Rect clipRect = Rect.fromLTWH(
             0,
@@ -1705,17 +1674,17 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
             viewportHeight,
           ).shift(offset);
           context.clipRectAndPaint(clipRect, _clipBehavior, clipRect, () {
-            context.paintChild(rowHeader, offset + rowHeaderParentData.offset);
+            context.paintChild(rowHeader!, offset + rowHeaderParentData.offset);
           });
         }
       }
     }
 
     if (columnHeader != null) {
-      final _ScrollPaneParentData columnHeaderParentData = parentDataFor(columnHeader);
+      final _ScrollPaneParentData columnHeaderParentData = parentDataFor(columnHeader!);
       if (columnHeaderParentData.visible) {
         if (_clipBehavior == Clip.none) {
-          context.paintChild(columnHeader, offset + columnHeaderParentData.offset);
+          context.paintChild(columnHeader!, offset + columnHeaderParentData.offset);
         } else {
           Rect clipRect = Rect.fromLTWH(
             rowHeaderWidth,
@@ -1724,60 +1693,60 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
             columnHeaderHeight,
           ).shift(offset);
           context.clipRectAndPaint(clipRect, _clipBehavior, clipRect, () {
-            context.paintChild(columnHeader, offset + columnHeaderParentData.offset);
+            context.paintChild(columnHeader!, offset + columnHeaderParentData.offset);
           });
         }
       }
     }
 
-    _ScrollPaneParentData horizontalScrollBarParentData = parentDataFor(horizontalScrollBar);
+    _ScrollPaneParentData horizontalScrollBarParentData = parentDataFor(horizontalScrollBar!);
     if (horizontalScrollBarParentData.visible) {
-      context.paintChild(horizontalScrollBar, offset + horizontalScrollBarParentData.offset);
+      context.paintChild(horizontalScrollBar!, offset + horizontalScrollBarParentData.offset);
     }
 
-    _ScrollPaneParentData verticalScrollBarParentData = parentDataFor(verticalScrollBar);
+    _ScrollPaneParentData verticalScrollBarParentData = parentDataFor(verticalScrollBar!);
     if (verticalScrollBarParentData.visible) {
-      context.paintChild(verticalScrollBar, offset + verticalScrollBarParentData.offset);
+      context.paintChild(verticalScrollBar!, offset + verticalScrollBarParentData.offset);
     }
 
-    _ScrollPaneParentData topLeftCornerParentData = parentDataFor(topLeftCorner);
+    _ScrollPaneParentData topLeftCornerParentData = parentDataFor(topLeftCorner!);
     if (topLeftCornerParentData.visible) {
-      context.paintChild(topLeftCorner, offset + topLeftCornerParentData.offset);
+      context.paintChild(topLeftCorner!, offset + topLeftCornerParentData.offset);
     }
 
-    _ScrollPaneParentData bottomLeftCornerParentData = parentDataFor(bottomLeftCorner);
+    _ScrollPaneParentData bottomLeftCornerParentData = parentDataFor(bottomLeftCorner!);
     if (bottomLeftCornerParentData.visible) {
-      context.paintChild(bottomLeftCorner, offset + bottomLeftCornerParentData.offset);
+      context.paintChild(bottomLeftCorner!, offset + bottomLeftCornerParentData.offset);
     }
 
-    _ScrollPaneParentData bottomRightCornerParentData = parentDataFor(bottomRightCorner);
+    _ScrollPaneParentData bottomRightCornerParentData = parentDataFor(bottomRightCorner!);
     if (bottomRightCornerParentData.visible) {
-      context.paintChild(bottomRightCorner, offset + bottomRightCornerParentData.offset);
+      context.paintChild(bottomRightCorner!, offset + bottomRightCornerParentData.offset);
     }
 
-    _ScrollPaneParentData topRightCornerParentData = parentDataFor(topRightCorner);
+    _ScrollPaneParentData topRightCornerParentData = parentDataFor(topRightCorner!);
     if (topRightCornerParentData.visible) {
-      context.paintChild(topRightCorner, offset + topRightCornerParentData.offset);
+      context.paintChild(topRightCorner!, offset + topRightCornerParentData.offset);
     }
   }
 
   @override
   void redepthChildren() {
-    if (view != null) redepthChild(view);
-    if (rowHeader != null) redepthChild(rowHeader);
-    if (columnHeader != null) redepthChild(columnHeader);
-    if (topLeftCorner != null) redepthChild(topLeftCorner);
-    if (bottomLeftCorner != null) redepthChild(bottomLeftCorner);
-    if (bottomRightCorner != null) redepthChild(bottomRightCorner);
-    if (topRightCorner != null) redepthChild(topRightCorner);
-    if (horizontalScrollBar != null) redepthChild(horizontalScrollBar);
-    if (verticalScrollBar != null) redepthChild(verticalScrollBar);
+    if (view != null) redepthChild(view!);
+    if (rowHeader != null) redepthChild(rowHeader!);
+    if (columnHeader != null) redepthChild(columnHeader!);
+    if (topLeftCorner != null) redepthChild(topLeftCorner!);
+    if (bottomLeftCorner != null) redepthChild(bottomLeftCorner!);
+    if (bottomRightCorner != null) redepthChild(bottomRightCorner!);
+    if (topRightCorner != null) redepthChild(topRightCorner!);
+    if (horizontalScrollBar != null) redepthChild(horizontalScrollBar!);
+    if (verticalScrollBar != null) redepthChild(verticalScrollBar!);
   }
 
   @override
   List<DiagnosticsNode> debugDescribeChildren() {
     final List<DiagnosticsNode> result = <DiagnosticsNode>[];
-    void add(RenderBox child, String name) {
+    void add(RenderBox? child, String name) {
       if (child != null) result.add(child.toDiagnosticsNode(name: name));
     }
 
@@ -1795,10 +1764,5 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
 }
 
 class _ScrollPaneParentData extends BoxParentData {
-  bool _visible = true;
-  bool get visible => _visible;
-  set visible(bool value) {
-    assert(value != null);
-    _visible = value;
-  }
+  bool visible = true;
 }

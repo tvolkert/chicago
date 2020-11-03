@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// @dart=2.9
-
 import 'dart:math' as math;
 
 import 'package:collection/collection.dart';
@@ -142,7 +140,7 @@ class ColoredCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final math.Random random = math.Random();
     return ColoredBox(
-      color: Color(0xff000000 | random.nextInt(math.pow(256, 3))),
+      color: Color(0xff000000 | random.nextInt(math.pow(256, 3) as int)),
       child: Align(child: Text(text)),
     );
   }
@@ -199,8 +197,7 @@ class IntrinsicTablePaneColumnWidth extends TablePaneColumnWidth {
 
 class FixedTablePaneColumnWidth extends TablePaneColumnWidth {
   const FixedTablePaneColumnWidth(this.width)
-      : assert(width != null),
-        assert(width >= 0),
+      : assert(width >= 0),
         super._();
 
   @override
@@ -252,8 +249,7 @@ class IntrinsicTablePaneRowHeight extends TablePaneRowHeight {
 
 class FixedTablePaneRowHeight extends TablePaneRowHeight {
   const FixedTablePaneRowHeight(this.height)
-      : assert(height != null),
-        assert(height >= 0),
+      : assert(height >= 0),
         super._();
 
   @override
@@ -283,13 +279,11 @@ class TableCell extends ParentDataWidget<TableCellParentData> {
   /// Creates a widget that controls the row-span and column-span of a child of
   /// [TablePane].
   const TableCell({
-    Key key,
+    Key? key,
     this.rowSpan = 1,
     this.columnSpan = 1,
-    @required Widget child,
-  })  : assert(rowSpan != null),
-        assert(columnSpan != null),
-        assert(rowSpan > 0),
+    required Widget child,
+  })  : assert(rowSpan > 0),
         assert(columnSpan > 0),
         super(key: key, child: child);
 
@@ -305,7 +299,7 @@ class TableCell extends ParentDataWidget<TableCellParentData> {
     if (parentData.rowSpan != rowSpan || parentData.columnSpan != columnSpan) {
       parentData.rowSpan = rowSpan;
       parentData.columnSpan = columnSpan;
-      AbstractNode targetParent = renderObject.parent;
+      AbstractNode? targetParent = renderObject.parent;
       while (targetParent != null && targetParent is! RenderTablePane) {
         targetParent = targetParent.parent;
       }
@@ -327,7 +321,7 @@ class TableCell extends ParentDataWidget<TableCellParentData> {
 }
 
 class EmptyTableCell extends LeafRenderObjectWidget {
-  const EmptyTableCell({Key key}) : super(key: key);
+  const EmptyTableCell({Key? key}) : super(key: key);
 
   @override
   RenderObject createRenderObject(BuildContext context) => RenderEmptyTableCell();
@@ -335,22 +329,16 @@ class EmptyTableCell extends LeafRenderObjectWidget {
 
 class TablePane extends MultiChildRenderObjectWidget {
   TablePane({
-    Key key,
-    @required this.columns,
+    Key? key,
+    required this.columns,
     this.horizontalSpacing = 0,
     this.verticalSpacing = 0,
     this.horizontalIntrinsicSize = MainAxisSize.max,
     this.horizontalRelativeSize = MainAxisSize.min,
     this.verticalIntrinsicSize = MainAxisSize.max,
     this.verticalRelativeSize = MainAxisSize.min,
-    @required List<Widget> children,
-  })  : assert(horizontalSpacing != null),
-        assert(verticalSpacing != null),
-        assert(horizontalIntrinsicSize != null),
-        assert(horizontalRelativeSize != null),
-        assert(verticalIntrinsicSize != null),
-        assert(verticalRelativeSize != null),
-        super(key: key, children: children);
+    required List<Widget> children,
+  })  : super(key: key, children: children);
 
   final List<TablePaneColumn> columns;
   final double horizontalSpacing;
@@ -391,9 +379,9 @@ class TablePane extends MultiChildRenderObjectWidget {
 
 class TableRow extends MultiChildRenderObjectWidget {
   TableRow({
-    Key key,
+    Key? key,
     this.height = const IntrinsicTablePaneRowHeight(),
-    List<Widget> children,
+    required List<Widget> children,
   }) : super(key: key, children: children);
 
   final TablePaneRowHeight height;
@@ -418,12 +406,11 @@ class TableRowParentData extends ContainerBoxParentData<RenderTableRow> {}
 /// [ParentData] used by [RenderTableRow].
 class TableCellParentData extends ContainerBoxParentData<RenderBox> {
   /// The column that the child was in the last time it was laid out.
-  int x;
+  int? x;
 
   int _rowSpan = 1;
   int get rowSpan => _rowSpan;
   set rowSpan(int value) {
-    assert(value != null);
     assert(value > 0);
     _rowSpan = value;
   }
@@ -431,7 +418,6 @@ class TableCellParentData extends ContainerBoxParentData<RenderBox> {
   int _columnSpan = 1;
   int get columnSpan => _columnSpan;
   set columnSpan(int value) {
-    assert(value != null);
     assert(value > 0);
     _columnSpan = value;
   }
@@ -451,10 +437,10 @@ class TableRowConstraints extends BoxConstraints {
   // }) : super(minWidth: minWidth, maxWidth: maxWidth, minHeight: minHeight, maxHeight: maxHeight);
 
   TableRowConstraints.tightFor({
-    double width,
-    double height,
-    @required this.cellConstraints,
-    @required this.cellPositions,
+    double? width,
+    double? height,
+    required this.cellConstraints,
+    required this.cellPositions,
   }) : super.tightFor(width: width, height: height);
 
   final List<BoxConstraints> cellConstraints;
@@ -491,7 +477,7 @@ class RenderEmptyTableCell extends RenderBox {
 mixin ChildListRenderObjectMixin<ChildType extends RenderBox,
         ParentDataType extends ContainerBoxParentData<ChildType>>
     on RenderBoxContainerDefaultsMixin<ChildType, ParentDataType> {
-  List<RenderBox> _children;
+  List<RenderBox>? _children;
 
   @protected
   List<RenderBox> get children {
@@ -511,14 +497,14 @@ mixin ChildListRenderObjectMixin<ChildType extends RenderBox,
   RenderBox operator [](int index) => children[index];
 
   @override
-  void insert(RenderBox child, {RenderBox after}) {
-    super.insert(child, after: after);
+  void insert(RenderBox child, {RenderBox? after}) {
+    super.insert(child as ChildType, after: after as ChildType?);
     markNeedsChildren();
   }
 
   @override
   void remove(RenderBox child) {
-    super.remove(child);
+    super.remove(child as ChildType);
     markNeedsChildren();
   }
 
@@ -529,8 +515,8 @@ mixin ChildListRenderObjectMixin<ChildType extends RenderBox,
   }
 
   @override
-  void move(RenderBox child, {RenderBox after}) {
-    super.move(child, after: after);
+  void move(RenderBox child, {RenderBox? after}) {
+    super.move(child as ChildType, after: after as ChildType?);
     markNeedsChildren();
   }
 }
@@ -540,19 +526,18 @@ class RenderTableRow extends RenderBox
         ContainerRenderObjectMixin<RenderBox, TableCellParentData>,
         RenderBoxContainerDefaultsMixin<RenderBox, TableCellParentData>,
         ChildListRenderObjectMixin<RenderBox, TableCellParentData> {
-  RenderTableRow({TablePaneRowHeight height}) {
+  RenderTableRow({required TablePaneRowHeight height}) {
     this.height = height;
   }
 
-  TablePaneRowHeight _height;
+  TablePaneRowHeight _height = const IntrinsicTablePaneRowHeight();
   TablePaneRowHeight get height => _height;
   set height(TablePaneRowHeight value) {
-    assert(value != null);
     if (value != _height) {
       _height = value;
       markNeedsLayout();
       if (parent != null) {
-        parent.markNeedsMetrics();
+        parent!.markNeedsMetrics();
       }
     }
   }
@@ -561,7 +546,7 @@ class RenderTableRow extends RenderBox
   TableRowConstraints get constraints => super.constraints as TableRowConstraints;
 
   @override
-  RenderTablePane get parent => super.parent as RenderTablePane;
+  RenderTablePane? get parent => super.parent as RenderTablePane?;
 
   @override
   void setupParentData(RenderBox child) {
@@ -574,11 +559,11 @@ class RenderTableRow extends RenderBox
   @protected
   void markNeedsChildren() {
     super.markNeedsChildren();
-    parent.markNeedsMetrics();
+    parent!.markNeedsMetrics();
   }
 
   @override
-  bool hitTestChildren(BoxHitTestResult result, {Offset position}) {
+  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
     return defaultHitTestChildren(result, position: position);
   }
 
@@ -614,7 +599,7 @@ class RenderTablePane extends RenderBox
         RenderBoxContainerDefaultsMixin<RenderTableRow, TableRowParentData>,
         ChildListRenderObjectMixin<RenderTableRow, TableRowParentData> {
   RenderTablePane({
-    @required List<TablePaneColumn> columns,
+    required List<TablePaneColumn> columns,
     double horizontalSpacing = 0,
     double verticalSpacing = 0,
     MainAxisSize horizontalIntrinsicSize = MainAxisSize.max,
@@ -631,10 +616,9 @@ class RenderTablePane extends RenderBox
     this.verticalRelativeSize = verticalRelativeSize;
   }
 
-  List<TablePaneColumn> _columns;
+  List<TablePaneColumn> _columns = <TablePaneColumn>[];
   List<TablePaneColumn> get columns => _columns;
   set columns(List<TablePaneColumn> value) {
-    assert(value != null);
     if (!const ListEquality().equals(value, _columns)) {
       _columns = value;
       markNeedsMetrics();
@@ -644,7 +628,6 @@ class RenderTablePane extends RenderBox
   double _horizontalSpacing = 0;
   double get horizontalSpacing => _horizontalSpacing;
   set horizontalSpacing(double value) {
-    assert(value != null);
     if (value != _horizontalSpacing) {
       _horizontalSpacing = value;
       markNeedsMetrics();
@@ -654,47 +637,42 @@ class RenderTablePane extends RenderBox
   double _verticalSpacing = 0;
   double get verticalSpacing => _verticalSpacing;
   set verticalSpacing(double value) {
-    assert(value != null);
     if (value != _verticalSpacing) {
       _verticalSpacing = value;
       markNeedsMetrics();
     }
   }
 
-  MainAxisSize _horizontalIntrinsicSize;
+  MainAxisSize _horizontalIntrinsicSize = MainAxisSize.max;
   MainAxisSize get horizontalIntrinsicSize => _horizontalIntrinsicSize;
   set horizontalIntrinsicSize(MainAxisSize value) {
-    assert(value != null);
     if (value != _horizontalIntrinsicSize) {
       _horizontalIntrinsicSize = value;
       markNeedsMetrics();
     }
   }
 
-  MainAxisSize _horizontalRelativeSize;
+  MainAxisSize _horizontalRelativeSize = MainAxisSize.min;
   MainAxisSize get horizontalRelativeSize => _horizontalRelativeSize;
   set horizontalRelativeSize(MainAxisSize value) {
-    assert(value != null);
     if (value != _horizontalRelativeSize) {
       _horizontalRelativeSize = value;
       markNeedsMetrics();
     }
   }
 
-  MainAxisSize _verticalIntrinsicSize;
+  MainAxisSize _verticalIntrinsicSize = MainAxisSize.max;
   MainAxisSize get verticalIntrinsicSize => _verticalIntrinsicSize;
   set verticalIntrinsicSize(MainAxisSize value) {
-    assert(value != null);
     if (value != _verticalIntrinsicSize) {
       _verticalIntrinsicSize = value;
       markNeedsMetrics();
     }
   }
 
-  MainAxisSize _verticalRelativeSize;
+  MainAxisSize _verticalRelativeSize = MainAxisSize.min;
   MainAxisSize get verticalRelativeSize => _verticalRelativeSize;
   set verticalRelativeSize(MainAxisSize value) {
-    assert(value != null);
     if (value != _verticalRelativeSize) {
       _verticalRelativeSize = value;
       markNeedsMetrics();
@@ -706,13 +684,10 @@ class RenderTablePane extends RenderBox
     List<double> columnWidths,
     _IntrinsicComputer computeIntrinsicCellHeight,
   ) {
-    assert(rowIndex != null);
-    assert(columnWidths != null);
     final RenderTableRow row = rows[rowIndex];
     double result = 0;
     for (int j = 0, n = row.length, m = columns.length; j < n && j < m; j++) {
       final RenderBox child = row[j];
-      assert(child != null);
       final TableCellParentData childParentData = child.parentData as TableCellParentData;
       if (childParentData.rowSpan == 1) {
         result = math.max(result, computeIntrinsicCellHeight(child, columnWidths[j]));
@@ -730,7 +705,6 @@ class RenderTablePane extends RenderBox
       final RenderTableRow row = rows[i];
       if (columnIndex < row.length) {
         final RenderBox child = row[columnIndex];
-        assert(child != null);
         final TableCellParentData childParentData = child.parentData as TableCellParentData;
         if (childParentData.columnSpan == 1) {
           result = math.max(result, computeIntrinsicCellWidth(child, double.infinity));
@@ -809,7 +783,6 @@ class RenderTablePane extends RenderBox
       final RenderTableRow row = rows[i];
       for (int j = 0, n = row.length; j < n && j < columns.length; j++) {
         final RenderBox child = row[j];
-        assert(child != null);
 
         if (child is! RenderEmptyTableCell) {
           final TableCellParentData childParentData = child.parentData as TableCellParentData;
@@ -880,9 +853,7 @@ class RenderTablePane extends RenderBox
     LinearConstraints heightConstraints,
     List<double> columnWidths,
   ) {
-    assert(heightConstraints != null);
     assert(heightConstraints.isNormalized);
-    assert(columnWidths != null);
     final List<double> rowHeights = List<double>.filled(rows.length, 0);
     final List<bool> defaultHeightRows = List<bool>.filled(rows.length, false);
 
@@ -923,7 +894,6 @@ class RenderTablePane extends RenderBox
       final RenderTableRow row = rows[i];
       for (int j = 0, n = row.length; j < n && j < columns.length; j++) {
         final RenderBox child = row[j];
-        assert(child != null);
         row.setupParentData(child);
         final TableCellParentData childParentData = child.parentData as TableCellParentData;
         final int rowSpan = childParentData.rowSpan;
@@ -960,7 +930,7 @@ class RenderTablePane extends RenderBox
             final int columnSpan = childParentData.columnSpan;
             double childWidth = columnWidths.skip(j).take(columnSpan).fold<double>(0, _sum);
             childWidth += math.max(columnSpan - 1, 0) * horizontalSpacing;
-            double childIntrinsicHeight;
+            late final double childIntrinsicHeight;
             switch (verticalIntrinsicSize) {
               case MainAxisSize.min:
                 childIntrinsicHeight = child.getMinIntrinsicHeight(childWidth);
@@ -1115,7 +1085,6 @@ class RenderTablePane extends RenderBox
       final RenderTableRow row = rows[i];
       for (int j = 0, n = row.length; j < n && j < columns.length; j++) {
         final RenderBox child = row[j];
-        assert(child != null);
 
         if (child is! RenderEmptyTableCell) {
           final TableCellParentData childParentData = child.parentData as TableCellParentData;
@@ -1202,7 +1171,6 @@ class RenderTablePane extends RenderBox
   }
 
   List<double> _computeActualColumnWidths(LinearConstraints widthConstraints) {
-    assert(widthConstraints != null);
     assert(widthConstraints.isNormalized);
     final List<double> columnWidths = List<double>.filled(columns.length, 0);
     final List<bool> defaultWidthColumns = List<bool>.filled(columns.length, false);
@@ -1244,7 +1212,6 @@ class RenderTablePane extends RenderBox
       final RenderTableRow row = rows[i];
       for (int j = 0, n = row.length; j < n && j < columns.length; j++) {
         final RenderBox child = row[j];
-        assert(child != null);
         row.setupParentData(child);
         final TableCellParentData childParentData = child.parentData as TableCellParentData;
         final int columnSpan = childParentData.columnSpan;
@@ -1278,7 +1245,7 @@ class RenderTablePane extends RenderBox
           // adjustment among the relative-width columns *or* among the
           // default-width columns if we don't span any relative-width columns
           if (!didSpanRelativeColumns && spannedDefaultWidthCellCount > 0) {
-            double childIntrinsicWidth;
+            late final double childIntrinsicWidth;
             switch (horizontalIntrinsicSize) {
               case MainAxisSize.min:
                 childIntrinsicWidth = child.getMinIntrinsicWidth(double.infinity);
@@ -1458,18 +1425,18 @@ class RenderTablePane extends RenderBox
 
   @override
   @protected
-  double computeDistanceToActualBaseline(TextBaseline baseline) {
+  double? computeDistanceToActualBaseline(TextBaseline baseline) {
     return defaultComputeDistanceToFirstActualBaseline(baseline);
   }
 
   @override
   @protected
-  bool hitTestChildren(BoxHitTestResult result, {Offset position}) {
+  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
     return defaultHitTestChildren(result, position: position);
   }
 
   bool _needsMetrics = true;
-  TablePaneMetrics _metrics;
+  late TablePaneMetrics _metrics;
 
   @protected
   TablePaneMetrics get metrics => _metrics;
@@ -1542,7 +1509,6 @@ class RenderTablePane extends RenderBox
       double expandedRowHeight = 0;
       for (int j = 0; j < row.length && j < columns.length; j++) {
         final RenderBox child = row[j];
-        assert(child != null);
 
         if (child is RenderEmptyTableCell) {
           cellConstraints.add(BoxConstraints.tight(Size.zero));

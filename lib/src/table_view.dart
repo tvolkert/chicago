@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// @dart=2.9
-
 import 'dart:async';
 import 'dart:collection';
 
@@ -29,6 +27,7 @@ import 'foundation.dart';
 import 'listener_list.dart';
 import 'navigator_listener.dart';
 import 'scroll_pane.dart';
+import 'segment.dart';
 import 'sorting.dart';
 import 'span.dart';
 
@@ -42,8 +41,8 @@ const double _kResizeHandleTargetPixels = 10; // logical
 /// See also:
 ///  * [TableCellRenderer], which renders table body cells.
 typedef TableHeaderRenderer = Widget Function({
-  BuildContext context,
-  int columnIndex,
+  required BuildContext context,
+  required int columnIndex,
 });
 
 /// Signature for a function that renders cells in a [ScrollableTableView].
@@ -69,13 +68,13 @@ typedef TableHeaderRenderer = Widget Function({
 ///  * [BasicTableCellRenderer], the equivalent cell renderer for a
 ///    [BasicTableView].
 typedef TableCellRenderer = Widget Function({
-  BuildContext context,
-  int rowIndex,
-  int columnIndex,
-  bool rowSelected,
-  bool rowHighlighted,
-  bool isEditing,
-  bool isRowDisabled,
+  required BuildContext context,
+  required int rowIndex,
+  required int columnIndex,
+  required bool rowSelected,
+  required bool rowHighlighted,
+  required bool isEditing,
+  required bool isRowDisabled,
 });
 
 typedef PreviewTableViewEditStartedHandler = Vote Function(
@@ -165,11 +164,10 @@ class TableViewEditorController with ListenerNotifier<TableViewEditorListener> {
   /// True if this controller is associated with a table view.
   ///
   /// A controller may only be associated with one table view at a time.
-  RenderTableView _renderObject;
+  RenderTableView? _renderObject;
   bool get isAttached => _renderObject != null;
 
   void _attach(RenderTableView renderObject) {
-    assert(renderObject != null);
     assert(!isAttached);
     _renderObject = renderObject;
   }
@@ -179,19 +177,17 @@ class TableViewEditorController with ListenerNotifier<TableViewEditorListener> {
     _renderObject = null;
   }
 
-  int _rowIndex;
-  int _columnIndex;
+  int? _rowIndex;
+  int? _columnIndex;
 
   TableCellRange get cellsBeingEdited {
     assert(isEditing);
     assert(isAttached);
     switch (behavior) {
       case TableViewEditorBehavior.singleCell:
-        return SingleCellRange(_rowIndex, _columnIndex);
-        break;
+        return SingleCellRange(_rowIndex!, _columnIndex!);
       case TableViewEditorBehavior.wholeRow:
-        return TableCellRect.fromLTRB(0, _rowIndex, _renderObject.columns.length - 1, _rowIndex);
-        break;
+        return TableCellRect.fromLTRB(0, _rowIndex!, _renderObject!.columns.length - 1, _rowIndex!);
       case TableViewEditorBehavior.none:
         assert(false);
         break;
@@ -221,10 +217,8 @@ class TableViewEditorController with ListenerNotifier<TableViewEditorListener> {
   bool start(int rowIndex, int columnIndex) {
     assert(!isEditing);
     assert(isAttached);
-    assert(rowIndex != null);
-    assert(columnIndex != null);
-    assert(rowIndex >= 0 && rowIndex < _renderObject.length);
-    assert(columnIndex >= 0 && columnIndex < _renderObject.columns.length);
+    assert(rowIndex >= 0 && rowIndex < _renderObject!.length);
+    assert(columnIndex >= 0 && columnIndex < _renderObject!.columns.length);
     assert(behavior != TableViewEditorBehavior.none);
 
     Vote vote = Vote.approve;
@@ -280,22 +274,21 @@ class TableViewEditorController with ListenerNotifier<TableViewEditorListener> {
 ///
 /// Mutable properties such as [width] and [sortDirection] will notify
 /// listeners when changed.
-class TableColumnController extends BasicTableColumn with ChangeNotifier {
+class TableColumnController extends TableColumn with ChangeNotifier {
   TableColumnController({
-    @required this.key,
-    @required TableCellRenderer cellRenderer,
+    required this.key,
+    required this.cellRenderer,
     this.headerRenderer,
     TableColumnWidth width = const FlexTableColumnWidth(),
-  })  : assert(key != null),
-        assert(cellRenderer != null),
-        assert(width != null),
-        _width = width,
-        super(cellRenderer: cellRenderer);
+  }) : _width = width;
 
   /// A unique identifier for this column.
   ///
   /// This is the key by which we sort columns in [TableViewSortController].
   final String key;
+
+  /// The renderer responsible for the look & feel of cells in this column.
+  final TableCellRenderer cellRenderer;
 
   /// The renderer responsible for the look & feel of the header for this column.
   ///
@@ -303,10 +296,7 @@ class TableColumnController extends BasicTableColumn with ChangeNotifier {
   ///
   ///  * [ScrollableTableView.includeHeader], which if false will allow for
   ///    this field to be null.
-  final TableHeaderRenderer headerRenderer;
-
-  @override
-  TableCellRenderer get cellRenderer => super.cellRenderer as TableCellRenderer;
+  final TableHeaderRenderer? headerRenderer;
 
   TableColumnWidth _width;
 
@@ -319,20 +309,20 @@ class TableColumnController extends BasicTableColumn with ChangeNotifier {
   @override
   TableColumnWidth get width => _width;
   set width(TableColumnWidth value) {
-    assert(value != null);
     if (value == _width) return;
     _width = value;
     notifyListeners();
   }
 
   @override
-  int get hashCode => hashValues(super.hashCode, headerRenderer);
+  int get hashCode => hashValues(super.hashCode, cellRenderer, headerRenderer);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return super == other &&
         other is TableColumnController &&
+        cellRenderer == other.cellRenderer &&
         headerRenderer == other.headerRenderer;
   }
 }
@@ -340,13 +330,13 @@ class TableColumnController extends BasicTableColumn with ChangeNotifier {
 class TableViewSelectionController with ChangeNotifier {
   TableViewSelectionController({
     this.selectMode = SelectMode.single,
-  }) : assert(selectMode != null);
+  });
 
   /// TODO: document
   final SelectMode selectMode;
 
   ListSelection _selectedRanges = ListSelection();
-  RenderTableView _renderObject;
+  RenderTableView? _renderObject;
 
   /// True if this controller is associated with a table view.
   ///
@@ -379,13 +369,17 @@ class TableViewSelectionController with ChangeNotifier {
   }
 
   /// TODO: document
-  Span get selectedRange {
+  Span? get selectedRange {
     assert(_selectedRanges.length <= 1);
     return _selectedRanges.isEmpty ? null : _selectedRanges[0];
   }
 
-  set selectedRange(Span range) {
-    selectedRanges = <Span>[range];
+  set selectedRange(Span? range) {
+    if (range == null) {
+      clearSelection();
+    } else {
+      selectedRanges = <Span>[range];
+    }
   }
 
   /// TODO: document
@@ -394,7 +388,6 @@ class TableViewSelectionController with ChangeNotifier {
   }
 
   set selectedRanges(Iterable<Span> ranges) {
-    assert(ranges != null);
     assert(selectMode != SelectMode.none, 'Selection is not enabled');
     assert(() {
       if (selectMode == SelectMode.single) {
@@ -413,8 +406,7 @@ class TableViewSelectionController with ChangeNotifier {
 
     final ListSelection selectedRanges = ListSelection();
     for (Span range in ranges) {
-      assert(range != null);
-      assert(range.start >= 0 && (!isAttached || range.end < _renderObject.length));
+      assert(range.start >= 0 && (!isAttached || range.end < _renderObject!.length));
       selectedRanges.addRange(range.start, range.end);
     }
     _selectedRanges = selectedRanges;
@@ -432,7 +424,7 @@ class TableViewSelectionController with ChangeNotifier {
 
   List<Span> addSelectedRange(int start, int end) {
     assert(selectMode == SelectMode.multi);
-    assert(start >= 0 && (!isAttached || end < _renderObject.length));
+    assert(start >= 0 && (!isAttached || end < _renderObject!.length));
     final List<Span> addedRanges = _selectedRanges.addRange(start, end);
     notifyListeners();
     return addedRanges;
@@ -445,7 +437,7 @@ class TableViewSelectionController with ChangeNotifier {
 
   List<Span> removeSelectedRange(int start, int end) {
     assert(selectMode == SelectMode.multi);
-    assert(start >= 0 && (!isAttached || end < _renderObject.length));
+    assert(start >= 0 && (!isAttached || end < _renderObject!.length));
     final List<Span> removedRanges = _selectedRanges.removeRange(start, end);
     notifyListeners();
     return removedRanges;
@@ -453,7 +445,7 @@ class TableViewSelectionController with ChangeNotifier {
 
   void selectAll() {
     assert(isAttached);
-    selectedRange = Span(0, _renderObject.length - 1);
+    selectedRange = Span(0, _renderObject!.length - 1);
   }
 
   void clearSelection() {
@@ -464,7 +456,7 @@ class TableViewSelectionController with ChangeNotifier {
   }
 
   bool isRowSelected(int rowIndex) {
-    assert(rowIndex >= 0 && isAttached && rowIndex < _renderObject.length);
+    assert(rowIndex >= 0 && isAttached && rowIndex < _renderObject!.length);
     return _selectedRanges.containsIndex(rowIndex);
   }
 }
@@ -483,7 +475,7 @@ typedef TableViewSortAddedHandler = void Function(
 typedef TableViewSortUpdatedHandler = void Function(
   TableViewSortController controller,
   String key,
-  SortDirection previousSortDirection,
+  SortDirection? previousSortDirection,
 );
 
 typedef TableViewSortChangedHandler = void Function(
@@ -502,7 +494,7 @@ class TableViewSortListener {
   final TableViewSortChangedHandler onChanged;
 
   static void _defaultOnAdded(TableViewSortController _, String __) {}
-  static void _defaultOnUpdated(TableViewSortController _, String __, SortDirection ___) {}
+  static void _defaultOnUpdated(TableViewSortController _, String __, SortDirection? ___) {}
   static void _defaultOnChanged(TableViewSortController _) {}
 }
 
@@ -512,11 +504,11 @@ class TableViewSortController with ListenerNotifier<TableViewSortListener> {
   final TableViewSortMode sortMode;
   final LinkedHashMap<String, SortDirection> _sortMap = LinkedHashMap<String, SortDirection>();
 
-  SortDirection operator [](String columnKey) => _sortMap[columnKey];
+  SortDirection? operator [](String columnKey) => _sortMap[columnKey];
 
-  operator []=(String columnKey, SortDirection direction) {
+  operator []=(String columnKey, SortDirection? direction) {
     assert(sortMode != TableViewSortMode.none);
-    final SortDirection previousDirection = _sortMap[columnKey];
+    final SortDirection? previousDirection = _sortMap[columnKey];
     if (previousDirection == direction) {
       return;
     } else if (sortMode == TableViewSortMode.singleColumn) {
@@ -541,8 +533,8 @@ class TableViewSortController with ListenerNotifier<TableViewSortListener> {
     }
   }
 
-  SortDirection remove(String columnKey) {
-    final SortDirection previousDirection = _sortMap.remove(columnKey);
+  SortDirection? remove(String columnKey) {
+    final SortDirection? previousDirection = _sortMap.remove(columnKey);
     if (previousDirection != null) {
       notifyListeners((TableViewSortListener listener) {
         listener.onUpdated(this, columnKey, null);
@@ -561,54 +553,51 @@ class TableViewSortController with ListenerNotifier<TableViewSortListener> {
 
   void replaceAll(Map<String, SortDirection> map) {
     _sortMap.clear();
-    for (String columnKey in map.keys) {
-      _sortMap[columnKey] = map[columnKey];
+    for (MapEntry<String, SortDirection> entry in map.entries) {
+      _sortMap[entry.key] = entry.value;
     }
     notifyListeners((TableViewSortListener listener) => listener.onChanged(this));
   }
 }
 
-typedef TableViewRowDisabledFilterChangedHandler = void Function(Predicate<int> previousFilter);
+typedef TableViewRowDisabledFilterChangedHandler = void Function(Predicate<int>? previousFilter);
 
 class TableViewRowDisablerListener {
   const TableViewRowDisablerListener({
-    @required this.onTableViewRowDisabledFilterChanged,
+    required this.onTableViewRowDisabledFilterChanged,
   });
 
-  final TableViewRowDisabledFilterChangedHandler onTableViewRowDisabledFilterChanged;
+  final TableViewRowDisabledFilterChangedHandler? onTableViewRowDisabledFilterChanged;
 }
 
 class TableViewRowDisablerController with ListenerNotifier<TableViewRowDisablerListener> {
-  TableViewRowDisablerController({Predicate<int> filter}) : _filter = filter;
+  TableViewRowDisablerController({Predicate<int>? filter}) : _filter = filter;
 
-  Predicate<int> _filter;
-  Predicate<int> get filter => _filter;
-  set filter(Predicate<int> value) {
-    Predicate<int> previousValue = _filter;
+  Predicate<int>? _filter;
+  Predicate<int>? get filter => _filter;
+  set filter(Predicate<int>? value) {
+    Predicate<int>? previousValue = _filter;
     if (value != previousValue) {
       _filter = value;
       notifyListeners((TableViewRowDisablerListener listener) {
         if (listener.onTableViewRowDisabledFilterChanged != null) {
-          listener.onTableViewRowDisabledFilterChanged(previousValue);
+          listener.onTableViewRowDisabledFilterChanged!(previousValue);
         }
       });
     }
   }
 
-  bool isRowDisabled(int rowIndex) => filter != null && filter(rowIndex);
+  bool isRowDisabled(int rowIndex) => filter != null && filter!(rowIndex);
 }
 
 class ConstrainedTableColumnWidth extends TableColumnWidth {
   const ConstrainedTableColumnWidth({
-    double width,
+    required double width,
     this.minWidth = 0.0,
     this.maxWidth = double.infinity,
-  })  : assert(width != null),
-        assert(width >= 0),
+  })  : assert(width >= 0),
         assert(width < double.infinity),
-        assert(minWidth != null),
         assert(minWidth >= 0),
-        assert(maxWidth != null),
         assert(maxWidth >= minWidth),
         super(width);
 
@@ -616,9 +605,9 @@ class ConstrainedTableColumnWidth extends TableColumnWidth {
   final double maxWidth;
 
   ConstrainedTableColumnWidth copyWith({
-    double width,
-    double minWidth,
-    double maxWidth,
+    double? width,
+    double? minWidth,
+    double? maxWidth,
   }) {
     minWidth ??= this.minWidth;
     maxWidth ??= this.maxWidth;
@@ -654,10 +643,10 @@ class ConstrainedTableColumnWidth extends TableColumnWidth {
 
 class ScrollableTableView extends StatelessWidget {
   const ScrollableTableView({
-    Key key,
-    @required this.rowHeight,
-    @required this.length,
-    @required this.columns,
+    Key? key,
+    required this.rowHeight,
+    required this.length,
+    required this.columns,
     this.metricsController,
     this.selectionController,
     this.sortController,
@@ -667,29 +656,24 @@ class ScrollableTableView extends StatelessWidget {
     this.scrollController,
     this.roundColumnWidthsToWholePixel = false,
     this.includeHeader = true,
-  })  : assert(rowHeight != null),
-        assert(length != null),
-        assert(columns != null),
-        assert(roundColumnWidthsToWholePixel != null),
-        assert(includeHeader != null),
-        super(key: key);
+  }) : super(key: key);
 
   final double rowHeight;
   final int length;
   final List<TableColumnController> columns;
-  final TableViewMetricsController metricsController;
-  final TableViewSelectionController selectionController;
-  final TableViewSortController sortController;
-  final TableViewEditorController editorController;
-  final TableViewRowDisablerController rowDisabledController;
-  final TargetPlatform platform;
-  final ScrollController scrollController;
+  final TableViewMetricsController? metricsController;
+  final TableViewSelectionController? selectionController;
+  final TableViewSortController? sortController;
+  final TableViewEditorController? editorController;
+  final TableViewRowDisablerController? rowDisabledController;
+  final TargetPlatform? platform;
+  final ScrollController? scrollController;
   final bool roundColumnWidthsToWholePixel;
   final bool includeHeader;
 
   @override
   Widget build(BuildContext context) {
-    Widget columnHeader;
+    Widget? columnHeader;
     if (includeHeader) {
       columnHeader = TableViewHeader(
         rowHeight: rowHeight,
@@ -722,10 +706,10 @@ class ScrollableTableView extends StatelessWidget {
 
 class TableView extends StatefulWidget {
   const TableView({
-    Key key,
-    @required this.rowHeight,
-    @required this.length,
-    @required this.columns,
+    Key? key,
+    required this.rowHeight,
+    required this.length,
+    required this.columns,
     this.metricsController,
     this.selectionController,
     this.editorController,
@@ -733,40 +717,36 @@ class TableView extends StatefulWidget {
     this.rowDisabledController,
     this.roundColumnWidthsToWholePixel = false,
     this.platform,
-  })  : assert(rowHeight != null),
-        assert(length != null),
-        assert(columns != null),
-        assert(roundColumnWidthsToWholePixel != null),
-        super(key: key);
+  }) : super(key: key);
 
   final double rowHeight;
   final int length;
   final List<TableColumnController> columns;
-  final TableViewMetricsController metricsController;
-  final TableViewSelectionController selectionController;
-  final TableViewEditorController editorController;
-  final TableViewSortController sortController;
-  final TableViewRowDisablerController rowDisabledController;
+  final TableViewMetricsController? metricsController;
+  final TableViewSelectionController? selectionController;
+  final TableViewEditorController? editorController;
+  final TableViewSortController? sortController;
+  final TableViewRowDisablerController? rowDisabledController;
   final bool roundColumnWidthsToWholePixel;
-  final TargetPlatform platform;
+  final TargetPlatform? platform;
 
   @override
   _TableViewState createState() => _TableViewState();
 }
 
 typedef ObserveNavigator = NavigatorListenerRegistration Function({
-  NavigatorObserverCallback onPushed,
-  NavigatorObserverCallback onPopped,
-  NavigatorObserverCallback onRemoved,
-  NavigatorObserverCallback onReplaced,
-  NavigatorObserverCallback onStartUserGesture,
-  VoidCallback onStopUserGesture,
+  NavigatorObserverCallback? onPushed,
+  NavigatorObserverCallback? onPopped,
+  NavigatorObserverCallback? onRemoved,
+  NavigatorObserverOnReplacedCallback? onReplaced,
+  NavigatorObserverCallback? onStartUserGesture,
+  VoidCallback? onStopUserGesture,
 });
 
 class _TableViewState extends State<TableView> {
-  StreamController<PointerEvent> _pointerEvents;
-  StreamController<Offset> _doubleTapEvents;
-  Offset _doubleTapPosition;
+  late StreamController<PointerEvent> _pointerEvents;
+  late StreamController<Offset> _doubleTapEvents;
+  late Offset _doubleTapPosition;
 
   void _handleDoubleTapDown(TapDownDetails details) {
     _doubleTapPosition = details.localPosition;
@@ -808,7 +788,7 @@ class _TableViewState extends State<TableView> {
     );
 
     if (widget.selectionController != null &&
-        widget.selectionController.selectMode != SelectMode.none) {
+        widget.selectionController!.selectMode != SelectMode.none) {
       result = MouseRegion(
         onEnter: _pointerEvents.add,
         onExit: _pointerEvents.add,
@@ -818,7 +798,7 @@ class _TableViewState extends State<TableView> {
     }
 
     if (widget.editorController != null &&
-        widget.editorController.behavior != TableViewEditorBehavior.none) {
+        widget.editorController!.behavior != TableViewEditorBehavior.none) {
       result = GestureDetector(
         onDoubleTapDown: _handleDoubleTapDown,
         onDoubleTap: _handleDoubleTap,
@@ -831,46 +811,41 @@ class _TableViewState extends State<TableView> {
 }
 
 @visibleForTesting
-class RawTableView extends BasicTableView {
+class RawTableView extends RenderObjectWidget {
   const RawTableView({
-    Key key,
-    @required double rowHeight,
-    @required int length,
-    @required List<TableColumnController> columns,
-    bool roundColumnWidthsToWholePixel = false,
-    TableViewMetricsController metricsController,
+    Key? key,
+    required this.rowHeight,
+    required this.length,
+    required this.columns,
+    this.roundColumnWidthsToWholePixel = false,
+    this.metricsController,
     this.selectionController,
     this.sortController,
     this.editorController,
     this.rowDisabledController,
-    @required this.pointerEvents,
-    @required this.doubleTapEvents,
-    @required this.platform,
-  })  : assert(platform != null),
-        super(
-          key: key,
-          rowHeight: rowHeight,
-          length: length,
-          columns: columns,
-          roundColumnWidthsToWholePixel: roundColumnWidthsToWholePixel,
-          metricsController: metricsController,
-        );
+    required this.pointerEvents,
+    required this.doubleTapEvents,
+    required this.platform,
+  }) : super(key: key);
 
-  final TableViewSelectionController selectionController;
-  final TableViewSortController sortController;
-  final TableViewEditorController editorController;
-  final TableViewRowDisablerController rowDisabledController;
+  final double rowHeight;
+  final int length;
+  final List<TableColumnController> columns;
+  final bool roundColumnWidthsToWholePixel;
+  final TableViewMetricsController? metricsController;
+  final TableViewSelectionController? selectionController;
+  final TableViewSortController? sortController;
+  final TableViewEditorController? editorController;
+  final TableViewRowDisablerController? rowDisabledController;
   final Stream<PointerEvent> pointerEvents;
   final Stream<Offset> doubleTapEvents;
   final TargetPlatform platform;
 
   @override
-  List<TableColumnController> get columns => super.columns as List<TableColumnController>;
+  TableViewElement createElement() => TableViewElement(this);
 
   @override
-  BasicTableViewElement createElement() => TableViewElement(this);
-
-  @override
+  @protected
   RenderTableView createRenderObject(BuildContext context) {
     return RenderTableView(
       rowHeight: rowHeight,
@@ -889,9 +864,14 @@ class RawTableView extends BasicTableView {
   }
 
   @override
+  @protected
   void updateRenderObject(BuildContext context, RenderTableView renderObject) {
-    super.updateRenderObject(context, renderObject);
     renderObject
+      ..rowHeight = rowHeight
+      ..length = length
+      ..columns = columns
+      ..roundColumnWidthsToWholePixel = roundColumnWidthsToWholePixel
+      ..metricsController = metricsController
       ..selectionController = selectionController
       ..sortController = sortController
       ..editorController = editorController
@@ -903,7 +883,7 @@ class RawTableView extends BasicTableView {
 }
 
 @visibleForTesting
-class TableViewElement extends BasicTableViewElement {
+class TableViewElement extends RenderObjectElement with TableViewElementMixin {
   TableViewElement(RawTableView tableView) : super(tableView);
 
   @override
@@ -914,8 +894,8 @@ class TableViewElement extends BasicTableViewElement {
 
   @override
   @protected
-  Widget renderCell(covariant TableColumnController column, int rowIndex, int columnIndex) {
-    assert(column.cellRenderer is TableCellRenderer);
+  Widget renderCell(int rowIndex, int columnIndex) {
+    final TableColumnController column = widget.columns[columnIndex];
     return column.cellRenderer(
       context: this,
       rowIndex: rowIndex,
@@ -928,18 +908,18 @@ class TableViewElement extends BasicTableViewElement {
   }
 
   @override
-  void mount(Element parent, dynamic newSlot) {
+  void mount(Element? parent, dynamic newSlot) {
     super.mount(parent, newSlot);
     renderObject.updateObserveNavigatorCallback(_observeNavigator);
   }
 
   NavigatorListenerRegistration _observeNavigator({
-    NavigatorObserverCallback onPushed,
-    NavigatorObserverCallback onPopped,
-    NavigatorObserverCallback onRemoved,
-    NavigatorObserverCallback onReplaced,
-    NavigatorObserverCallback onStartUserGesture,
-    VoidCallback onStopUserGesture,
+    NavigatorObserverCallback? onPushed,
+    NavigatorObserverCallback? onPopped,
+    NavigatorObserverCallback? onRemoved,
+    NavigatorObserverOnReplacedCallback? onReplaced,
+    NavigatorObserverCallback? onStartUserGesture,
+    VoidCallback? onStopUserGesture,
   }) {
     return NavigatorListener.of(this).addObserver(
       onPushed: onPushed,
@@ -953,28 +933,22 @@ class TableViewElement extends BasicTableViewElement {
 }
 
 @visibleForTesting
-class RenderTableView extends RenderBasicTableView
-    with TableViewColumnListenerMixin, TableViewSortingMixin {
+class RenderTableView extends RenderSegment
+    with RenderTableViewMixin, TableViewColumnListenerMixin, TableViewSortingMixin {
   RenderTableView({
-    double rowHeight,
-    int length,
-    List<TableColumnController> columns,
+    required double rowHeight,
+    required int length,
+    required List<TableColumnController> columns,
     bool roundColumnWidthsToWholePixel = false,
-    TableViewMetricsController metricsController,
-    TableViewSelectionController selectionController,
-    TableViewSortController sortController,
-    TableViewEditorController editorController,
-    TableViewRowDisablerController rowDisabledController,
-    Stream<PointerEvent> pointerEvents,
-    Stream<Offset> doubleTapEvents,
-    TargetPlatform platform,
-  }) : super(
-          rowHeight: rowHeight,
-          length: length,
-          columns: columns,
-          roundColumnWidthsToWholePixel: roundColumnWidthsToWholePixel,
-          metricsController: metricsController,
-        ) {
+    TableViewMetricsController? metricsController,
+    TableViewSelectionController? selectionController,
+    TableViewSortController? sortController,
+    TableViewEditorController? editorController,
+    TableViewRowDisablerController? rowDisabledController,
+    required Stream<PointerEvent> pointerEvents,
+    required Stream<Offset> doubleTapEvents,
+    required TargetPlatform platform,
+  }) {
     initializeSortListener();
     _editorListener = TableViewEditorListener(
       onEditStarted: _handleEditStarted,
@@ -983,6 +957,11 @@ class RenderTableView extends RenderBasicTableView
     _rowDisablerListener = TableViewRowDisablerListener(
       onTableViewRowDisabledFilterChanged: _handleRowDisabledFilterChanged,
     );
+    this.rowHeight = rowHeight;
+    this.length = length;
+    this.columns = columns;
+    this.roundColumnWidthsToWholePixel = roundColumnWidthsToWholePixel;
+    this.metricsController = metricsController;
     this.selectionController = selectionController;
     this.sortController = sortController;
     this.editorController = editorController;
@@ -992,15 +971,15 @@ class RenderTableView extends RenderBasicTableView
     this.platform = platform;
   }
 
-  TableViewEditorListener _editorListener;
-  TableViewRowDisablerListener _rowDisablerListener;
+  late TableViewEditorListener _editorListener;
+  late TableViewRowDisablerListener _rowDisablerListener;
 
   Set<int> _sortedColumns = <int>{};
   void _resetSortedColumns() {
     _sortedColumns.clear();
     if (sortController != null) {
       for (int i = 0; i < columns.length; i++) {
-        if (sortController[columns[i].key] != null) {
+        if (sortController![columns[i].key] != null) {
           _sortedColumns.add(i);
         }
       }
@@ -1008,14 +987,14 @@ class RenderTableView extends RenderBasicTableView
   }
 
   void _cancelEditIfNecessary() {
-    if (_editorController != null && _editorController.isEditing) {
-      _editorController.cancel();
+    if (_editorController != null && _editorController!.isEditing) {
+      _editorController!.cancel();
     }
   }
 
   @override
   set length(int value) {
-    int previousValue = length;
+    int? previousValue = rawLength;
     super.length = value;
     if (length != previousValue) {
       _cancelEditIfNecessary();
@@ -1024,7 +1003,7 @@ class RenderTableView extends RenderBasicTableView
 
   @override
   set columns(List<TableColumnController> value) {
-    List<TableColumnController> previousValue = columns;
+    List<TableColumnController>? previousValue = rawColumns;
     super.columns = value;
     if (columns != previousValue) {
       _cancelEditIfNecessary();
@@ -1032,8 +1011,8 @@ class RenderTableView extends RenderBasicTableView
   }
 
   @override
-  set sortController(TableViewSortController value) {
-    TableViewSortController previousValue = sortController;
+  set sortController(TableViewSortController? value) {
+    TableViewSortController? previousValue = sortController;
     super.sortController = value;
     if (sortController != previousValue) {
       _resetSortedColumns();
@@ -1041,58 +1020,58 @@ class RenderTableView extends RenderBasicTableView
     }
   }
 
-  TableViewSelectionController _selectionController;
-  TableViewSelectionController get selectionController => _selectionController;
-  set selectionController(TableViewSelectionController value) {
+  TableViewSelectionController? _selectionController;
+  TableViewSelectionController? get selectionController => _selectionController;
+  set selectionController(TableViewSelectionController? value) {
     if (_selectionController == value) return;
     if (_selectionController != null) {
       if (attached) {
-        _selectionController._detach();
+        _selectionController!._detach();
       }
-      _selectionController.removeListener(_handleSelectionChanged);
+      _selectionController!.removeListener(_handleSelectionChanged);
     }
     _selectionController = value;
     if (_selectionController != null) {
       if (attached) {
-        _selectionController._attach(this);
+        _selectionController!._attach(this);
       }
-      _selectionController.addListener(_handleSelectionChanged);
+      _selectionController!.addListener(_handleSelectionChanged);
     }
     markNeedsBuild();
   }
 
-  TableViewEditorController _editorController;
-  TableViewEditorController get editorController => _editorController;
-  set editorController(TableViewEditorController value) {
+  TableViewEditorController? _editorController;
+  TableViewEditorController? get editorController => _editorController;
+  set editorController(TableViewEditorController? value) {
     if (_editorController == value) return;
     if (_editorController != null) {
       _cancelEditIfNecessary();
       if (attached) {
-        _editorController._detach();
+        _editorController!._detach();
       }
-      _editorController.removeListener(_editorListener);
+      _editorController!.removeListener(_editorListener);
     }
     _editorController = value;
     if (_editorController != null) {
       if (attached) {
-        _editorController._attach(this);
+        _editorController!._attach(this);
       }
-      _editorController.addListener(_editorListener);
+      _editorController!.addListener(_editorListener);
     }
     markNeedsBuild();
   }
 
-  TableViewRowDisablerController _rowDisabledController;
-  TableViewRowDisablerController get rowDisabledController => _rowDisabledController;
-  set rowDisabledController(TableViewRowDisablerController value) {
+  TableViewRowDisablerController? _rowDisabledController;
+  TableViewRowDisablerController? get rowDisabledController => _rowDisabledController;
+  set rowDisabledController(TableViewRowDisablerController? value) {
     if (value != _rowDisabledController) {
       _cancelEditIfNecessary();
       if (_rowDisabledController != null) {
-        _rowDisabledController.removeListener(_rowDisablerListener);
+        _rowDisabledController!.removeListener(_rowDisablerListener);
       }
       _rowDisabledController = value;
       if (_rowDisabledController != null) {
-        _rowDisabledController.addListener(_rowDisablerListener);
+        _rowDisabledController!.addListener(_rowDisablerListener);
       }
       markNeedsBuild();
     }
@@ -1100,7 +1079,7 @@ class RenderTableView extends RenderBasicTableView
 
   bool _isRowDisabled(int rowIndex) => _rowDisabledController?.isRowDisabled(rowIndex) ?? false;
 
-  ObserveNavigator _observeNavigator;
+  late ObserveNavigator _observeNavigator;
 
   @protected
   void updateObserveNavigatorCallback(ObserveNavigator callback) {
@@ -1108,49 +1087,39 @@ class RenderTableView extends RenderBasicTableView
     _cancelEditIfNecessary();
   }
 
-  StreamSubscription<PointerEvent> _pointerEventsSubscription;
-  Stream<PointerEvent> _pointerEvents;
-  Stream<PointerEvent> get pointerEvents => _pointerEvents;
+  StreamSubscription<PointerEvent> _pointerEventsSubscription =
+      const FakeSubscription<PointerEvent>();
+  Stream<PointerEvent>? _pointerEvents;
+  Stream<PointerEvent> get pointerEvents => _pointerEvents!;
   set pointerEvents(Stream<PointerEvent> value) {
-    assert(value != null);
     if (_pointerEvents == value) return;
-    if (_pointerEventsSubscription != null) {
-      assert(_pointerEvents != null);
-      _pointerEventsSubscription.cancel();
-      _pointerEventsSubscription = null;
-    }
+    _pointerEventsSubscription.cancel();
     _pointerEvents = value;
-    _pointerEventsSubscription = _pointerEvents.listen(_onPointerEvent);
+    _pointerEventsSubscription = _pointerEvents!.listen(_onPointerEvent);
   }
 
-  StreamSubscription<Offset> _doubleTapEventsSubscription;
-  Stream<Offset> _doubleTapEvents;
-  Stream<Offset> get doubleTapEvents => _doubleTapEvents;
+  StreamSubscription<Offset> _doubleTapEventsSubscription = const FakeSubscription<Offset>();
+  Stream<Offset>? _doubleTapEvents;
+  Stream<Offset> get doubleTapEvents => _doubleTapEvents!;
   set doubleTapEvents(Stream<Offset> value) {
-    assert(value != null);
     if (_doubleTapEvents == value) return;
-    if (_doubleTapEventsSubscription != null) {
-      assert(_doubleTapEvents != null);
-      _doubleTapEventsSubscription.cancel();
-      _doubleTapEventsSubscription = null;
-    }
+    _doubleTapEventsSubscription.cancel();
     _doubleTapEvents = value;
-    _doubleTapEventsSubscription = _doubleTapEvents.listen(_onDoubleTap);
+    _doubleTapEventsSubscription = _doubleTapEvents!.listen(_onDoubleTap);
   }
 
-  TargetPlatform _platform;
-  TargetPlatform get platform => _platform;
+  TargetPlatform? _platform;
+  TargetPlatform get platform => _platform!;
   set platform(TargetPlatform value) {
-    assert(value != null);
     if (value == _platform) return;
     _platform = value;
   }
 
-  int _highlightedRow;
-  int get highlightedRow => _highlightedRow;
-  set highlightedRow(int value) {
+  int? _highlightedRow;
+  int? get highlightedRow => _highlightedRow;
+  set highlightedRow(int? value) {
     if (_highlightedRow == value) return;
-    final int previousValue = _highlightedRow;
+    final int? previousValue = _highlightedRow;
     _highlightedRow = value;
     final UnionTableCellRange dirtyCells = UnionTableCellRange();
     if (previousValue != null) {
@@ -1164,49 +1133,48 @@ class RenderTableView extends RenderBasicTableView
 
   /// Local cache of the cells being edited, so that we know which cells to
   /// mark dirty when the edit finishes.
-  TableCellRange _cellsBeingEdited;
+  TableCellRange? _cellsBeingEdited;
 
-  NavigatorListenerRegistration _navigatorListenerRegistration;
+  NavigatorListenerRegistration? _navigatorListenerRegistration;
   int _routesPushedDuringEdit = 0;
 
   void _handleEditStarted(TableViewEditorController controller) {
     assert(controller == _editorController);
     assert(_cellsBeingEdited == null);
-    assert(_observeNavigator != null);
     assert(_navigatorListenerRegistration == null);
-    _cellsBeingEdited = _editorController.cellsBeingEdited;
-    markCellsDirty(_cellsBeingEdited);
-    GestureBinding.instance.pointerRouter.addGlobalRoute(_handleGlobalPointerEvent);
+    _cellsBeingEdited = controller.cellsBeingEdited;
+    markCellsDirty(_cellsBeingEdited!);
+    GestureBinding.instance!.pointerRouter.addGlobalRoute(_handleGlobalPointerEvent);
     _navigatorListenerRegistration = _observeNavigator(
       onPushed: _handleRoutePushedDuringEditing,
       onPopped: _handleRoutePoppedDuringEditing,
     );
   }
 
-  void _handleRoutePushedDuringEditing(Route<dynamic> route, Route<dynamic> previousRoute) {
+  void _handleRoutePushedDuringEditing(Route<dynamic> route, Route<dynamic>? previousRoute) {
     assert(_routesPushedDuringEdit >= 0);
     if (_routesPushedDuringEdit++ == 0) {
-      GestureBinding.instance.pointerRouter.removeGlobalRoute(_handleGlobalPointerEvent);
+      GestureBinding.instance!.pointerRouter.removeGlobalRoute(_handleGlobalPointerEvent);
     }
   }
 
-  void _handleRoutePoppedDuringEditing(Route<dynamic> route, Route<dynamic> previousRoute) {
+  void _handleRoutePoppedDuringEditing(Route<dynamic> route, Route<dynamic>? previousRoute) {
     assert(_navigatorListenerRegistration != null);
     assert(_routesPushedDuringEdit > 0);
     if (--_routesPushedDuringEdit == 0) {
-      GestureBinding.instance.pointerRouter.addGlobalRoute(_handleGlobalPointerEvent);
+      GestureBinding.instance!.pointerRouter.addGlobalRoute(_handleGlobalPointerEvent);
     }
   }
 
   void _handleGlobalPointerEvent(PointerEvent event) {
     assert(_editorController != null);
-    assert(_editorController.isEditing);
+    assert(_editorController!.isEditing);
     assert(_cellsBeingEdited != null);
     if (event is PointerDownEvent) {
       final Offset localPosition = globalToLocal(event.position);
-      final TableCellOffset cellOffset = metrics.getCellAt(localPosition);
-      if (cellOffset == null || !_editorController.cellsBeingEdited.containsCell(cellOffset)) {
-        _editorController.save();
+      final TableCellOffset? cellOffset = metrics.getCellAt(localPosition);
+      if (cellOffset == null || !_editorController!.cellsBeingEdited.containsCell(cellOffset)) {
+        _editorController!.save();
       }
     }
   }
@@ -1215,14 +1183,14 @@ class RenderTableView extends RenderBasicTableView
     assert(controller == _editorController);
     assert(_cellsBeingEdited != null);
     assert(_navigatorListenerRegistration != null);
-    _navigatorListenerRegistration.dispose();
+    _navigatorListenerRegistration!.dispose();
     _navigatorListenerRegistration = null;
-    markCellsDirty(_cellsBeingEdited);
+    markCellsDirty(_cellsBeingEdited!);
     _cellsBeingEdited = null;
-    GestureBinding.instance.pointerRouter.removeGlobalRoute(_handleGlobalPointerEvent);
+    GestureBinding.instance!.pointerRouter.removeGlobalRoute(_handleGlobalPointerEvent);
   }
 
-  void _handleRowDisabledFilterChanged(Predicate<int> previousFilter) {
+  void _handleRowDisabledFilterChanged(Predicate<int>? previousFilter) {
     _cancelEditIfNecessary();
     markNeedsBuild();
   }
@@ -1242,8 +1210,9 @@ class RenderTableView extends RenderBasicTableView
 
   @override
   @protected
-  void handleSortUpdated(TableViewSortController controller, String key, SortDirection direction) {
+  void handleSortUpdated(TableViewSortController controller, String key, SortDirection? previous) {
     final int columnIndex = columns.indexWhere((TableColumnController column) => column.key == key);
+    final SortDirection? direction = controller[key];
     if (direction == null) {
       _sortedColumns.remove(columnIndex);
     } else {
@@ -1261,10 +1230,9 @@ class RenderTableView extends RenderBasicTableView
 
   void _onDoubleTap(Offset position) {
     if (_editorController != null) {
-      assert(metrics != null);
-      final TableCellOffset cellOffset = metrics.getCellAt(position);
+      final TableCellOffset? cellOffset = metrics.getCellAt(position);
       if (cellOffset != null && !_isRowDisabled(cellOffset.rowIndex)) {
-        _editorController.start(cellOffset.rowIndex, cellOffset.columnIndex);
+        _editorController!.start(cellOffset.rowIndex, cellOffset.columnIndex);
       }
     }
   }
@@ -1287,8 +1255,9 @@ class RenderTableView extends RenderBasicTableView
   int _selectIndex = -1;
 
   void _onPointerDown(PointerDownEvent event) {
+    final TableViewSelectionController? selectionController = this.selectionController;
     final SelectMode selectMode = selectionController?.selectMode ?? SelectMode.none;
-    if (selectMode != SelectMode.none) {
+    if (selectionController != null && selectMode != SelectMode.none) {
       final int rowIndex = metrics.getRowAt(event.localPosition.dy);
       if (rowIndex >= 0 && rowIndex < length && !_isRowDisabled(rowIndex)) {
         final Set<LogicalKeyboardKey> keys = RawKeyboard.instance.keysPressed;
@@ -1326,8 +1295,8 @@ class RenderTableView extends RenderBasicTableView
 
   void _onPointerUp(PointerUpEvent event) {
     if (_selectIndex != -1 &&
-        selectionController.firstSelectedIndex != selectionController.lastSelectedIndex) {
-      selectionController.selectedIndex = _selectIndex;
+        selectionController!.firstSelectedIndex != selectionController!.lastSelectedIndex) {
+      selectionController!.selectedIndex = _selectIndex;
     }
     _selectIndex = -1;
   }
@@ -1341,7 +1310,7 @@ class RenderTableView extends RenderBasicTableView
   }
 
   @override
-  void handleEvent(PointerEvent event, HitTestEntry entry) {
+  void handleEvent(PointerEvent event, BoxHitTestEntry entry) {
     assert(debugHandleEvent(event, entry));
     _onPointerEvent(event);
     super.handleEvent(event, entry);
@@ -1351,20 +1320,20 @@ class RenderTableView extends RenderBasicTableView
   void attach(PipelineOwner owner) {
     super.attach(owner);
     if (_selectionController != null) {
-      _selectionController._attach(this);
+      _selectionController!._attach(this);
     }
     if (_editorController != null) {
-      _editorController._attach(this);
+      _editorController!._attach(this);
     }
   }
 
   @override
   void detach() {
     if (_selectionController != null) {
-      _selectionController._detach();
+      _selectionController!._detach();
     }
     if (_editorController != null) {
-      _editorController._detach();
+      _editorController!._detach();
     }
     super.detach();
   }
@@ -1381,17 +1350,17 @@ class RenderTableView extends RenderBasicTableView
       }
     }
     if (_highlightedRow != null) {
-      final Rect rowBounds = metrics.getRowBounds(_highlightedRow);
+      final Rect rowBounds = metrics.getRowBounds(_highlightedRow!);
       final Paint paint = Paint()
         ..style = PaintingStyle.fill
         ..color = const Color(0xffdddcd5);
       context.canvas.drawRect(rowBounds.shift(offset), paint);
     }
-    if (selectionController != null && selectionController.selectedRanges.isNotEmpty) {
+    if (selectionController != null && selectionController!.selectedRanges.isNotEmpty) {
       final Paint paint = Paint()
         ..style = PaintingStyle.fill
         ..color = const Color(0xff14538b);
-      for (Span range in selectionController.selectedRanges) {
+      for (Span range in selectionController!.selectedRanges) {
         Rect bounds = metrics.getRowBounds(range.start);
         bounds = bounds.expandToInclude(metrics.getRowBounds(range.end));
         context.canvas.drawRect(bounds.shift(offset), paint);
@@ -1401,36 +1370,29 @@ class RenderTableView extends RenderBasicTableView
   }
 }
 
-class TableViewHeader extends BasicTableView {
+class TableViewHeader extends RenderObjectWidget {
   const TableViewHeader({
-    Key key,
-    @required double rowHeight,
-    @required List<TableColumnController> columns,
-    bool roundColumnWidthsToWholePixel = false,
-    TableViewMetricsController metricsController,
+    Key? key,
+    required this.rowHeight,
+    required this.columns,
+    this.roundColumnWidthsToWholePixel = false,
+    this.metricsController,
     this.sortController,
-  }) : super(
-          key: key,
-          rowHeight: rowHeight,
-          length: 1,
-          columns: columns,
-          roundColumnWidthsToWholePixel: roundColumnWidthsToWholePixel,
-          metricsController: metricsController,
-        );
+  }) : super(key: key);
 
-  final TableViewSortController sortController;
-
-  @override
-  List<TableColumnController> get columns => super.columns as List<TableColumnController>;
+  final double rowHeight;
+  final List<TableColumnController> columns;
+  final bool roundColumnWidthsToWholePixel;
+  final TableViewMetricsController? metricsController;
+  final TableViewSortController? sortController;
 
   @override
   TableViewHeaderElement createElement() => TableViewHeaderElement(this);
 
   @override
-  RenderBasicTableView createRenderObject(BuildContext context) {
+  RenderTableViewHeader createRenderObject(BuildContext context) {
     return RenderTableViewHeader(
       rowHeight: rowHeight,
-      length: length,
       columns: columns,
       roundColumnWidthsToWholePixel: roundColumnWidthsToWholePixel,
       metricsController: metricsController,
@@ -1440,12 +1402,16 @@ class TableViewHeader extends BasicTableView {
 
   @override
   void updateRenderObject(BuildContext context, RenderTableViewHeader renderObject) {
-    super.updateRenderObject(context, renderObject);
-    renderObject..sortController = sortController;
+    renderObject
+      ..rowHeight = rowHeight
+      ..columns = columns
+      ..roundColumnWidthsToWholePixel = roundColumnWidthsToWholePixel
+      ..metricsController = metricsController
+      ..sortController = sortController;
   }
 
   @protected
-  Widget renderHeaderEnvelope({BuildContext context, int columnIndex}) {
+  Widget renderHeaderEnvelope({BuildContext? context, required int columnIndex}) {
     return TableViewHeaderEnvelope(
       column: columns[columnIndex],
       columnIndex: columnIndex,
@@ -1456,17 +1422,15 @@ class TableViewHeader extends BasicTableView {
 
 class TableViewHeaderEnvelope extends StatefulWidget {
   const TableViewHeaderEnvelope({
-    this.column,
-    this.columnIndex,
+    required this.column,
+    required this.columnIndex,
     this.sortController,
-    Key key,
-  })  : assert(column != null),
-        assert(columnIndex != null),
-        super(key: key);
+    Key? key,
+  }) : super(key: key);
 
   final TableColumnController column;
   final int columnIndex;
-  final TableViewSortController sortController;
+  final TableViewSortController? sortController;
 
   @override
   _TableViewHeaderEnvelopeState createState() => _TableViewHeaderEnvelopeState();
@@ -1491,20 +1455,21 @@ class _TableViewHeaderEnvelopeState extends State<TableViewHeaderEnvelope> {
 
     Widget renderedHeader = Padding(
       padding: EdgeInsets.only(left: 3),
-      child: widget.column.headerRenderer(
+      child: widget.column.headerRenderer!(
         context: context,
         columnIndex: widget.columnIndex,
       ),
     );
 
-    if (widget.sortController != null && widget.sortController.sortMode != TableViewSortMode.none) {
+    if (widget.sortController != null &&
+        widget.sortController!.sortMode != TableViewSortMode.none) {
       renderedHeader = GestureDetector(
         onTapDown: (TapDownDetails _) => setState(() => _pressed = true),
         onTapUp: (TapUpDetails _) => setState(() => _pressed = false),
         onTapCancel: () => setState(() => _pressed = false),
         onTap: () {
           final String key = widget.column.key;
-          SortDirection direction = widget.sortController[key];
+          SortDirection? direction = widget.sortController![key];
           switch (direction) {
             case SortDirection.ascending:
               direction = SortDirection.descending;
@@ -1513,12 +1478,12 @@ class _TableViewHeaderEnvelopeState extends State<TableViewHeaderEnvelope> {
               direction = SortDirection.ascending;
               break;
           }
-          if (widget.sortController.sortMode == TableViewSortMode.singleColumn) {
-            widget.sortController[key] = direction;
+          if (widget.sortController!.sortMode == TableViewSortMode.singleColumn) {
+            widget.sortController![key] = direction;
           } else if (isShiftKeyPressed()) {
-            widget.sortController[key] = direction;
+            widget.sortController![key] = direction;
           } else {
-            widget.sortController.replaceAll(<String, SortDirection>{key: direction});
+            widget.sortController!.replaceAll(<String, SortDirection>{key: direction});
           }
         },
         child: renderedHeader,
@@ -1559,9 +1524,10 @@ class _TableViewHeaderEnvelopeState extends State<TableViewHeaderEnvelope> {
                     dragStartBehavior: DragStartBehavior.down,
                     onHorizontalDragUpdate: (DragUpdateDetails details) {
                       assert(widget.column.width is ConstrainedTableColumnWidth);
-                      final ConstrainedTableColumnWidth width = widget.column.width;
+                      final ConstrainedTableColumnWidth width =
+                          widget.column.width as ConstrainedTableColumnWidth;
                       widget.column.width = width.copyWith(
-                        width: width.width + details.primaryDelta,
+                        width: width.width + details.primaryDelta!,
                       );
                     },
                   ),
@@ -1575,7 +1541,7 @@ class _TableViewHeaderEnvelopeState extends State<TableViewHeaderEnvelope> {
 }
 
 @visibleForTesting
-class TableViewHeaderElement extends BasicTableViewElement {
+class TableViewHeaderElement extends RenderObjectElement with TableViewElementMixin {
   TableViewHeaderElement(TableViewHeader tableView) : super(tableView);
 
   @override
@@ -1586,28 +1552,26 @@ class TableViewHeaderElement extends BasicTableViewElement {
 
   @override
   @protected
-  Widget renderCell(covariant TableColumnController column, int rowIndex, int columnIndex) {
+  Widget renderCell(int rowIndex, int columnIndex) {
     return widget.renderHeaderEnvelope(context: this, columnIndex: columnIndex);
   }
 }
 
-class RenderTableViewHeader extends RenderBasicTableView
-    with TableViewColumnListenerMixin, TableViewSortingMixin {
+class RenderTableViewHeader extends RenderSegment
+    with RenderTableViewMixin, TableViewColumnListenerMixin, TableViewSortingMixin {
   RenderTableViewHeader({
-    double rowHeight,
-    int length,
-    List<TableColumnController> columns,
+    required double rowHeight,
+    required List<TableColumnController> columns,
     bool roundColumnWidthsToWholePixel = false,
-    TableViewMetricsController metricsController,
-    TableViewSortController sortController,
-  }) : super(
-          rowHeight: rowHeight,
-          length: length,
-          columns: columns,
-          roundColumnWidthsToWholePixel: roundColumnWidthsToWholePixel,
-          metricsController: metricsController,
-        ) {
+    TableViewMetricsController? metricsController,
+    TableViewSortController? sortController,
+  }) {
     initializeSortListener();
+    this.length = 1;
+    this.rowHeight = rowHeight;
+    this.columns = columns;
+    this.roundColumnWidthsToWholePixel = roundColumnWidthsToWholePixel;
+    this.metricsController = metricsController;
     this.sortController = sortController;
   }
 
@@ -1619,7 +1583,7 @@ class RenderTableViewHeader extends RenderBasicTableView
 
   @override
   @protected
-  void handleSortUpdated(TableViewSortController _, String __, SortDirection ___) {
+  void handleSortUpdated(TableViewSortController _, String __, SortDirection? ___) {
     markNeedsPaint();
   }
 
@@ -1635,7 +1599,7 @@ class RenderTableViewHeader extends RenderBasicTableView
 
     if (sortController != null) {
       for (int columnIndex = 0; columnIndex < columns.length; columnIndex++) {
-        final SortDirection sortDirection = sortController[columns[columnIndex].key];
+        final SortDirection? sortDirection = sortController![columns[columnIndex].key];
         if (sortDirection != null) {
           final Rect cellBounds = metrics.getCellBounds(0, columnIndex);
           final SortIndicatorPainter painter = SortIndicatorPainter(sortDirection: sortDirection);
@@ -1656,31 +1620,36 @@ class RenderTableViewHeader extends RenderBasicTableView
   }
 }
 
-mixin TableViewColumnListenerMixin on RenderBasicTableView {
+mixin TableViewColumnListenerMixin on RenderTableViewMixin {
+  List<TableColumnController>? _columns;
+
   @override
-  List<TableColumnController> get columns => super.columns as List<TableColumnController>;
+  List<TableColumnController>? get rawColumns => _columns;
+
+  @override
+  List<TableColumnController> get columns => _columns!;
 
   @override
   set columns(List<TableColumnController> value) {
-    final List<TableColumnController> oldColumns = columns;
-    super.columns = value;
-    if (oldColumns != columns) {
-      // Initializer value is null (late bound).
-      if (oldColumns != null) {
-        for (int i = 0; i < oldColumns.length; i++) {
-          oldColumns[i].removeListener(_columnListeners[i]);
-        }
+    if (_columns == value) return;
+    final List<TableColumnController>? oldColumns = _columns;
+    _columns = value;
+    markNeedsMetrics();
+    markNeedsBuild();
+    if (oldColumns != null) {
+      for (int i = 0; i < oldColumns.length; i++) {
+        oldColumns[i].removeListener(_columnListeners[i]);
       }
-      _columnListeners = <VoidCallback>[];
-      for (int i = 0; i < columns.length; i++) {
-        final VoidCallback listener = _listenerForColumn(i);
-        _columnListeners.add(listener);
-        columns[i].addListener(listener);
-      }
+    }
+    _columnListeners = <VoidCallback>[];
+    for (int i = 0; i < value.length; i++) {
+      final VoidCallback listener = _listenerForColumn(i);
+      _columnListeners.add(listener);
+      value[i].addListener(listener);
     }
   }
 
-  List<VoidCallback> _columnListeners;
+  late List<VoidCallback> _columnListeners;
 
   VoidCallback _listenerForColumn(int columnIndex) {
     return () {
@@ -1696,19 +1665,19 @@ mixin TableViewColumnListenerMixin on RenderBasicTableView {
   }
 }
 
-mixin TableViewSortingMixin on RenderBasicTableView {
-  TableViewSortListener _sortListener;
+mixin TableViewSortingMixin on RenderTableViewMixin {
+  late TableViewSortListener _sortListener;
 
-  TableViewSortController _sortController;
-  TableViewSortController get sortController => _sortController;
-  set sortController(TableViewSortController value) {
+  TableViewSortController? _sortController;
+  TableViewSortController? get sortController => _sortController;
+  set sortController(TableViewSortController? value) {
     if (_sortController == value) return;
     if (_sortController != null) {
-      _sortController.removeListener(_sortListener);
+      _sortController!.removeListener(_sortListener);
     }
     _sortController = value;
     if (_sortController != null) {
-      _sortController.addListener(_sortListener);
+      _sortController!.addListener(_sortListener);
     }
     markNeedsBuild();
   }
@@ -1726,7 +1695,7 @@ mixin TableViewSortingMixin on RenderBasicTableView {
   void handleSortAdded(TableViewSortController controller, String key) {}
 
   @protected
-  void handleSortUpdated(TableViewSortController controller, String key, SortDirection previous) {}
+  void handleSortUpdated(TableViewSortController controller, String key, SortDirection? previous) {}
 
   @protected
   void handleSortChanged(TableViewSortController controller) {}

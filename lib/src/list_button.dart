@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// @dart=2.9
-
 import 'dart:math' as math;
 import 'dart:ui' show window;
 
@@ -83,9 +81,9 @@ abstract class ListButtonWidth {
   const ListButtonWidth._();
 
   /// Calculates the width of the content area of the specified list button.
-  double _measureWidth<T>(BuildContext context, ListButton<T> listButton);
+  double? _measureWidth<T>(BuildContext context, ListButton<T> listButton);
 
-  Widget _build(double width, EdgeInsetsGeometry padding, Widget child);
+  Widget _build(double? width, EdgeInsetsGeometry padding, Widget child);
 }
 
 /// Specification of [ListButton] width that causes the button to adopt the
@@ -101,10 +99,10 @@ class ShrinkWrappedListButtonWidth extends ListButtonWidth {
   const ShrinkWrappedListButtonWidth() : super._();
 
   @override
-  double _measureWidth<T>(BuildContext context, ListButton<T> listButton) => null;
+  double? _measureWidth<T>(BuildContext context, ListButton<T> listButton) => null;
 
   @override
-  Widget _build(double width, EdgeInsetsGeometry padding, Widget child) {
+  Widget _build(double? width, EdgeInsetsGeometry padding, Widget child) {
     assert(width == null);
     return Padding(
       padding: padding,
@@ -126,10 +124,10 @@ class ExpandedListButtonWidth extends ListButtonWidth {
   const ExpandedListButtonWidth() : super._();
 
   @override
-  double _measureWidth<T>(BuildContext context, ListButton<T> listButton) => null;
+  double? _measureWidth<T>(BuildContext context, ListButton<T> listButton) => null;
 
   @override
-  Widget _build(double width, EdgeInsetsGeometry padding, Widget child) {
+  Widget _build(double? width, EdgeInsetsGeometry padding, Widget child) {
     assert(width == null);
     return Expanded(
       child: Padding(
@@ -161,17 +159,17 @@ class ExpandedListButtonWidth extends ListButtonWidth {
 class MaximumListButtonWidth extends ListButtonWidth {
   const MaximumListButtonWidth({this.ancestryBuilder}) : super._();
 
-  final Widget Function(BuildContext context, Widget child) ancestryBuilder;
+  final Widget Function(BuildContext context, Widget child)? ancestryBuilder;
 
   @override
   double _measureWidth<T>(BuildContext context, ListButton<T> listButton) {
     const WidgetSurveyor surveyor = WidgetSurveyor();
     double maxWidth = 0;
     for (int i = -1; i < listButton.items.length; i++) {
-      final T item = i == -1 ? null : listButton.items[i];
+      final T? item = i == -1 ? null : listButton.items[i];
       Widget built = listButton.builder(context: context, item: item);
       if (ancestryBuilder != null) {
-        built = ancestryBuilder(context, built);
+        built = ancestryBuilder!(context, built);
       }
       maxWidth = math.max(maxWidth, surveyor.measureWidget(built).width);
     }
@@ -179,7 +177,7 @@ class MaximumListButtonWidth extends ListButtonWidth {
   }
 
   @override
-  Widget _build(double width, EdgeInsetsGeometry padding, Widget child) {
+  Widget _build(double? width, EdgeInsetsGeometry padding, Widget child) {
     return Padding(
       padding: padding,
       child: SizedBox(
@@ -191,42 +189,38 @@ class MaximumListButtonWidth extends ListButtonWidth {
 }
 
 typedef ListButtonBuilder<T> = Widget Function({
-  BuildContext context,
-  T item,
+  required BuildContext context,
+  required T? item,
 });
 
 typedef ListButtonItemBuilder<T> = Widget Function({
-  BuildContext context,
-  T item,
-  bool isSelected,
-  bool isHighlighted,
-  bool isDisabled,
+  required BuildContext context,
+  required T item,
+  required bool isSelected,
+  required bool isHighlighted,
+  required bool isDisabled,
 });
 
 class ListButton<T> extends StatefulWidget {
   ListButton({
-    Key key,
-    @required this.items,
+    Key? key,
+    required this.items,
     this.builder = defaultBuilder,
     this.itemBuilder = defaultItemBuilder,
     this.width = const MaximumListButtonWidth(),
     this.selectionController,
     this.disabledItemFilter,
-  })  : assert(items != null),
-        assert(builder != null),
-        assert(itemBuilder != null),
-        assert(width != null),
-        assert(selectionController == null || selectionController.selectMode == SelectMode.single),
+  })  : assert(selectionController == null || selectionController.selectMode == SelectMode.single),
         super(key: key);
 
   final List<T> items;
   final ListButtonBuilder<T> builder;
   final ListButtonItemBuilder<T> itemBuilder;
   final ListButtonWidth width;
-  final ListViewSelectionController selectionController;
-  final Predicate<T> disabledItemFilter;
+  final ListViewSelectionController? selectionController;
+  final Predicate<T>? disabledItemFilter;
 
-  static Widget defaultBuilder({BuildContext context, Object item}) {
+  static Widget defaultBuilder({required BuildContext context, Object? item}) {
     if (item == null) {
       return Container();
     }
@@ -242,11 +236,11 @@ class ListButton<T> extends StatefulWidget {
   }
 
   static Widget defaultItemBuilder({
-    BuildContext context,
-    Object item,
-    bool isSelected,
-    bool isHighlighted,
-    bool isDisabled,
+    required BuildContext context,
+    Object? item,
+    required bool isSelected,
+    required bool isHighlighted,
+    required bool isDisabled,
   }) {
     TextStyle style = DefaultTextStyle.of(context).style;
     if (isSelected) {
@@ -262,7 +256,7 @@ class ListButton<T> extends StatefulWidget {
   }
 
   static ListButtonBuilder<Map<K, V>> mapBuilderFor<K, V>(K key) {
-    return ({BuildContext context, Map<K, V> item}) {
+    return ({required BuildContext context, Map<K, V>? item}) {
       return defaultBuilder(
         context: context,
         item: item == null ? null : item[key],
@@ -272,11 +266,11 @@ class ListButton<T> extends StatefulWidget {
 
   static ListButtonItemBuilder<Map<K, V>> mapItemBuilderFor<K, V>(K key) {
     return ({
-      BuildContext context,
-      Map<K, V> item,
-      bool isSelected,
-      bool isHighlighted,
-      bool isDisabled,
+      required BuildContext context,
+      required Map<K, V> item,
+      required bool isSelected,
+      required bool isHighlighted,
+      required bool isDisabled,
     }) {
       return defaultItemBuilder(
         context: context,
@@ -293,11 +287,11 @@ class ListButton<T> extends StatefulWidget {
 }
 
 class _ListButtonState<T> extends State<ListButton<T>> {
-  ListViewSelectionController _selectionController;
+  ListViewSelectionController? _selectionController;
 
   int _selectedIndex = -1;
   bool _pressed = false;
-  double _buttonWidth;
+  double? _buttonWidth;
 
   void _handleSelectionChanged() {
     setState(() {
@@ -310,20 +304,19 @@ class _ListButtonState<T> extends State<ListButton<T>> {
   }
 
   BasicListItemBuilder _adaptBuilder(ListButtonBuilder<T> builder) {
-    return ({BuildContext context, int index}) {
-      final T item = index == -1 ? null : widget.items[index];
+    return ({required BuildContext context, required int index}) {
+      final T? item = index == -1 ? null : widget.items[index];
       return builder(context: context, item: item);
     };
   }
 
   ListItemBuilder _adaptItemBuilder(ListButtonItemBuilder<T> itemBuilder) {
-    assert(itemBuilder != null);
     return ({
-      BuildContext context,
-      int index,
-      bool isSelected,
-      bool isHighlighted,
-      bool isDisabled,
+      required BuildContext context,
+      required int index,
+      required bool isSelected,
+      required bool isHighlighted,
+      required bool isDisabled,
     }) {
       return itemBuilder(
         context: context,
@@ -335,7 +328,7 @@ class _ListButtonState<T> extends State<ListButton<T>> {
     };
   }
 
-  Predicate<int> _adaptDisabledItemFilter(Predicate<T> predicate) {
+  Predicate<int>? _adaptDisabledItemFilter(Predicate<T>? predicate) {
     if (predicate == null) {
       return null;
     }
@@ -345,12 +338,12 @@ class _ListButtonState<T> extends State<ListButton<T>> {
   }
 
   ListViewSelectionController get selectionController {
-    return _selectionController ?? widget.selectionController;
+    return _selectionController ?? widget.selectionController!;
   }
 
   void showPopup() {
     final RenderBox button = context.findRenderObject() as RenderBox;
-    final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    final RenderBox overlay = Overlay.of(context)!.context.findRenderObject() as RenderBox;
     final Offset buttonGlobalOffset = button.localToGlobal(Offset.zero, ancestor: overlay);
     // TODO: Why do we need to ceil here?
     final Offset buttonPosition = Offset(
@@ -365,7 +358,7 @@ class _ListButtonState<T> extends State<ListButton<T>> {
       disabledItemFilter: _adaptDisabledItemFilter(widget.disabledItemFilter),
       showMenuContext: context,
     );
-    Navigator.of(context).push<int>(popupListRoute).then((int selectedIndex) {
+    Navigator.of(context)!.push<int>(popupListRoute).then((int? selectedIndex) {
       if (mounted) {
         setState(() {
           _pressed = false;
@@ -391,7 +384,7 @@ class _ListButtonState<T> extends State<ListButton<T>> {
     selectionController.removeListener(_handleSelectionChanged);
     if (_selectionController != null) {
       assert(widget.selectionController == null);
-      _selectionController.dispose();
+      _selectionController!.dispose();
       _selectionController = null;
     }
     super.dispose();
@@ -404,24 +397,24 @@ class _ListButtonState<T> extends State<ListButton<T>> {
   }
 
   @override
-  void didUpdateWidget(covariant ListButton oldWidget) {
+  void didUpdateWidget(covariant ListButton<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
     _updateButtonWidth();
     if (oldWidget.selectionController != widget.selectionController) {
       if (oldWidget.selectionController == null) {
         assert(_selectionController != null);
-        _selectionController.removeListener(_handleSelectionChanged);
-        _selectionController.dispose();
+        _selectionController!.removeListener(_handleSelectionChanged);
+        _selectionController!.dispose();
         _selectionController = null;
       } else {
         assert(_selectionController == null);
-        oldWidget.selectionController.removeListener(_handleSelectionChanged);
+        oldWidget.selectionController!.removeListener(_handleSelectionChanged);
       }
       if (widget.selectionController == null) {
         _selectionController = ListViewSelectionController();
-        _selectionController.addListener(_handleSelectionChanged);
+        _selectionController!.addListener(_handleSelectionChanged);
       } else {
-        widget.selectionController.addListener(_handleSelectionChanged);
+        widget.selectionController!.addListener(_handleSelectionChanged);
       }
     }
   }
@@ -499,19 +492,19 @@ class _ListButtonState<T> extends State<ListButton<T>> {
 
 class _PopupListRoute<T> extends PopupRoute<T> {
   _PopupListRoute({
-    @required this.position,
-    this.length,
-    this.itemBuilder,
-    this.selectionController,
+    required this.position,
+    required this.length,
+    required this.itemBuilder,
+    required this.selectionController,
     this.disabledItemFilter,
-    this.showMenuContext,
+    required this.showMenuContext,
   });
 
   final RelativeRect position;
   final int length;
   final ListItemBuilder itemBuilder;
   final ListViewSelectionController selectionController;
-  final Predicate<int> disabledItemFilter;
+  final Predicate<int>? disabledItemFilter;
   final BuildContext showMenuContext;
 
   @override
@@ -524,7 +517,7 @@ class _PopupListRoute<T> extends PopupRoute<T> {
   bool get barrierDismissible => true;
 
   @override
-  Color get barrierColor => null;
+  Color? get barrierColor => null;
 
   @override
   String get barrierLabel => 'Dismiss';
@@ -583,17 +576,17 @@ class _PopupListRouteLayout extends SingleChildLayoutDelegate {
 
 class _PopupList<T> extends StatefulWidget {
   const _PopupList({
-    this.length,
-    this.itemBuilder,
-    this.selectionController,
+    required this.length,
+    required this.itemBuilder,
+    required this.selectionController,
     this.disabledItemFilter,
-    this.route,
+    required this.route,
   });
 
   final int length;
   final ListItemBuilder itemBuilder;
   final ListViewSelectionController selectionController;
-  final Predicate<int> disabledItemFilter;
+  final Predicate<int>? disabledItemFilter;
   final _PopupListRoute<T> route;
 
   @override
@@ -601,12 +594,12 @@ class _PopupList<T> extends StatefulWidget {
 }
 
 class _PopupListState<T> extends State<_PopupList<T>> {
-  ListViewSelectionController _selectionController;
-  double _popupWidth;
-  double _itemHeight;
+  late ListViewSelectionController _selectionController;
+  late double _popupWidth;
+  late double _itemHeight;
 
   void _handleTap() {
-    Navigator.of(context).pop(_selectionController.selectedIndex);
+    Navigator.of(context)!.pop(_selectionController.selectedIndex);
   }
 
   void _updateListViewMetrics() {
@@ -663,10 +656,10 @@ class _PopupListState<T> extends State<_PopupList<T>> {
     final CurveTween opacity = CurveTween(curve: Curves.linear);
 
     return AnimatedBuilder(
-      animation: widget.route.animation,
-      builder: (BuildContext context, Widget child) {
+      animation: widget.route.animation!,
+      builder: (BuildContext context, Widget? child) {
         return Opacity(
-          opacity: opacity.evaluate(widget.route.animation),
+          opacity: opacity.evaluate(widget.route.animation!),
           child: GestureDetector(
             onTap: _handleTap,
             child: ClipRect(
@@ -700,7 +693,7 @@ class _PopupListState<T> extends State<_PopupList<T>> {
 }
 
 class _ShadowClipper extends CustomClipper<Rect> {
-  const _ShadowClipper(this.shadow) : assert(shadow != null);
+  const _ShadowClipper(this.shadow);
 
   final BoxShadow shadow;
 

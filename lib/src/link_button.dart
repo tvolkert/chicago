@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// @dart=2.9
-
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
@@ -22,15 +20,15 @@ import 'hover_builder.dart';
 
 class LinkButton extends StatelessWidget {
   const LinkButton({
-    Key key,
+    Key? key,
     this.image,
-    this.text,
+    required this.text,
     this.onPressed,
   }) : super(key: key);
 
-  final ImageProvider image;
+  final ImageProvider? image;
   final String text;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +43,7 @@ class LinkButton extends StatelessWidget {
               if (image != null)
                 Padding(
                   padding: EdgeInsets.only(right: 4),
-                  child: Image(image: image),
+                  child: Image(image: image!),
                 ),
               Text(
                 text,

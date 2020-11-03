@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// @dart=2.9
-
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 
@@ -23,7 +21,7 @@ mixin DeferredLayoutMixin on RenderObject {
   void markNeedsLayoutDeferred() {
     if (!_needsLayoutDeferred) {
       _needsLayoutDeferred = true;
-      SchedulerBinding.instance.scheduleFrameCallback((Duration timeStamp) {
+      SchedulerBinding.instance!.scheduleFrameCallback((Duration timeStamp) {
         if (_needsLayoutDeferred) {
           _needsLayoutDeferred = false;
           markNeedsLayout();

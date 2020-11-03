@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// @dart=2.9
-
 import 'package:flutter/widgets.dart';
 
 /// Signature for a function that receives [NavigatorObserver] notifications.
@@ -24,7 +22,18 @@ import 'package:flutter/widgets.dart';
 ///  * [NavigatorListenerController.addObserver], where this signature is used.
 typedef NavigatorObserverCallback = void Function(
   Route<dynamic> route,
-  Route<dynamic> previousRoute,
+  Route<dynamic>? previousRoute,
+);
+
+/// Signature for a function that receives [NavigatorObserver.didReplace]
+/// notifications.
+///
+/// See also:
+///
+///  * [NavigatorListenerController.addObserver], where this signature is used.
+typedef NavigatorObserverOnReplacedCallback = void Function(
+  Route<dynamic>? route,
+  Route<dynamic>? previousRoute,
 );
 
 /// The result of a call to [NavigatorListenerController.addObserver].
@@ -70,7 +79,7 @@ class NavigatorListenerRegistration {
 /// }
 /// ```
 class NavigatorListener extends StatefulWidget {
-  const NavigatorListener({Key key, this.child}) : super(key: key);
+  const NavigatorListener({Key? key, required this.child}) : super(key: key);
 
   /// The widget below this widget in the tree.
   ///
@@ -83,8 +92,7 @@ class NavigatorListener extends StatefulWidget {
   /// The controller from the closest instance of this class that encloses the
   /// given context.
   static NavigatorListenerController of(BuildContext context) {
-    _Scope scope = context.dependOnInheritedWidgetOfExactType<_Scope>();
-    assert(scope != null, 'NavigatorListener not found in ancestry');
+    _Scope scope = context.dependOnInheritedWidgetOfExactType<_Scope>()!;
     return scope.navigatorListenerStateState;
   }
 }
@@ -114,12 +122,12 @@ abstract class NavigatorListenerController {
   /// The returned [NavigatorListenerRegistration] can be used to unregister
   /// the listener via [NavigatorListenerRegistration.dispose].
   NavigatorListenerRegistration addObserver({
-    NavigatorObserverCallback onPushed,
-    NavigatorObserverCallback onPopped,
-    NavigatorObserverCallback onRemoved,
-    NavigatorObserverCallback onReplaced,
-    NavigatorObserverCallback onStartUserGesture,
-    VoidCallback onStopUserGesture,
+    NavigatorObserverCallback? onPushed,
+    NavigatorObserverCallback? onPopped,
+    NavigatorObserverCallback? onRemoved,
+    NavigatorObserverOnReplacedCallback? onReplaced,
+    NavigatorObserverCallback? onStartUserGesture,
+    VoidCallback? onStopUserGesture,
   });
 }
 
@@ -130,12 +138,12 @@ class _NavigatorListenerState extends State<NavigatorListener>
 
   @override
   NavigatorListenerRegistration addObserver({
-    NavigatorObserverCallback onPushed,
-    NavigatorObserverCallback onPopped,
-    NavigatorObserverCallback onRemoved,
-    NavigatorObserverCallback onReplaced,
-    NavigatorObserverCallback onStartUserGesture,
-    VoidCallback onStopUserGesture,
+    NavigatorObserverCallback? onPushed,
+    NavigatorObserverCallback? onPopped,
+    NavigatorObserverCallback? onRemoved,
+    NavigatorObserverOnReplacedCallback? onReplaced,
+    NavigatorObserverCallback? onStartUserGesture,
+    VoidCallback? onStopUserGesture,
   }) {
     final _ProxyObserver proxy = _ProxyObserver(
       onPushed: onPushed,
@@ -160,8 +168,8 @@ class _NavigatorListenerState extends State<NavigatorListener>
 
 class _Scope extends InheritedWidget {
   const _Scope({
-    this.navigatorListenerStateState,
-    Widget child,
+    required this.navigatorListenerStateState,
+    required Widget child,
   }) : super(child: child);
 
   final _NavigatorListenerState navigatorListenerStateState;
@@ -176,35 +184,35 @@ class _AggregateObserver extends NavigatorObserver {
   final Set<_ProxyObserver> proxies = <_ProxyObserver>{};
 
   @override
-  void didPush(Route<dynamic> route, Route<dynamic> previousRoute) {
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
     for (NavigatorObserver proxy in proxies) {
       proxy.didPush(route, previousRoute);
     }
   }
 
   @override
-  void didPop(Route<dynamic> route, Route<dynamic> previousRoute) {
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
     for (NavigatorObserver proxy in proxies) {
       proxy.didPop(route, previousRoute);
     }
   }
 
   @override
-  void didRemove(Route<dynamic> route, Route<dynamic> previousRoute) {
+  void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) {
     for (NavigatorObserver proxy in proxies) {
       proxy.didRemove(route, previousRoute);
     }
   }
 
   @override
-  void didReplace({Route<dynamic> oldRoute, Route<dynamic> newRoute}) {
+  void didReplace({Route<dynamic>? oldRoute, Route<dynamic>? newRoute}) {
     for (NavigatorObserver proxy in proxies) {
       proxy.didReplace(oldRoute: oldRoute, newRoute: newRoute);
     }
   }
 
   @override
-  void didStartUserGesture(Route<dynamic> route, Route<dynamic> previousRoute) {
+  void didStartUserGesture(Route<dynamic> route, Route<dynamic>? previousRoute) {
     for (NavigatorObserver proxy in proxies) {
       proxy.didStartUserGesture(route, previousRoute);
     }
@@ -228,52 +236,52 @@ class _ProxyObserver extends NavigatorObserver {
     this.onStopUserGesture,
   });
 
-  final NavigatorObserverCallback onPushed;
-  final NavigatorObserverCallback onPopped;
-  final NavigatorObserverCallback onRemoved;
-  final NavigatorObserverCallback onReplaced;
-  final NavigatorObserverCallback onStartUserGesture;
-  final VoidCallback onStopUserGesture;
+  final NavigatorObserverCallback? onPushed;
+  final NavigatorObserverCallback? onPopped;
+  final NavigatorObserverCallback? onRemoved;
+  final NavigatorObserverOnReplacedCallback? onReplaced;
+  final NavigatorObserverCallback? onStartUserGesture;
+  final VoidCallback? onStopUserGesture;
 
   @override
-  void didPush(Route<dynamic> route, Route<dynamic> previousRoute) {
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
     if (onPushed != null) {
-      onPushed(route, previousRoute);
+      onPushed!(route, previousRoute);
     }
   }
 
   @override
-  void didPop(Route<dynamic> route, Route<dynamic> previousRoute) {
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
     if (onPopped != null) {
-      onPopped(route, previousRoute);
+      onPopped!(route, previousRoute);
     }
   }
 
   @override
-  void didRemove(Route<dynamic> route, Route<dynamic> previousRoute) {
+  void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) {
     if (onRemoved != null) {
-      onRemoved(route, previousRoute);
+      onRemoved!(route, previousRoute);
     }
   }
 
   @override
-  void didReplace({Route<dynamic> oldRoute, Route<dynamic> newRoute}) {
+  void didReplace({Route<dynamic>? oldRoute, Route<dynamic>? newRoute}) {
     if (onReplaced != null) {
-      onReplaced(newRoute, oldRoute);
+      onReplaced!(newRoute, oldRoute);
     }
   }
 
   @override
-  void didStartUserGesture(Route<dynamic> route, Route<dynamic> previousRoute) {
+  void didStartUserGesture(Route<dynamic> route, Route<dynamic>? previousRoute) {
     if (onStartUserGesture != null) {
-      onStartUserGesture(route, previousRoute);
+      onStartUserGesture!(route, previousRoute);
     }
   }
 
   @override
   void didStopUserGesture() {
     if (onStopUserGesture != null) {
-      onStopUserGesture();
+      onStopUserGesture!();
     }
   }
 }

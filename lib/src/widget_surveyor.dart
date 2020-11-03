@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// @dart=2.9
-
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
@@ -70,29 +68,29 @@ class WidgetSurveyor {
     pipelineOwner.rootNode = _MeasurementView();
     BuildOwner buildOwner = BuildOwner(onBuildScheduled: () {});
     RenderObjectToWidgetAdapter<RenderBox>(
-      container: pipelineOwner.rootNode,
+      container: pipelineOwner.rootNode as RenderObjectWithChildMixin<RenderBox>,
       debugShortDescription: '[root]',
       child: widget,
     ).attachToRenderTree(buildOwner);
-    _MeasurementView rootView = pipelineOwner.rootNode;
+    _MeasurementView rootView = pipelineOwner.rootNode as _MeasurementView;
     rootView.scheduleInitialLayout();
     rootView.childConstraints = constraints;
     pipelineOwner.flushLayout();
     assert(rootView.size != null);
-    return rootView.size;
+    return rootView.size!;
   }
 }
 
 class _MeasurementView extends RenderObject with RenderObjectWithChildMixin<RenderBox> {
-  Size size;
-  BoxConstraints childConstraints;
+  Size? size;
+  BoxConstraints? childConstraints;
 
   @override
   void performLayout() {
     assert(child != null);
     assert(childConstraints != null);
-    child.layout(childConstraints, parentUsesSize: true);
-    size = child.size;
+    child!.layout(childConstraints!, parentUsesSize: true);
+    size = child!.size;
   }
 
   @override

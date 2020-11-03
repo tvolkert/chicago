@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// @dart=2.9
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 
@@ -24,14 +22,12 @@ abstract class ViewportResolver {
 }
 
 class StaticViewportResolver implements ViewportResolver {
-  const StaticViewportResolver(this.viewport) : assert(viewport != null);
+  const StaticViewportResolver(this.viewport);
 
   StaticViewportResolver.fromParts({
-    @required Offset offset,
-    @required Size size,
-  })  : assert(offset != null),
-        assert(size != null),
-        viewport = offset & size;
+    required Offset offset,
+    required Size size,
+  })  : viewport = offset & size;
 
   final Rect viewport;
 
@@ -62,13 +58,13 @@ class SegmentConstraints extends BoxConstraints {
     double maxWidth = double.infinity,
     double minHeight = 0,
     double maxHeight = double.infinity,
-    @required this.viewportResolver,
+    required this.viewportResolver,
   }) : super(minWidth: minWidth, maxWidth: maxWidth, minHeight: minHeight, maxHeight: maxHeight);
 
   SegmentConstraints.tightFor({
-    double width,
-    double height,
-    this.viewportResolver,
+    double? width,
+    double? height,
+    required this.viewportResolver,
   }) : super.tightFor(width: width, height: height);
 
   final ViewportResolver viewportResolver;

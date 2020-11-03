@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// @dart=2.9
-
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -40,11 +38,11 @@ void main() {
           length: 1000,
           itemHeight: 20,
           itemBuilder: ({
-            BuildContext context,
-            int index,
-            bool isSelected,
-            bool isHighlighted,
-            bool isDisabled,
+            required BuildContext context,
+            required int index,
+            required bool isSelected,
+            required bool isHighlighted,
+            required bool isDisabled,
           }) {
             return Padding(padding: EdgeInsets.only(left: index.toDouble()), child: Text('$index'));
           },
@@ -55,22 +53,22 @@ void main() {
 }
 
 typedef ListItemBuilder = Widget Function({
-  BuildContext context,
-  int index,
-  bool isSelected,
-  bool isHighlighted,
-  bool isDisabled,
+  required BuildContext context,
+  required int index,
+  required bool isSelected,
+  required bool isHighlighted,
+  required bool isDisabled,
 });
 
 class ListViewSelectionController with ChangeNotifier {
   ListViewSelectionController({
     this.selectMode = SelectMode.single,
-  }) : assert(selectMode != null);
+  });
 
   final SelectMode selectMode;
 
   ListSelection _selectedRanges = ListSelection();
-  RenderListView _renderObject;
+  RenderListView? _renderObject;
 
   /// True if this controller is associated with a list view.
   ///
@@ -101,13 +99,17 @@ class ListViewSelectionController with ChangeNotifier {
     }
   }
 
-  Span get selectedRange {
+  Span? get selectedRange {
     assert(_selectedRanges.length <= 1);
     return _selectedRanges.isEmpty ? null : _selectedRanges[0];
   }
 
-  set selectedRange(Span range) {
-    selectedRanges = <Span>[range];
+  set selectedRange(Span? range) {
+    if (range == null) {
+      clearSelection();
+    } else {
+      selectedRanges = <Span>[range];
+    }
   }
 
   Iterable<Span> get selectedRanges {
@@ -115,7 +117,6 @@ class ListViewSelectionController with ChangeNotifier {
   }
 
   set selectedRanges(Iterable<Span> ranges) {
-    assert(ranges != null);
     assert(selectMode != SelectMode.none, 'Selection is not enabled');
     assert(() {
       if (selectMode == SelectMode.single) {
@@ -134,8 +135,7 @@ class ListViewSelectionController with ChangeNotifier {
 
     final ListSelection selectedRanges = ListSelection();
     for (Span range in ranges) {
-      assert(range != null);
-      assert(range.start >= 0 && (!isAttached || range.end < _renderObject.length));
+      assert(range.start >= 0 && (!isAttached || range.end < _renderObject!.length));
       selectedRanges.addRange(range.start, range.end);
     }
     _selectedRanges = selectedRanges;
@@ -153,7 +153,7 @@ class ListViewSelectionController with ChangeNotifier {
 
   List<Span> addSelectedRange(int start, int end) {
     assert(selectMode == SelectMode.multi);
-    assert(start >= 0 && (!isAttached || end < _renderObject.length));
+    assert(start >= 0 && (!isAttached || end < _renderObject!.length));
     final List<Span> addedRanges = _selectedRanges.addRange(start, end);
     notifyListeners();
     return addedRanges;
@@ -166,7 +166,7 @@ class ListViewSelectionController with ChangeNotifier {
 
   List<Span> removeSelectedRange(int start, int end) {
     assert(selectMode == SelectMode.multi);
-    assert(start >= 0 && (!isAttached || end < _renderObject.length));
+    assert(start >= 0 && (!isAttached || end < _renderObject!.length));
     final List<Span> removedRanges = _selectedRanges.removeRange(start, end);
     notifyListeners();
     return removedRanges;
@@ -174,7 +174,7 @@ class ListViewSelectionController with ChangeNotifier {
 
   void selectAll() {
     assert(isAttached);
-    selectedRange = Span(0, _renderObject.length - 1);
+    selectedRange = Span(0, _renderObject!.length - 1);
   }
 
   void clearSelection() {
@@ -185,62 +185,58 @@ class ListViewSelectionController with ChangeNotifier {
   }
 
   bool isItemSelected(int index) {
-    assert(index >= 0 && isAttached && index < _renderObject.length);
+    assert(index >= 0 && isAttached && index < _renderObject!.length);
     return _selectedRanges.containsIndex(index);
   }
 }
 
-typedef ListViewItemDisabledFilterChangedHandler = void Function(Predicate<int> previousFilter);
+typedef ListViewItemDisabledFilterChangedHandler = void Function(Predicate<int>? previousFilter);
 
 class ListViewItemDisablerListener {
   const ListViewItemDisablerListener({
-    @required this.onListViewItemDisabledFilterChanged,
+    required this.onListViewItemDisabledFilterChanged,
   });
 
   final ListViewItemDisabledFilterChangedHandler onListViewItemDisabledFilterChanged;
 }
 
 class ListViewItemDisablerController with ListenerNotifier<ListViewItemDisablerListener> {
-  ListViewItemDisablerController({Predicate<int> filter}) : _filter = filter;
+  ListViewItemDisablerController({Predicate<int>? filter}) : _filter = filter;
 
-  Predicate<int> _filter;
-  Predicate<int> get filter => _filter;
-  set filter(Predicate<int> value) {
-    Predicate<int> previousValue = _filter;
+  Predicate<int>? _filter;
+  Predicate<int>? get filter => _filter;
+  set filter(Predicate<int>? value) {
+    Predicate<int>? previousValue = _filter;
     if (value != previousValue) {
       _filter = value;
       notifyListeners((ListViewItemDisablerListener listener) {
-        if (listener.onListViewItemDisabledFilterChanged != null) {
-          listener.onListViewItemDisabledFilterChanged(previousValue);
-        }
+        listener.onListViewItemDisabledFilterChanged(previousValue);
       });
     }
   }
 
-  bool isItemDisabled(int index) => filter != null && filter(index);
+  bool isItemDisabled(int index) => filter != null && filter!(index);
 }
 
 class ScrollableListView extends StatelessWidget {
   const ScrollableListView({
-    Key key,
-    @required this.itemHeight,
-    @required this.length,
-    @required this.itemBuilder,
+    Key? key,
+    required this.itemHeight,
+    required this.length,
+    required this.itemBuilder,
     this.selectionController,
     this.itemDisabledController,
     this.platform,
     this.scrollController,
-  })  : assert(itemHeight != null),
-        assert(length != null),
-        super(key: key);
+  }) : super(key: key);
 
   final double itemHeight;
   final int length;
   final ListItemBuilder itemBuilder;
-  final ListViewSelectionController selectionController;
-  final ListViewItemDisablerController itemDisabledController;
-  final TargetPlatform platform;
-  final ScrollController scrollController;
+  final ListViewSelectionController? selectionController;
+  final ListViewItemDisablerController? itemDisabledController;
+  final TargetPlatform? platform;
+  final ScrollController? scrollController;
 
   @override
   Widget build(BuildContext context) {
@@ -262,10 +258,10 @@ class ScrollableListView extends StatelessWidget {
 
 class ListView extends StatefulWidget {
   const ListView({
-    Key key,
-    @required this.itemHeight,
-    @required this.length,
-    @required this.itemBuilder,
+    Key? key,
+    required this.itemHeight,
+    required this.length,
+    required this.itemBuilder,
     this.selectionController,
     this.itemDisabledController,
     this.platform,
@@ -274,16 +270,16 @@ class ListView extends StatefulWidget {
   final double itemHeight;
   final int length;
   final ListItemBuilder itemBuilder;
-  final ListViewSelectionController selectionController;
-  final ListViewItemDisablerController itemDisabledController;
-  final TargetPlatform platform;
+  final ListViewSelectionController? selectionController;
+  final ListViewItemDisablerController? itemDisabledController;
+  final TargetPlatform? platform;
 
   @override
   _ListViewState createState() => _ListViewState();
 }
 
 class _ListViewState extends State<ListView> {
-  StreamController<PointerEvent> _pointerEvents;
+  late StreamController<PointerEvent> _pointerEvents;
 
   @override
   void initState() {
@@ -310,7 +306,7 @@ class _ListViewState extends State<ListView> {
     );
 
     if (widget.selectionController != null &&
-        widget.selectionController.selectMode != SelectMode.none) {
+        widget.selectionController!.selectMode != SelectMode.none) {
       result = MouseRegion(
         onEnter: _pointerEvents.add,
         onExit: _pointerEvents.add,
@@ -323,41 +319,34 @@ class _ListViewState extends State<ListView> {
   }
 }
 
-class RawListView extends BasicListView {
+class RawListView extends RenderObjectWidget {
   const RawListView({
-    Key key,
-    @required double itemHeight,
-    @required int length,
-    @required ListItemBuilder itemBuilder,
+    Key? key,
+    required this.itemHeight,
+    required this.length,
+    required this.itemBuilder,
     this.selectionController,
     this.itemDisabledController,
-    @required this.pointerEvents,
-    @required this.platform,
-  })  : assert(platform != null),
-        super(
-          key: key,
-          itemHeight: itemHeight,
-          length: length,
-          itemBuilder: itemBuilder,
-        );
+    required this.pointerEvents,
+    required this.platform,
+  }) : super(key: key);
 
-  final ListViewSelectionController selectionController;
-  final ListViewItemDisablerController itemDisabledController;
+  final int length;
+  final double itemHeight;
+  final ListItemBuilder itemBuilder;
+  final ListViewSelectionController? selectionController;
+  final ListViewItemDisablerController? itemDisabledController;
   final Stream<PointerEvent> pointerEvents;
   final TargetPlatform platform;
 
   @override
-  ListItemBuilder get itemBuilder => super.itemBuilder as ListItemBuilder;
-
-  @override
-  BasicListViewElement createElement() => ListViewElement(this);
+  ListViewElement createElement() => ListViewElement(this);
 
   @override
   RenderListView createRenderObject(BuildContext context) {
     return RenderListView(
       itemHeight: itemHeight,
       length: length,
-      itemBuilder: itemBuilder,
       selectionController: selectionController,
       itemDisabledController: itemDisabledController,
       pointerEvents: pointerEvents,
@@ -376,7 +365,7 @@ class RawListView extends BasicListView {
   }
 }
 
-class ListViewElement extends BasicListViewElement {
+class ListViewElement extends RenderObjectElement with ListViewElementMixin {
   ListViewElement(RawListView listView) : super(listView);
 
   @override
@@ -388,7 +377,6 @@ class ListViewElement extends BasicListViewElement {
   @override
   @protected
   Widget renderItem(int index) {
-    assert(widget.itemBuilder is ListItemBuilder);
     return widget.itemBuilder(
       context: this,
       index: index,
@@ -401,14 +389,13 @@ class ListViewElement extends BasicListViewElement {
 
 class RenderListView extends RenderBasicListView {
   RenderListView({
-    double itemHeight,
-    int length,
-    ListItemBuilder itemBuilder,
-    ListViewSelectionController selectionController,
-    ListViewItemDisablerController itemDisabledController,
-    Stream<PointerEvent> pointerEvents,
-    TargetPlatform platform,
-  }) : super(itemHeight: itemHeight, length: length, itemBuilder: itemBuilder) {
+    required double itemHeight,
+    required int length,
+    ListViewSelectionController? selectionController,
+    ListViewItemDisablerController? itemDisabledController,
+    required Stream<PointerEvent> pointerEvents,
+    required TargetPlatform platform,
+  }) : super(itemHeight: itemHeight, length: length) {
     _itemDisablerListener = ListViewItemDisablerListener(
       onListViewItemDisabledFilterChanged: _handleItemDisabledFilterChanged,
     );
@@ -418,39 +405,39 @@ class RenderListView extends RenderBasicListView {
     this.platform = platform;
   }
 
-  ListViewItemDisablerListener _itemDisablerListener;
+  late final ListViewItemDisablerListener _itemDisablerListener;
 
-  ListViewSelectionController _selectionController;
-  ListViewSelectionController get selectionController => _selectionController;
-  set selectionController(ListViewSelectionController value) {
+  ListViewSelectionController? _selectionController;
+  ListViewSelectionController? get selectionController => _selectionController;
+  set selectionController(ListViewSelectionController? value) {
     if (_selectionController == value) return;
     if (_selectionController != null) {
       if (attached) {
-        _selectionController._detach();
+        _selectionController!._detach();
       }
-      _selectionController.removeListener(_handleSelectionChanged);
+      _selectionController!.removeListener(_handleSelectionChanged);
     }
     _selectionController = value;
     if (_selectionController != null) {
       if (attached) {
-        _selectionController._attach(this);
+        _selectionController!._attach(this);
       }
-      _selectionController.addListener(_handleSelectionChanged);
+      _selectionController!.addListener(_handleSelectionChanged);
     }
     highlightedItem = null;
     markNeedsBuild();
   }
 
-  ListViewItemDisablerController _itemDisabledController;
-  ListViewItemDisablerController get itemDisabledController => _itemDisabledController;
-  set itemDisabledController(ListViewItemDisablerController value) {
+  ListViewItemDisablerController? _itemDisabledController;
+  ListViewItemDisablerController? get itemDisabledController => _itemDisabledController;
+  set itemDisabledController(ListViewItemDisablerController? value) {
     if (value != _itemDisabledController) {
       if (_itemDisabledController != null) {
-        _itemDisabledController.removeListener(_itemDisablerListener);
+        _itemDisabledController!.removeListener(_itemDisablerListener);
       }
       _itemDisabledController = value;
       if (_itemDisabledController != null) {
-        _itemDisabledController.addListener(_itemDisablerListener);
+        _itemDisabledController!.addListener(_itemDisablerListener);
       }
       markNeedsBuild();
     }
@@ -458,34 +445,29 @@ class RenderListView extends RenderBasicListView {
 
   bool _isItemDisabled(int index) => _itemDisabledController?.isItemDisabled(index) ?? false;
 
-  StreamSubscription<PointerEvent> _pointerEventsSubscription;
-  Stream<PointerEvent> _pointerEvents;
-  Stream<PointerEvent> get pointerEvents => _pointerEvents;
+  StreamSubscription<PointerEvent> _pointerEventsSubscription =
+      const FakeSubscription<PointerEvent>();
+  Stream<PointerEvent>? _pointerEvents;
+  Stream<PointerEvent> get pointerEvents => _pointerEvents!;
   set pointerEvents(Stream<PointerEvent> value) {
-    assert(value != null);
     if (_pointerEvents == value) return;
-    if (_pointerEventsSubscription != null) {
-      assert(_pointerEvents != null);
-      _pointerEventsSubscription.cancel();
-      _pointerEventsSubscription = null;
-    }
+    _pointerEventsSubscription.cancel();
     _pointerEvents = value;
-    _pointerEventsSubscription = _pointerEvents.listen(_onPointerEvent);
+    _pointerEventsSubscription = value.listen(_onPointerEvent);
   }
 
-  TargetPlatform _platform;
-  TargetPlatform get platform => _platform;
+  TargetPlatform? _platform;
+  TargetPlatform get platform => _platform!;
   set platform(TargetPlatform value) {
-    assert(value != null);
     if (value == _platform) return;
     _platform = value;
   }
 
-  int _highlightedItem;
-  int get highlightedItem => _highlightedItem;
-  set highlightedItem(int value) {
+  int? _highlightedItem;
+  int? get highlightedItem => _highlightedItem;
+  set highlightedItem(int? value) {
     if (_highlightedItem == value) return;
-    final int previousValue = _highlightedItem;
+    final int? previousValue = _highlightedItem;
     _highlightedItem = value;
     final UnionListItemRange dirtyItems = UnionListItemRange();
     if (previousValue != null) {
@@ -497,7 +479,7 @@ class RenderListView extends RenderBasicListView {
     markItemsDirty(dirtyItems);
   }
 
-  void _handleItemDisabledFilterChanged(Predicate<int> previousFilter) {
+  void _handleItemDisabledFilterChanged(Predicate<int>? previousFilter) {
     markNeedsBuild();
   }
 
@@ -528,8 +510,9 @@ class RenderListView extends RenderBasicListView {
   int _selectIndex = -1;
 
   void _onPointerDown(PointerDownEvent event) {
+    ListViewSelectionController? selectionController = this.selectionController;
     final SelectMode selectMode = selectionController?.selectMode ?? SelectMode.none;
-    if (selectMode != SelectMode.none) {
+    if (selectionController != null && selectMode != SelectMode.none) {
       final int index = getItemAt(event.localPosition.dy);
       if (index >= 0 && index < length && !_isItemDisabled(index)) {
         final Set<LogicalKeyboardKey> keys = RawKeyboard.instance.keysPressed;
@@ -566,7 +549,9 @@ class RenderListView extends RenderBasicListView {
   }
 
   void _onPointerUp(PointerUpEvent event) {
-    if (_selectIndex != -1 &&
+    ListViewSelectionController? selectionController = this.selectionController;
+    if (selectionController != null &&
+        _selectIndex != -1 &&
         selectionController.firstSelectedIndex != selectionController.lastSelectedIndex) {
       selectionController.selectedIndex = _selectIndex;
     }
@@ -582,7 +567,7 @@ class RenderListView extends RenderBasicListView {
   }
 
   @override
-  void handleEvent(PointerEvent event, HitTestEntry entry) {
+  void handleEvent(PointerEvent event, BoxHitTestEntry entry) {
     assert(debugHandleEvent(event, entry));
     _onPointerEvent(event);
     super.handleEvent(event, entry);
@@ -592,14 +577,14 @@ class RenderListView extends RenderBasicListView {
   void attach(PipelineOwner owner) {
     super.attach(owner);
     if (_selectionController != null) {
-      _selectionController._attach(this);
+      _selectionController!._attach(this);
     }
   }
 
   @override
   void detach() {
     if (_selectionController != null) {
-      _selectionController._detach();
+      _selectionController!._detach();
     }
     super.detach();
   }
@@ -607,17 +592,17 @@ class RenderListView extends RenderBasicListView {
   @override
   void paint(PaintingContext context, Offset offset) {
     if (_highlightedItem != null) {
-      final Rect rowBounds = getItemBounds(_highlightedItem);
+      final Rect rowBounds = getItemBounds(_highlightedItem!);
       final Paint paint = Paint()
         ..style = PaintingStyle.fill
         ..color = const Color(0xffdddcd5);
       context.canvas.drawRect(rowBounds.shift(offset), paint);
     }
-    if (selectionController != null && selectionController.selectedRanges.isNotEmpty) {
+    if (selectionController != null && selectionController!.selectedRanges.isNotEmpty) {
       final Paint paint = Paint()
         ..style = PaintingStyle.fill
         ..color = const Color(0xff14538b);
-      for (Span range in selectionController.selectedRanges) {
+      for (Span range in selectionController!.selectedRanges) {
         Rect bounds = getItemBounds(range.start);
         bounds = bounds.expandToInclude(getItemBounds(range.end));
         context.canvas.drawRect(bounds.shift(offset), paint);

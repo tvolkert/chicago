@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// @dart=2.9
-
 import 'dart:math' as math;
 import 'dart:ui' show hashValues;
 
@@ -24,13 +22,10 @@ import 'foundation.dart';
 /// values in the interval `[start, end]`. Values may be negative, and the
 /// value of [start] may be less than or equal to the value of [end].
 class Span {
-  const Span(this.start, this.end)
-      : assert(start != null),
-        assert(end != null);
+  const Span(this.start, this.end);
 
   const Span.single(this.start)
-      : assert(start != null),
-        end = start;
+      : end = start;
 
   Span.normalized(int start, int end)
       : this.start = math.min(start, end),
@@ -39,7 +34,7 @@ class Span {
   final int start;
   final int end;
 
-  Span copyWith({int start, int end}) {
+  Span copyWith({int? start, int? end}) {
     return Span(
       start ?? this.start,
       end ?? this.end,
@@ -49,7 +44,6 @@ class Span {
   int get length => (end - start).abs() + 1;
 
   bool contains(Span span) {
-    assert(span != null);
     final Span normalizedSpan = span.normalize();
     if (start < end) {
       return start <= normalizedSpan.start && end >= normalizedSpan.end;
@@ -59,7 +53,6 @@ class Span {
   }
 
   bool intersects(Span span) {
-    assert(span != null);
     final Span normalizedSpan = span.normalize();
     if (start < end) {
       return start <= normalizedSpan.end && end >= normalizedSpan.start;
@@ -68,13 +61,11 @@ class Span {
     }
   }
 
-  Span intersect(Span span) {
-    assert(span != null);
+  Span? intersect(Span span) {
     return intersects(span) ? Span(math.max(start, span.start), math.min(end, span.end)) : null;
   }
 
   Span union(Span span) {
-    assert(span != null);
     return Span(math.min(start, span.start), math.max(end, span.end));
   }
 
@@ -224,7 +215,7 @@ class ListSelection {
           _ranges.insert(i + 1, Span(range.end + 1, lowerRange.end));
           removedRanges.add(range);
         } else {
-          Span leadingRemovedRange;
+          Span? leadingRemovedRange;
           if (range.start > lowerRange.start) {
             // Remove the tail of this range
             _ranges[i] = Span(lowerRange.start, range.start - 1);
@@ -243,7 +234,7 @@ class ListSelection {
           if (j > 0) {
             Span upperRange = _ranges[j - 1];
 
-            Span trailingRemovedRange;
+            Span? trailingRemovedRange;
             if (range.end < upperRange.end) {
               // Remove the head of this range
               _ranges[j - 1] = Span(range.end + 1, upperRange.end);
@@ -292,7 +283,6 @@ class ListSelection {
   Iterable<Span> get data => _ranges;
 
   int indexOf(Span span) {
-    assert(span != null);
     final int i = binarySearch<Span>(_ranges, span, compare: _compareIntersection);
     if (i >= 0) {
       return span == _ranges[i] ? i : -1;

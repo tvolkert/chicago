@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// @dart=2.9
-
 import 'dart:math' as math;
 import 'dart:ui';
 
@@ -24,7 +22,7 @@ import 'package:flutter/widgets.dart' as flutter show Border;
 
 class Border extends StatelessWidget {
   const Border({
-    Key key,
+    Key? key,
     this.title,
     this.titleStyle,
     this.titlePadding = EdgeInsets.zero,
@@ -34,23 +32,18 @@ class Border extends StatelessWidget {
     this.borderRadius = BorderRadius.zero,
     this.backgroundColor,
     this.inset = 0,
-    this.child,
-  })  : assert(titlePadding != null),
-        assert(borderColor != null),
-        assert(borderThickness != null),
-        assert(borderRadius != null),
-        assert(inset != null),
-        super(key: key);
+    required this.child,
+  })  : super(key: key);
 
-  final String title;
-  final TextStyle titleStyle;
+  final String? title;
+  final TextStyle? titleStyle;
   final EdgeInsetsGeometry titlePadding;
 
   /// The directionality of this widget.
   ///
   /// This affects the placement of the [title] widget and the associated
   /// behavior of the [inset] amount.
-  final TextDirection textDirection;
+  final TextDirection? textDirection;
 
   /// The color of the border.
   ///
@@ -70,7 +63,7 @@ class Border extends StatelessWidget {
   /// The color to paint inside the border, behind the [child] and [title].
   ///
   /// If unspecified, the background will be transparent.
-  final Color backgroundColor;
+  final Color? backgroundColor;
 
   /// The indentation (in pixels) for [title].
   ///
@@ -84,16 +77,16 @@ class Border extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget titleWidget;
+    Widget? titleWidget;
     if (title != null) {
-      TextStyle titleStyle = this.titleStyle;
+      TextStyle? titleStyle = this.titleStyle;
       if (titleStyle == null) {
         final TextStyle baseStyle = DefaultTextStyle.of(context).style;
         titleStyle = baseStyle.copyWith(fontWeight: FontWeight.bold, color: const Color(0xff3c77b2));
       }
       titleWidget = Padding(
         padding: titlePadding,
-        child: Text(title, style: titleStyle),
+        child: Text(title!, style: titleStyle),
       );
     }
 
@@ -115,16 +108,14 @@ class Border extends StatelessWidget {
 
 class _BorderLayout extends RenderObjectWidget {
   _BorderLayout({
-    Key key,
-    @required this.title,
-    @required this.child,
-    @required this.inset,
-    @required this.textDirection,
-  })  : assert(inset != null),
-        assert(textDirection != null),
-        super(key: key);
+    Key? key,
+    required this.title,
+    required this.child,
+    required this.inset,
+    required this.textDirection,
+  })  : super(key: key);
 
-  final Widget title;
+  final Widget? title;
   final Widget child;
   final double inset;
   final TextDirection textDirection;
@@ -160,8 +151,8 @@ enum _BorderLayoutSlot {
 class _BorderLayoutElement extends RenderObjectElement {
   _BorderLayoutElement(_BorderLayout widget) : super(widget);
 
-  Element _title;
-  Element _child;
+  Element? _title;
+  Element? _child;
 
   @override
   _BorderLayout get widget => super.widget as _BorderLayout;
@@ -172,15 +163,15 @@ class _BorderLayoutElement extends RenderObjectElement {
   @override
   void visitChildren(ElementVisitor visitor) {
     if (_title != null) {
-      visitor(_title);
+      visitor(_title!);
     }
     if (_child != null) {
-      visitor(_child);
+      visitor(_child!);
     }
   }
 
   @override
-  void mount(Element parent, dynamic newSlot) {
+  void mount(Element? parent, dynamic newSlot) {
     super.mount(parent, newSlot);
     _title = updateChild(_title, widget.title, _BorderLayoutSlot.title);
     _child = updateChild(_child, widget.child, _BorderLayoutSlot.child);
@@ -188,7 +179,6 @@ class _BorderLayoutElement extends RenderObjectElement {
 
   @override
   void insertRenderObjectChild(RenderBox child, _BorderLayoutSlot slot) {
-    assert(slot != null);
     switch (slot) {
       case _BorderLayoutSlot.title:
         renderObject.title = child;
@@ -200,7 +190,7 @@ class _BorderLayoutElement extends RenderObjectElement {
   }
 
   @override
-  void moveRenderObjectChild(RenderObject _, _BorderLayoutSlot __, _BorderLayoutSlot ___) {
+  void moveRenderObjectChild(RenderObject _, _BorderLayoutSlot? __, _BorderLayoutSlot? ___) {
     assert(false);
   }
 
@@ -223,7 +213,7 @@ class _BorderLayoutElement extends RenderObjectElement {
   }
 
   @override
-  void removeRenderObjectChild(RenderObject child, _BorderLayoutSlot slot) {
+  void removeRenderObjectChild(RenderBox child, _BorderLayoutSlot? slot) {
     assert(child == renderObject.title || child == renderObject.child);
     switch (slot) {
       case _BorderLayoutSlot.title:
@@ -232,6 +222,8 @@ class _BorderLayoutElement extends RenderObjectElement {
       case _BorderLayoutSlot.child:
         renderObject.child = null;
         break;
+      case null:
+        assert(false);
     }
   }
 }
@@ -240,74 +232,71 @@ class _RenderBorderLayout extends RenderBox {
   _RenderBorderLayout({
     double inset = 0,
     TextDirection textDirection = TextDirection.ltr,
-  })  : assert(inset != null),
-        assert(textDirection != null) {
+  }) {
     this.inset = inset;
     this.textDirection = textDirection;
   }
 
-  double _inset;
-  double get inset => _inset;
+  double? _inset;
+  double get inset => _inset!;
   set inset(double value) {
-    assert(value != null);
     if (value == _inset) return;
     _inset = value;
     markNeedsLayout();
   }
 
-  TextDirection _textDirection;
-  TextDirection get textDirection => _textDirection;
+  TextDirection? _textDirection;
+  TextDirection get textDirection => _textDirection!;
   set textDirection(TextDirection value) {
-    assert(value != null);
     if (value == _textDirection) return;
     _textDirection = value;
     markNeedsLayout();
   }
 
-  RenderBox _title;
-  RenderBox get title => _title;
-  set title(RenderBox value) {
+  RenderBox? _title;
+  RenderBox? get title => _title;
+  set title(RenderBox? value) {
     if (value == _title) return;
-    if (_title != null) dropChild(_title);
+    if (_title != null) dropChild(_title!);
     _title = value;
-    if (_title != null) adoptChild(_title);
+    if (_title != null) adoptChild(_title!);
   }
 
-  RenderBox _child;
-  RenderBox get child => _child;
-  set child(RenderBox value) {
+  RenderBox? _child;
+  RenderBox? get child => _child;
+  set child(RenderBox? value) {
     if (value == _child) return;
-    if (_child != null) dropChild(_child);
+    if (_child != null) dropChild(_child!);
     _child = value;
-    if (_child != null) adoptChild(_child);
+    if (_child != null) adoptChild(_child!);
   }
 
   @override
   void attach(PipelineOwner owner) {
     super.attach(owner);
-    if (title != null) title.attach(owner);
-    if (child != null) child.attach(owner);
+    if (title != null) title!.attach(owner);
+    if (child != null) child!.attach(owner);
   }
 
   @override
   void detach() {
     super.detach();
-    if (title != null) title.detach();
-    if (child != null) child.detach();
+    if (title != null) title!.detach();
+    if (child != null) child!.detach();
   }
 
   @override
   void visitChildren(RenderObjectVisitor visitor) {
-    if (title != null) visitor(title);
-    if (child != null) visitor(child);
+    if (title != null) visitor(title!);
+    if (child != null) visitor(child!);
   }
 
   @override
-  bool hitTestChildren(BoxHitTestResult result, {Offset position}) {
+  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
     bool isHit = false;
-    for (RenderBox child in [title, this.child]) {
+    for (RenderBox? child in [title, this.child]) {
       if (child != null) {
-        final BoxParentData parentData = child.parentData;
+        final BoxParentData parentData = child.parentData as BoxParentData;
         isHit |= result.addWithPaintOffset(
           offset: parentData.offset,
           position: position,
@@ -331,15 +320,15 @@ class _RenderBorderLayout extends RenderBox {
 
     double titleHalfHeight = 0;
     if (title != null) {
-      intrinsicWidth = title.getMinIntrinsicWidth(double.infinity);
-      titleHalfHeight = (title.getMinIntrinsicHeight(intrinsicWidth) / 2).ceilToDouble();
+      intrinsicWidth = title!.getMinIntrinsicWidth(double.infinity);
+      titleHalfHeight = (title!.getMinIntrinsicHeight(intrinsicWidth) / 2).ceilToDouble();
     }
 
     if (child != null) {
       if (height.isFinite) {
         height = math.max(height - titleHalfHeight, 0);
       }
-      intrinsicWidth = math.max(child.getMinIntrinsicWidth(height), intrinsicWidth);
+      intrinsicWidth = math.max(child!.getMinIntrinsicWidth(height), intrinsicWidth);
     }
 
     return intrinsicWidth;
@@ -353,12 +342,12 @@ class _RenderBorderLayout extends RenderBox {
     double intrinsicHeight = 0;
 
     if (title != null) {
-      double titleHeight = title.getMinIntrinsicHeight(width - inset);
+      double titleHeight = title!.getMinIntrinsicHeight(width - inset);
       intrinsicHeight += (titleHeight / 2).ceilToDouble();
     }
 
     if (child != null) {
-      intrinsicHeight += child.getMinIntrinsicHeight(width);
+      intrinsicHeight += child!.getMinIntrinsicHeight(width);
     }
 
     return intrinsicHeight;
@@ -371,28 +360,28 @@ class _RenderBorderLayout extends RenderBox {
   void performLayout() {
     double titleHeight = 0;
     if (title != null) {
-      title.layout(constraints.deflate(EdgeInsets.only(left: inset)).loosen(), parentUsesSize: true);
-      titleHeight = title.size.height;
+      title!.layout(constraints.deflate(EdgeInsets.only(left: inset)).loosen(), parentUsesSize: true);
+      titleHeight = title!.size.height;
     }
     final double titleHalfHeight = (titleHeight / 2).roundToDouble();
 
     Size childSize = Size.zero;
     if (child != null) {
       BoxConstraints childConstraints = constraints.deflate(EdgeInsets.only(top: titleHalfHeight));
-      child.layout(childConstraints, parentUsesSize: true);
-      childSize = child.size;
-      final BoxParentData childParentData = child.parentData;
+      child!.layout(childConstraints, parentUsesSize: true);
+      childSize = child!.size;
+      final BoxParentData childParentData = child!.parentData as BoxParentData;
       childParentData.offset = Offset(0, titleHalfHeight);
     }
 
     size = constraints.constrainDimensions(childSize.width, childSize.height + titleHalfHeight);
 
     if (title != null) {
-      final BoxParentData titleParentData = title.parentData;
+      final BoxParentData titleParentData = title!.parentData as BoxParentData;
       if (textDirection == TextDirection.ltr) {
         titleParentData.offset = Offset(inset, 0);
       } else {
-        titleParentData.offset = Offset(size.width - title.size.width - inset, 0);
+        titleParentData.offset = Offset(size.width - title!.size.width - inset, 0);
       }
     }
   }
@@ -400,37 +389,37 @@ class _RenderBorderLayout extends RenderBox {
   @override
   void paint(PaintingContext context, Offset offset) {
     if (child != null) {
-      final BoxParentData childParentData = child.parentData;
+      final BoxParentData childParentData = child!.parentData as BoxParentData;
       if (title != null) {
         context.canvas.save();
         try {
-          final BoxParentData titleParentData = title.parentData;
-          context.canvas.clipRect((offset + titleParentData.offset) & title.size, clipOp: ClipOp.difference);
-          context.paintChild(child, offset + childParentData.offset);
+          final BoxParentData titleParentData = title!.parentData as BoxParentData;
+          context.canvas.clipRect((offset + titleParentData.offset) & title!.size, clipOp: ClipOp.difference);
+          context.paintChild(child!, offset + childParentData.offset);
         } finally {
           context.canvas.restore();
         }
       } else {
-        context.paintChild(child, offset + childParentData.offset);
+        context.paintChild(child!, offset + childParentData.offset);
       }
     }
 
     if (title != null) {
-      final BoxParentData titleParentData = title.parentData;
-      context.paintChild(title, offset + titleParentData.offset);
+      final BoxParentData titleParentData = title!.parentData as BoxParentData;
+      context.paintChild(title!, offset + titleParentData.offset);
     }
   }
 
   @override
   void redepthChildren() {
-    if (title != null) redepthChild(title);
-    if (child != null) redepthChild(child);
+    if (title != null) redepthChild(title!);
+    if (child != null) redepthChild(child!);
   }
 
   @override
   List<DiagnosticsNode> debugDescribeChildren() {
     final List<DiagnosticsNode> result = <DiagnosticsNode>[];
-    void add(RenderBox child, String name) {
+    void add(RenderBox? child, String name) {
       if (child != null) result.add(child.toDiagnosticsNode(name: name));
     }
 

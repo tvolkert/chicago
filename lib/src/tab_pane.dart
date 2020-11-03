@@ -13,16 +13,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// @dart=2.9
-
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 class Tab {
   const Tab({
-    this.label,
-    this.builder,
+    required this.label,
+    required this.builder,
   });
 
   final String label;
@@ -31,11 +29,10 @@ class Tab {
 
 class TabPane extends StatefulWidget {
   const TabPane({
-    Key key,
+    Key? key,
     this.initialSelectedIndex = 0,
-    this.tabs,
-  })  : assert(tabs != null),
-        super(key: key);
+    required this.tabs,
+  })  : super(key: key);
 
   final int initialSelectedIndex;
   final List<Tab> tabs;
@@ -45,7 +42,7 @@ class TabPane extends StatefulWidget {
 }
 
 class _TabPaneState extends State<TabPane> {
-  int selectedIndex;
+  late int selectedIndex;
 
   @override
   void initState() {

@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// @dart=2.9
+import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
@@ -25,7 +25,7 @@ typedef Predicate<T> = bool Function(T item);
 int binarySearch<T>(
   List<T> sortedList,
   T value, {
-  int Function(T, T) compare,
+  int Function(T, T)? compare,
 }) {
   compare ??= _defaultCompare<T>();
   int min = 0;
@@ -67,7 +67,7 @@ bool isShiftKeyPressed() {
 ///
 /// A command key is the "Command" (⌘) key on MacOS, and the "Control" (⌃)
 /// key on other platforms.
-bool isPlatformCommandKeyPressed([TargetPlatform platform]) {
+bool isPlatformCommandKeyPressed([TargetPlatform? platform]) {
   platform ??= defaultTargetPlatform;
   final Set<LogicalKeyboardKey> keys = RawKeyboard.instance.keysPressed;
   switch (platform) {
@@ -90,7 +90,6 @@ class Vote {
   static const Vote abstain = Vote._('abstain');
 
   Vote tally(Vote other) {
-    assert(other != null);
     switch (other) {
       case approve:
         return this;
@@ -110,12 +109,10 @@ class LinearConstraints extends Constraints {
   const LinearConstraints({
     this.min = 0,
     this.max = double.infinity,
-  })  : assert(min != null),
-        assert(max != null);
+  });
 
   const LinearConstraints.tight(double value)
-      : assert(value != null),
-        min = value,
+      : min = value,
         max = value;
 
   LinearConstraints.width(BoxConstraints constraints)
@@ -138,7 +135,6 @@ class LinearConstraints extends Constraints {
       case MainAxisSize.max:
         return max;
     }
-    throw StateError('Unreachable');
   }
 
   @override
@@ -164,5 +160,46 @@ class MessageType {
 
   Widget toSmallImage() {
     return Image.asset('assets/message_type-$_assetKey-16x16.png');
+  }
+}
+
+class FakeSubscription<T> implements StreamSubscription<T> {
+  const FakeSubscription();
+
+  @override
+  Future<E> asFuture<E>([E? futureValue]) async {
+    assert(false);
+    return futureValue as E;
+  }
+
+  @override
+  Future<void> cancel() async {}
+
+  @override
+  bool get isPaused => false;
+
+  @override
+  void onData(void Function(T data)? handleData) {
+    assert(false);
+  }
+
+  @override
+  void onDone(void Function()? handleDone) {
+    assert(false);
+  }
+
+  @override
+  void onError(Function? handleError) {
+    assert(false);
+  }
+
+  @override
+  void pause([Future<void>? resumeSignal]) {
+    assert(false);
+  }
+
+  @override
+  void resume() {
+    assert(false);
   }
 }
