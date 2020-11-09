@@ -194,7 +194,7 @@ class Prompt extends StatelessWidget {
 /// animation starts)
 @visibleForTesting
 class DialogTracker<T> {
-  final Completer<T> _completer = Completer<T>();
+  final Completer<T?> _completer = Completer<T?>();
 
   Animation<double>? _animation;
   bool _isDialogClosing = false;
@@ -283,7 +283,7 @@ class _AsyncResult<T> {
   final Object? error;
   final StackTrace? stack;
 
-  void complete(Completer<T> completer) {
+  void complete(Completer<T?> completer) {
     if (error != null) {
       completer.completeError(error!, stack);
     } else {

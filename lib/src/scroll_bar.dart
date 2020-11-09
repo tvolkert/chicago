@@ -654,7 +654,7 @@ class _RenderScrollBarButton extends RenderBox
   bool get enabled => _enabled;
   set enabled(bool value) {
     if (_enabled == value) return;
-    parent.automaticScroller.stop();
+    parent!.automaticScroller.stop();
     _enabled = value;
     if (_enabled) {
       child.cursor = SystemMouseCursors.click;
@@ -685,30 +685,30 @@ class _RenderScrollBarButton extends RenderBox
   }
 
   void _onExit(PointerExitEvent event) {
-    parent.automaticScroller.stop();
+    parent!.automaticScroller.stop();
     highlighted = false;
     pressed = false;
   }
 
   void _onPointerDown(PointerDownEvent event) {
     if (event.buttons & kPrimaryMouseButton != 0) {
-      parent.automaticScroller.start(direction, _ScrollType.unit, -1);
+      parent!.automaticScroller.start(direction, _ScrollType.unit, -1);
       pressed = true;
     }
   }
 
   void _onPointerUp(PointerUpEvent event) {
-    parent.automaticScroller.stop();
+    parent!.automaticScroller.stop();
     pressed = false;
   }
 
   void _onPointerCancel(PointerCancelEvent event) {
-    parent.automaticScroller.stop();
+    parent!.automaticScroller.stop();
     pressed = false;
   }
 
   @override
-  RenderScrollBar get parent => super.parent as RenderScrollBar;
+  RenderScrollBar? get parent => super.parent as RenderScrollBar?;
 
   @override
   RenderMouseRegion get child => super.child as RenderMouseRegion;
@@ -796,8 +796,8 @@ class _RenderScrollBarHandle extends RenderBox
   void _onPointerDown(PointerDownEvent event) {
     if (event.buttons & kPrimaryMouseButton != 0) {
       _dragOffset = orientation == Axis.horizontal
-          ? event.position.dx - parentData.offset.dx + parent._upButton.size.width - 1
-          : event.position.dy - parentData.offset.dy + parent._upButton.size.height - 1;
+          ? event.position.dx - parentData!.offset.dx + parent!._upButton.size.width - 1
+          : event.position.dy - parentData!.offset.dy + parent!._upButton.size.height - 1;
     }
   }
 
@@ -816,17 +816,17 @@ class _RenderScrollBarHandle extends RenderBox
         pixelValue = event.position.dy - _dragOffset!;
       }
 
-      double scrollBarValue = (pixelValue / parent._pixelValueRatio);
-      scrollBarValue = math.min(math.max(scrollBarValue, 0), parent.end - parent.extent);
-      parent.value = scrollBarValue;
+      double scrollBarValue = (pixelValue / parent!._pixelValueRatio);
+      scrollBarValue = math.min(math.max(scrollBarValue, 0), parent!.end - parent!.extent);
+      parent!.value = scrollBarValue;
     }
   }
 
   @override
-  RenderScrollBar get parent => super.parent as RenderScrollBar;
+  RenderScrollBar? get parent => super.parent as RenderScrollBar?;
 
   @override
-  BoxParentData get parentData => super.parentData as BoxParentData;
+  BoxParentData? get parentData => super.parentData as BoxParentData?;
 
   @override
   void handleEvent(PointerEvent event, BoxHitTestEntry entry) {
