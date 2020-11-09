@@ -395,40 +395,40 @@ class _RenderForm extends RenderBox {
 
   static const double _flagImageSize = 16;
 
-  late double _horizontalSpacing;
-  double get horizontalSpacing => _horizontalSpacing;
+  double? _horizontalSpacing;
+  double get horizontalSpacing => _horizontalSpacing!;
   set horizontalSpacing(double value) {
     if (value == _horizontalSpacing) return;
     _horizontalSpacing = value;
     markNeedsLayout();
   }
 
-  late double _verticalSpacing;
-  double get verticalSpacing => _verticalSpacing;
+  double? _verticalSpacing;
+  double get verticalSpacing => _verticalSpacing!;
   set verticalSpacing(double value) {
     if (value == _verticalSpacing) return;
     _verticalSpacing = value;
     markNeedsLayout();
   }
 
-  late double _flagImageOffset;
-  double get flagImageOffset => _flagImageOffset;
+  double? _flagImageOffset;
+  double get flagImageOffset => _flagImageOffset!;
   set flagImageOffset(double value) {
     if (value == _flagImageOffset) return;
     _flagImageOffset = value;
     markNeedsLayout();
   }
 
-  late bool _stretch;
-  bool get stretch => _stretch;
+  bool? _stretch;
+  bool get stretch => _stretch!;
   set stretch(bool value) {
     if (value == _stretch) return;
     _stretch = value;
     markNeedsLayout();
   }
 
-  late bool _rightAlignLabels;
-  bool get rightAlignLabels => _rightAlignLabels;
+  bool? _rightAlignLabels;
+  bool get rightAlignLabels => _rightAlignLabels!;
   set rightAlignLabels(bool value) {
     if (value == _rightAlignLabels) return;
     _rightAlignLabels = value;
