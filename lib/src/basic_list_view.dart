@@ -271,7 +271,7 @@ mixin ListViewElementMixin on RenderObjectElement {
   RenderBasicListView get renderObject => super.renderObject as RenderBasicListView;
 
   @override
-  void update(BasicListView newWidget) {
+  void update(RenderObjectWidget newWidget) {
     assert(widget != newWidget);
     super.update(newWidget);
     assert(widget == newWidget);
