@@ -173,8 +173,8 @@ class Prompt extends StatelessWidget {
     required Widget body,
     List<String> options = const <String>[],
     int? selectedOption,
-  }) {
-    return DialogTracker<int>().open(
+  }) async {
+    final int? result = await DialogTracker<int>().open(
       context: context,
       barrierDismissible: false,
       child: Prompt(
@@ -184,7 +184,8 @@ class Prompt extends StatelessWidget {
         options: options,
         selectedOption: selectedOption,
       ),
-    ) as Future<int>;
+    );
+    return result!;
   }
 }
 
