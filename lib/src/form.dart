@@ -140,7 +140,7 @@ class Form extends StatelessWidget {
     this.stretch = false,
     this.rightAlignLabels = false,
     required this.children,
-  })  : super(key: key);
+  }) : super(key: key);
 
   final double horizontalSpacing;
   final double verticalSpacing;
@@ -207,7 +207,7 @@ class _RawForm extends RenderObjectWidget {
     this.stretch = false,
     this.rightAlignLabels = false,
     required this.children,
-  })  : super(key: key);
+  }) : super(key: key);
 
   final double horizontalSpacing;
   final double verticalSpacing;
@@ -323,7 +323,25 @@ class _FormElement extends RenderObjectElement {
   void update(_RawForm newWidget) {
     super.update(newWidget);
     assert(widget == newWidget);
-    print('TODO: update form');
+    List<_FormRow> newRows = <_FormRow>[];
+    _FormRow previous = _FormRow();
+    int i = 0;
+    for (_RawFormField field in newWidget.children) {
+      final _FormRow row = i < _rows.length ? _rows[i] : _FormRow();
+      newRows.add(row);
+      row.label = updateChild(row.label, field.label, _FormSlot.label(previous.label));
+      row.field = updateChild(row.field, field.child, _FormSlot.field(previous.field));
+      row.flag = updateChild(row.flag, field.flag, _FormSlot.flag(previous.flag));
+      previous = row;
+      i++;
+    }
+    for (; i < _rows.length; i++) {
+      final _FormRow row = _rows[i];
+      row.label = updateChild(row.label, null, null);
+      row.field = updateChild(row.field, null, null);
+      row.flag = updateChild(row.flag, null, null);
+    }
+    _rows = newRows.toList(growable: false);
   }
 
   @override
@@ -342,12 +360,24 @@ class _FormElement extends RenderObjectElement {
   }
 
   @override
-  void moveRenderObjectChild(RenderObject _, _FormSlot? __, _FormSlot? ___) {
-    assert(false);
+  void moveRenderObjectChild(RenderBox child, _FormSlot oldSlot, _FormSlot newSlot) {
+    assert(oldSlot.type == newSlot.type);
+    assert(child.parent == renderObject);
+    switch (oldSlot.type) {
+      case _SlotType.label:
+        renderObject.moveLabel(child, after: newSlot.previous?.renderObject as RenderBox?);
+        break;
+      case _SlotType.field:
+        renderObject.moveField(child, after: newSlot.previous?.renderObject as RenderBox?);
+        break;
+      case _SlotType.flag:
+        renderObject.moveFlag(child, after: newSlot.previous?.renderObject as RenderBox?);
+        break;
+    }
   }
 
   @override
-  void removeRenderObjectChild(RenderObject child, _FormSlot slot) {
+  void removeRenderObjectChild(RenderBox child, _FormSlot slot) {
     assert(child.parent == renderObject);
     switch (slot.type) {
       case _SlotType.label:
@@ -372,8 +402,101 @@ class _FormElement extends RenderObjectElement {
 class FormParentData extends ContainerBoxParentData<RenderBox> {}
 
 class _ChildList {
+  int _childCount = 0;
   RenderBox? firstChild;
   RenderBox? lastChild;
+
+  static bool _debugUltimatePreviousSiblingOf(RenderBox child, {required RenderBox? equals}) {
+    ContainerParentDataMixin<RenderBox> childParentData =
+        child.parentData as ContainerParentDataMixin<RenderBox>;
+    while (childParentData.previousSibling != null) {
+      assert(childParentData.previousSibling != child);
+      child = childParentData.previousSibling!;
+      childParentData = child.parentData as ContainerParentDataMixin<RenderBox>;
+    }
+    return child == equals;
+  }
+
+  static bool _debugUltimateNextSiblingOf(RenderBox child, {required RenderBox? equals}) {
+    ContainerParentDataMixin<RenderBox> childParentData =
+        child.parentData as ContainerParentDataMixin<RenderBox>;
+    while (childParentData.nextSibling != null) {
+      assert(childParentData.nextSibling != child);
+      child = childParentData.nextSibling!;
+      childParentData = child.parentData as ContainerParentDataMixin<RenderBox>;
+    }
+    return child == equals;
+  }
+
+  void insert(RenderBox child, {RenderBox? after}) {
+    final FormParentData childParentData = child.parentData as FormParentData;
+    assert(childParentData.nextSibling == null);
+    assert(childParentData.previousSibling == null);
+    _childCount += 1;
+    assert(_childCount > 0);
+    if (after == null) {
+      // insert at the start (_firstChild)
+      childParentData.nextSibling = firstChild;
+      if (firstChild != null) {
+        final FormParentData firstChildParentData = firstChild!.parentData as FormParentData;
+        firstChildParentData.previousSibling = child;
+      }
+      firstChild = child;
+      lastChild ??= child;
+    } else {
+      assert(firstChild != null);
+      assert(lastChild != null);
+      assert(_debugUltimatePreviousSiblingOf(after, equals: firstChild));
+      assert(_debugUltimateNextSiblingOf(after, equals: lastChild));
+      final FormParentData afterParentData = after.parentData as FormParentData;
+      if (afterParentData.nextSibling == null) {
+        // insert at the end (_lastChild); we'll end up with two or more children
+        assert(after == lastChild);
+        childParentData.previousSibling = after;
+        afterParentData.nextSibling = child;
+        lastChild = child;
+      } else {
+        // insert in the middle; we'll end up with three or more children
+        // set up links from child to siblings
+        childParentData.nextSibling = afterParentData.nextSibling;
+        childParentData.previousSibling = after;
+        // set up links from siblings to child
+        final FormParentData childPreviousSiblingParentData =
+            childParentData.previousSibling!.parentData as FormParentData;
+        final FormParentData childNextSiblingParentData =
+            childParentData.nextSibling!.parentData as FormParentData;
+        childPreviousSiblingParentData.nextSibling = child;
+        childNextSiblingParentData.previousSibling = child;
+        assert(afterParentData.nextSibling == child);
+      }
+    }
+  }
+
+  void remove(RenderBox child) {
+    final FormParentData childParentData = child.parentData! as FormParentData;
+    assert(_debugUltimatePreviousSiblingOf(child, equals: firstChild));
+    assert(_debugUltimateNextSiblingOf(child, equals: lastChild));
+    assert(_childCount >= 0);
+    if (childParentData.previousSibling == null) {
+      assert(firstChild == child);
+      firstChild = childParentData.nextSibling;
+    } else {
+      final FormParentData childPreviousSiblingParentData =
+          childParentData.previousSibling!.parentData! as FormParentData;
+      childPreviousSiblingParentData.nextSibling = childParentData.nextSibling;
+    }
+    if (childParentData.nextSibling == null) {
+      assert(lastChild == child);
+      lastChild = childParentData.previousSibling;
+    } else {
+      final FormParentData childNextSiblingParentData =
+          childParentData.nextSibling!.parentData! as FormParentData;
+      childNextSiblingParentData.previousSibling = childParentData.previousSibling;
+    }
+    childParentData.previousSibling = null;
+    childParentData.nextSibling = null;
+    _childCount -= 1;
+  }
 }
 
 typedef FormRenderObjectVisitor = void Function(RenderBox label, RenderBox field, RenderBox flag);
@@ -435,83 +558,11 @@ class _RenderForm extends RenderBox {
     markNeedsLayout();
   }
 
-  /// The number of children.
-  int _childCount = 0;
-  int get childCount => _childCount;
-
   final Map<_SlotType, _ChildList> _children = <_SlotType, _ChildList>{
     _SlotType.label: _ChildList(),
     _SlotType.field: _ChildList(),
     _SlotType.flag: _ChildList(),
   };
-
-  bool _debugUltimatePreviousSiblingOf(RenderBox child, {required RenderBox equals}) {
-    ContainerParentDataMixin<RenderBox> childParentData = child.parentData as ContainerParentDataMixin<RenderBox>;
-    while (childParentData.previousSibling != null) {
-      assert(childParentData.previousSibling != child);
-      child = childParentData.previousSibling!;
-      childParentData = child.parentData as ContainerParentDataMixin<RenderBox>;
-    }
-    return child == equals;
-  }
-
-  bool _debugUltimateNextSiblingOf(RenderBox child, {RenderBox? equals}) {
-    ContainerParentDataMixin<RenderBox> childParentData = child.parentData as ContainerParentDataMixin<RenderBox>;
-    while (childParentData.nextSibling != null) {
-      assert(childParentData.nextSibling != child);
-      child = childParentData.nextSibling!;
-      childParentData = child.parentData as ContainerParentDataMixin<RenderBox>;
-    }
-    return child == equals;
-  }
-
-  void _insertIntoChildList(
-    RenderBox child, {
-    RenderBox? after,
-    required _SlotType type,
-  }) {
-    final _ChildList children = _children[type]!;
-    final FormParentData childParentData = child.parentData as FormParentData;
-    assert(childParentData.nextSibling == null);
-    assert(childParentData.previousSibling == null);
-    _childCount += 1;
-    assert(_childCount > 0);
-    if (after == null) {
-      // insert at the start (_firstChild)
-      childParentData.nextSibling = children.firstChild;
-      if (children.firstChild != null) {
-        final FormParentData firstChildParentData = children.firstChild!.parentData as FormParentData;
-        firstChildParentData.previousSibling = child;
-      }
-      children.firstChild = child;
-      children.lastChild ??= child;
-    } else {
-      assert(children.firstChild != null);
-      assert(children.lastChild != null);
-      assert(_debugUltimatePreviousSiblingOf(after, equals: children.firstChild!));
-      assert(_debugUltimateNextSiblingOf(after, equals: children.lastChild));
-      final FormParentData afterParentData = after.parentData as FormParentData;
-      if (afterParentData.nextSibling == null) {
-        // insert at the end (_lastChild); we'll end up with two or more children
-        assert(after == children.lastChild);
-        childParentData.previousSibling = after;
-        afterParentData.nextSibling = child;
-        children.lastChild = child;
-      } else {
-        // insert in the middle; we'll end up with three or more children
-        // set up links from child to siblings
-        childParentData.nextSibling = afterParentData.nextSibling;
-        childParentData.previousSibling = after;
-        // set up links from siblings to child
-        final FormParentData childPreviousSiblingParentData =
-            childParentData.previousSibling!.parentData as FormParentData;
-        final FormParentData childNextSiblingParentData = childParentData.nextSibling!.parentData as FormParentData;
-        childPreviousSiblingParentData.nextSibling = child;
-        childNextSiblingParentData.previousSibling = child;
-        assert(afterParentData.nextSibling == child);
-      }
-    }
-  }
 
   void _insertChild(RenderBox child, {RenderBox? after, required _SlotType type}) {
     final _ChildList children = _children[type]!;
@@ -522,7 +573,7 @@ class _RenderForm extends RenderBox {
     assert(child != children.firstChild);
     assert(child != children.lastChild);
     adoptChild(child);
-    _insertIntoChildList(child, after: after, type: type);
+    children.insert(child, after: after);
   }
 
   void insertLabel(RenderBox label, {RenderBox? after}) {
@@ -537,16 +588,49 @@ class _RenderForm extends RenderBox {
     _insertChild(child, after: after, type: _SlotType.flag);
   }
 
-  void removeLabel(RenderObject label) {
-    // TODO
+  void _moveChild(RenderBox child, {RenderBox? after, required _SlotType type}) {
+    assert(child != this);
+    assert(after != this);
+    assert(child != after);
+    assert(child.parent == this);
+    final FormParentData childParentData = child.parentData! as FormParentData;
+    if (childParentData.previousSibling == after) {
+      return;
+    }
+    final _ChildList children = _children[type]!;
+    children.remove(child);
+    children.insert(child, after: after);
+    markNeedsLayout();
   }
 
-  void removeField(RenderObject child) {
-    // TODO
+  void moveLabel(RenderBox label, {RenderBox? after}) {
+    _moveChild(label, after: after, type: _SlotType.label);
   }
 
-  void removeFlag(RenderObject child) {
-    // TODO
+  void moveField(RenderBox child, {RenderBox? after}) {
+    _moveChild(child, after: after, type: _SlotType.field);
+  }
+
+  void moveFlag(RenderBox child, {RenderBox? after}) {
+    _moveChild(child, after: after, type: _SlotType.flag);
+  }
+
+  void _removeChild(RenderBox child, {required _SlotType type}) {
+    final _ChildList children = _children[type]!;
+    children.remove(child);
+    dropChild(child);
+  }
+
+  void removeLabel(RenderBox label) {
+    _removeChild(label, type: _SlotType.label);
+  }
+
+  void removeField(RenderBox field) {
+    _removeChild(field, type: _SlotType.field);
+  }
+
+  void removeFlag(RenderBox flag) {
+    _removeChild(flag, type: _SlotType.flag);
   }
 
   @override
