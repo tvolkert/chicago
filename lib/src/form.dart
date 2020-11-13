@@ -14,99 +14,12 @@
 // limitations under the License.
 
 import 'dart:math' as math;
-import 'dart:ui' show window;
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 import 'foundation.dart';
-import 'text_input.dart';
-
-void main() {
-  runApp(
-    Localizations(
-      locale: Locale('en', 'US'),
-      delegates: [
-        DefaultWidgetsLocalizations.delegate,
-        DefaultMaterialLocalizations.delegate,
-      ],
-      child: MediaQuery(
-        data: MediaQueryData.fromWindow(window),
-        child: Navigator(
-          onGenerateRoute: (RouteSettings settings) {
-            return PageRouteBuilder<void>(
-              settings: settings,
-              pageBuilder: (
-                BuildContext context,
-                Animation<double> animation,
-                Animation<double> secondaryAnimation,
-              ) {
-                return Material(
-                  child: ColoredBox(
-                    color: Color(0xffffffff),
-                    child: Directionality(
-                      textDirection: TextDirection.ltr,
-                      child: DefaultTextStyle(
-                        style: TextStyle(fontFamily: 'Verdana', color: Color(0xff000000)),
-                        child: Center(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Form(
-                                children: [
-                                  const FormField(
-                                    label: 'Field 1',
-                                    flag: Flag(messageType: MessageType.error, message: 'Hey!'),
-                                    child: SizedBox(
-                                      width: 200,
-                                      child: TextInput(
-                                        backgroundColor: Color(0xfff7f5ee),
-                                      ),
-                                    ),
-                                  ),
-                                  const FormField(
-                                    label: 'Foo',
-                                    child: Padding(
-                                      padding: EdgeInsets.only(top: 10),
-                                      child: ColoredBox(
-                                        color: Color(0xffccdddd),
-                                        child: Text('Hello World'),
-                                      ),
-                                    ),
-                                  ),
-                                  FormField(
-                                    label: 'Field 2',
-                                    child: Row(
-                                      children: [
-                                        const SizedBox(
-                                          width: 200,
-                                          child: TextInput(
-                                            backgroundColor: Color(0xfff7f5ee),
-                                          ),
-                                        ),
-                                        const Text('(optional)'),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            );
-          },
-        ),
-      ),
-    ),
-  );
-}
 
 class Flag {
   const Flag({

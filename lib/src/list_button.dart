@@ -14,10 +14,8 @@
 // limitations under the License.
 
 import 'dart:math' as math;
-import 'dart:ui' show window;
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
@@ -25,55 +23,6 @@ import 'basic_list_view.dart';
 import 'foundation.dart';
 import 'list_view.dart';
 import 'widget_surveyor.dart';
-
-void main() {
-  runApp(
-    Localizations(
-      locale: Locale('en', 'US'),
-      delegates: [
-        DefaultWidgetsLocalizations.delegate,
-        DefaultMaterialLocalizations.delegate,
-      ],
-      child: MediaQuery(
-        data: MediaQueryData.fromWindow(window),
-        child: Navigator(
-          onGenerateRoute: (RouteSettings settings) {
-            return MaterialPageRoute<void>(
-              settings: settings,
-              builder: (BuildContext context) {
-                return Material(
-                  child: ColoredBox(
-                    color: const Color(0xffffffff),
-                    child: Directionality(
-                      textDirection: TextDirection.ltr,
-                      child: DefaultTextStyle(
-                        style: TextStyle(fontFamily: 'Verdana', color: const Color(0xff000000)),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            ListButton<String>(
-                              items: List<String>.generate(5, (int index) {
-                                if (index % 2 == 0) {
-                                  return 'Even steven $index';
-                                }
-                                return '$index';
-                              }),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            );
-          },
-        ),
-      ),
-    ),
-  );
-}
 
 /// Class that specifies how a [ListButton] will calculate its width.
 @immutable

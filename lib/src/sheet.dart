@@ -15,6 +15,7 @@
 
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter/material.dart';
 
 import 'push_button.dart';
@@ -106,7 +107,7 @@ class Prompt extends StatelessWidget {
         children: [
           DecoratedBox(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: const Color(0xffffffff),
               border: Border.all(
                 color: const Color(0xff999999),
               ),
