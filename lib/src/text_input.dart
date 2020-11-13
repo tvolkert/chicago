@@ -25,6 +25,7 @@ class TextInput extends StatelessWidget {
     this.backgroundColor = const Color(0xffffffff),
     this.obscureText = false,
     this.autofocus = false,
+    this.enabled = true,
   }) : super(key: key);
 
   final TextEditingController? controller;
@@ -32,6 +33,7 @@ class TextInput extends StatelessWidget {
   final Color backgroundColor;
   final bool obscureText;
   final bool autofocus;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -39,6 +41,7 @@ class TextInput extends StatelessWidget {
       controller: controller,
       backgroundColor: backgroundColor,
       obscureText: obscureText,
+      enabled: enabled,
     );
 
     if (autofocus) {
@@ -142,12 +145,14 @@ class _TextField extends StatelessWidget {
     this.controller,
     this.backgroundColor = const Color(0xffffffff),
     this.obscureText = false,
+    this.enabled = true,
   }) : super(key: key);
 
   final FocusNode? focusNode;
   final TextEditingController? controller;
   final Color backgroundColor;
   final bool obscureText;
+  final bool enabled;
 
   _TextField copyWith({
     required FocusNode focusNode,
@@ -165,6 +170,8 @@ class _TextField extends StatelessWidget {
     borderRadius: BorderRadius.zero,
   );
 
+  static const Color _disabledBackgroundColor = Color(0xffdddcd5);
+
   @override
   Widget build(BuildContext context) {
     return TextField(
@@ -172,16 +179,18 @@ class _TextField extends StatelessWidget {
       focusNode: focusNode,
       cursorWidth: 1,
       obscureText: obscureText,
+      enabled: enabled,
       cursorColor: const Color(0xff000000),
       style: const TextStyle(fontFamily: 'Verdana', fontSize: 11),
       decoration: InputDecoration(
-        fillColor: backgroundColor,
+        fillColor: enabled ? backgroundColor : _disabledBackgroundColor,
         hoverColor: backgroundColor,
         filled: true,
         contentPadding: const EdgeInsets.fromLTRB(3, 13, 0, 4),
         isDense: true,
         enabledBorder: _inputBorder,
         focusedBorder: _inputBorder,
+        disabledBorder: _inputBorder,
       ),
     );
   }
