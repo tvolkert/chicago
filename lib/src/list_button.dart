@@ -159,6 +159,7 @@ class ListButton<T> extends StatefulWidget {
     this.width = const MaximumListButtonWidth(),
     this.selectionController,
     this.disabledItemFilter,
+    this.isEnabled = true,
   })  : assert(selectionController == null || selectionController.selectMode == SelectMode.single),
         super(key: key);
 
@@ -168,6 +169,7 @@ class ListButton<T> extends StatefulWidget {
   final ListButtonWidth width;
   final ListViewSelectionController? selectionController;
   final Predicate<T>? disabledItemFilter;
+  final bool isEnabled;
 
   static Widget defaultBuilder({required BuildContext context, Object? item}) {
     if (item == null) {
@@ -175,12 +177,15 @@ class ListButton<T> extends StatefulWidget {
     }
     final TextStyle style = DefaultTextStyle.of(context).style;
     final TextDirection textDirection = Directionality.of(context);
-    return Text(
-      '$item',
-      maxLines: 1,
-      softWrap: false,
-      textDirection: textDirection,
-      style: style,
+    return Padding(
+      padding: EdgeInsets.only(bottom: 1),
+      child: Text(
+        '$item',
+        maxLines: 1,
+        softWrap: false,
+        textDirection: textDirection,
+        style: style,
+      ),
     );
   }
 
@@ -326,6 +331,7 @@ class _ListButtonState<T> extends State<ListButton<T>> {
       _selectionController = ListViewSelectionController();
     }
     selectionController.addListener(_handleSelectionChanged);
+    _handleSelectionChanged(); // to set the initial value of _selectedIndex
   }
 
   @override
@@ -365,10 +371,11 @@ class _ListButtonState<T> extends State<ListButton<T>> {
       } else {
         widget.selectionController!.addListener(_handleSelectionChanged);
       }
+      _handleSelectionChanged(); // to set the initial value of _selectedIndex
     }
   }
 
-  static const BoxDecoration _decoration = BoxDecoration(
+  static const BoxDecoration _enabledDecoration = BoxDecoration(
     border: Border.fromBorderSide(BorderSide(color: Color(0xff999999))),
     gradient: LinearGradient(
       begin: Alignment.bottomCenter,
@@ -386,56 +393,81 @@ class _ListButtonState<T> extends State<ListButton<T>> {
     ),
   );
 
+  static const BoxDecoration _disabledDecoration = BoxDecoration(
+    border: Border.fromBorderSide(BorderSide(color: Color(0xff999999))),
+    color: const Color(0xffdddcd5),
+  );
+
   @override
   Widget build(BuildContext context) {
     final BasicListItemBuilder builder = _adaptBuilder(widget.builder);
 
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTapDown: (TapDownDetails details) {
-          setState(() {
-            _pressed = true;
-          });
-        },
-        onTapCancel: () {
-          setState(() {
-            _pressed = false;
-          });
-        },
-        onTap: () {
-          setState(() {
-            showPopup();
-          });
-        },
-        child: DecoratedBox(
-          decoration: _pressed ? _pressedDecoration : _decoration,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              widget.width._build(
-                _buttonWidth,
-                const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                builder(context: context, index: _selectedIndex),
-              ),
-              SizedBox(
-                width: 1,
-                height: 20,
-                child: ColoredBox(color: const Color(0xff999999)),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                child: const CustomPaint(
-                  size: Size(7, 4),
-                  painter: _ArrowPainter(),
-                ),
-              ),
-            ],
+    late final BoxDecoration decoration;
+    if (widget.isEnabled) {
+      decoration = _pressed ? _pressedDecoration : _enabledDecoration;
+    } else {
+      decoration = _disabledDecoration;
+    }
+
+    Widget result = DecoratedBox(
+      decoration: decoration,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          widget.width._build(
+            _buttonWidth,
+            const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+            Builder(builder: (BuildContext context) {
+              return builder(context: context, index: _selectedIndex);
+            }),
           ),
-        ),
+          SizedBox(
+            width: 1,
+            height: 20,
+            child: ColoredBox(color: const Color(0xff999999)),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            child: const CustomPaint(
+              size: Size(7, 4),
+              painter: _ArrowPainter(),
+            ),
+          ),
+        ],
       ),
     );
+
+    if (widget.isEnabled) {
+      result = MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTapDown: (TapDownDetails details) {
+            setState(() {
+              _pressed = true;
+            });
+          },
+          onTapCancel: () {
+            setState(() {
+              _pressed = false;
+            });
+          },
+          onTap: () {
+            setState(() {
+              showPopup();
+            });
+          },
+          child: result,
+        ),
+      );
+    } else {
+      result = DefaultTextStyle(
+        style: DefaultTextStyle.of(context).style.copyWith(color: const Color(0xff999999)),
+        child: result,
+      );
+    }
+
+    return result;
   }
 }
 
