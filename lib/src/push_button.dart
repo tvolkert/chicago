@@ -15,12 +15,14 @@
 
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
+import 'action_tracker.dart';
 import 'colors.dart';
 import 'sorting.dart';
 
@@ -137,7 +139,9 @@ class _PushButtonState<T extends Object> extends State<PushButton<T>> {
     Widget button = Center(
       child: Padding(
         padding: widget.padding,
-        child: widget.axis == Axis.horizontal ? Row(children: buttonData) : Column(children: buttonData),
+        child: widget.axis == Axis.horizontal
+            ? Row(children: buttonData)
+            : Column(children: buttonData),
       ),
     );
 
@@ -263,7 +267,7 @@ class _MinimumAspectRatio extends SingleChildRenderObjectWidget {
     Key? key,
     required Widget child,
     required this.minimumAspectRatio,
-  })  : super(key: key, child: child);
+  }) : super(key: key, child: child);
 
   final double minimumAspectRatio;
 
@@ -282,7 +286,7 @@ class _RenderMinimumAspectRatio extends RenderProxyBox {
   _RenderMinimumAspectRatio({
     RenderBox? child,
     required double minimumAspectRatio,
-  })  : super(child) {
+  }) : super(child) {
     this.minimumAspectRatio = minimumAspectRatio;
   }
 
@@ -348,7 +352,7 @@ class CommandPushButton extends StatelessWidget {
     Key? key,
     required this.label,
     required this.onPressed,
-  })  : super(key: key);
+  }) : super(key: key);
 
   final String label;
   final VoidCallback? onPressed;
@@ -368,10 +372,10 @@ class CommandPushButton extends StatelessWidget {
   }
 }
 
-class ActionPushButton<T extends Intent> extends StatefulWidget {
+class ActionPushButton<I extends Intent> extends ActionTracker<I> {
   const ActionPushButton({
     Key? key,
-    required this.intent,
+    required I intent,
     this.icon,
     this.label,
     this.axis = _defaultAxis,
@@ -382,9 +386,8 @@ class ActionPushButton<T extends Intent> extends StatefulWidget {
     this.borderColor = _defaultBorderColor,
     this.padding = _defaultPadding,
     this.showTooltip = _defaultShowTooltip,
-  })  : super(key: key);
+  }) : super(key: key, intent: intent);
 
-  final T intent;
   final String? icon;
   final String? label;
   final Axis axis;
@@ -397,51 +400,11 @@ class ActionPushButton<T extends Intent> extends StatefulWidget {
   final bool showTooltip;
 
   @override
-  _ActionPushButtonState<T> createState() => _ActionPushButtonState<T>();
+  _ActionPushButtonState<I> createState() => _ActionPushButtonState<I>();
 }
 
-class _ActionPushButtonState<T extends Intent> extends State<ActionPushButton<T>> {
-  Action<T>? _action;
-  bool _enabled = false;
-
-  void _attachToAction() {
-    setState(() {
-      _action = Actions.find<T>(context);
-      _enabled = _action!.isEnabled(widget.intent);
-    });
-    _action!.addActionListener(_actionUpdated as void Function(Action<Intent>));
-  }
-
-  void _detachFromAction() {
-    if (_action != null) {
-      _action!.removeActionListener(_actionUpdated as void Function(Action<Intent>));
-      setState(() {
-        _action = null;
-        _enabled = false;
-      });
-    }
-  }
-
-  void _actionUpdated(Action<T> action) {
-    setState(() {
-      _enabled = action.isEnabled(widget.intent);
-    });
-  }
-
-  void _handlePress() {
-    assert(_action != null);
-    assert(_enabled);
-    assert(_action!.isEnabled(widget.intent));
-    Actions.of(context).invokeAction(_action!, widget.intent, context);
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _detachFromAction();
-    _attachToAction();
-  }
-
+class _ActionPushButtonState<I extends Intent> extends State<ActionPushButton<I>>
+    with ActionTrackerStateMixin<I, ActionPushButton<I>> {
   @override
   Widget build(BuildContext context) {
     return PushButton(
@@ -449,7 +412,7 @@ class _ActionPushButtonState<T extends Intent> extends State<ActionPushButton<T>
       label: widget.label,
       axis: widget.axis,
       isToolbar: widget.isToolbar,
-      onPressed: _enabled ? _handlePress : null,
+      onPressed: isEnabled ? invokeAction : null,
       minimumAspectRatio: widget.minimumAspectRatio,
       color: widget.color,
       backgroundColor: widget.backgroundColor,
