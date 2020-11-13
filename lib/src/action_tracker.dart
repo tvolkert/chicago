@@ -74,4 +74,10 @@ mixin ActionTrackerStateMixin<I extends Intent, T extends ActionTracker<I>> on S
     _detachFromAction();
     _attachToAction();
   }
+
+  @override
+  void dispose() {
+    _action?.removeActionListener(_actionUpdated as void Function(Action<Intent>));
+    super.dispose();
+  }
 }
