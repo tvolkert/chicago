@@ -185,6 +185,10 @@ class RenderScrollBar extends RenderBox
   late final _RenderScrollBarHandle _handle;
   late final _AutomaticScroller automaticScroller;
 
+  late Size _upButtonSize;
+  late Size _downButtonSize;
+  late Size _handleSize;
+
   static const double _minimumHandleLength = 31;
 
   Axis _orientation;
@@ -217,10 +221,10 @@ class RenderScrollBar extends RenderBox
     // update the handle's location and save the work of a full layout.
     if (parentDataFor(_handle).visible) {
       if (orientation == Axis.horizontal) {
-        double handleX = (value * _pixelValueRatio) + _upButton.size.width - 1;
+        double handleX = (value * _pixelValueRatio) + _upButtonSize.width - 1;
         parentDataFor(_handle).offset = Offset(handleX, 1);
       } else {
-        double handleY = (value * _pixelValueRatio) + _upButton.size.height - 1;
+        double handleY = (value * _pixelValueRatio) + _upButtonSize.height - 1;
         parentDataFor(_handle).offset = Offset(1, handleY);
       }
     }
@@ -269,11 +273,11 @@ class RenderScrollBar extends RenderBox
     // Track pixel values add two to account for the handle border overlapping
     // the button borders by 1 pixel to form a shared border.
     if (orientation == Axis.horizontal) {
-      double trackWidth = size.width - _upButton.size.width - _downButton.size.width + 2;
-      numLegalPixelValues = trackWidth - _handle.size.width + 1;
+      double trackWidth = size.width - _upButtonSize.width - _downButtonSize.width + 2;
+      numLegalPixelValues = trackWidth - _handleSize.width + 1;
     } else {
-      double trackHeight = size.height - _upButton.size.height - _downButton.size.height + 2;
-      numLegalPixelValues = trackHeight - _handle.size.height + 1;
+      double trackHeight = size.height - _upButtonSize.height - _downButtonSize.height + 2;
+      numLegalPixelValues = trackHeight - _handleSize.height + 1;
     }
 
     return numLegalPixelValues / numLegalRealValues;
@@ -315,26 +319,26 @@ class RenderScrollBar extends RenderBox
       if (orientation == Axis.horizontal) {
         direction = event.localPosition.dx < parentDataFor(_handle).offset.dx ? -1 : 1;
 
-        double pixelStopValue = event.localPosition.dx - _upButton.size.width + 1;
+        double pixelStopValue = event.localPosition.dx - _upButtonSize.width + 1;
 
         if (direction == 1) {
           // If we're scrolling down, account for the width of the
           // handle in our pixel stop value so that we stop as soon
           // as the *bottom* of the handle reaches our click point
-          pixelStopValue -= _handle.size.width;
+          pixelStopValue -= _handleSize.width;
         }
 
         realStopValue = pixelStopValue / _pixelValueRatio;
       } else {
         direction = event.localPosition.dy < parentDataFor(_handle).offset.dy ? -1 : 1;
 
-        double pixelStopValue = event.localPosition.dy - _upButton.size.height + 1;
+        double pixelStopValue = event.localPosition.dy - _upButtonSize.height + 1;
 
         if (direction == 1) {
           // If we're scrolling down, account for the height of the
           // handle in our pixel stop value so that we stop as soon
           // as the *bottom* of the handle reaches our click point
-          pixelStopValue -= _handle.size.height;
+          pixelStopValue -= _handleSize.height;
         }
 
         realStopValue = pixelStopValue / _pixelValueRatio;
@@ -432,15 +436,15 @@ class RenderScrollBar extends RenderBox
 
         if (handleWidth > availableWidth) {
           // If we can't fit the handle, we hide it
-          _handle.layout(BoxConstraints.tight(Size.zero));
+          _handle.layout(BoxConstraints.tight(Size.zero), parentUsesSize: true);
           parentDataFor(_handle).visible = false;
         } else {
-          _handle.layout(BoxConstraints.tightFor(width: handleWidth, height: size.height - 2));
+          _handle.layout(BoxConstraints.tightFor(width: handleWidth, height: size.height - 2), parentUsesSize: true);
           parentDataFor(_handle).visible = true;
           parentDataFor(_handle).offset = Offset(handleX, 1);
         }
       } else {
-        _handle.layout(BoxConstraints.tight(Size.zero));
+        _handle.layout(BoxConstraints.tight(Size.zero), parentUsesSize: true);
         parentDataFor(_handle).visible = false;
       }
     } else {
@@ -473,18 +477,22 @@ class RenderScrollBar extends RenderBox
 
         if (handleHeight > availableHeight) {
           // If we can't fit the handle, we hide it
-          _handle.layout(BoxConstraints.tight(Size.zero));
+          _handle.layout(BoxConstraints.tight(Size.zero), parentUsesSize: true);
           parentDataFor(_handle).visible = false;
         } else {
-          _handle.layout(BoxConstraints.tightFor(width: size.width - 2, height: handleHeight));
+          _handle.layout(BoxConstraints.tightFor(width: size.width - 2, height: handleHeight), parentUsesSize: true);
           parentDataFor(_handle).visible = true;
           parentDataFor(_handle).offset = Offset(1, handleY);
         }
       } else {
-        _handle.layout(BoxConstraints.tight(Size.zero));
+        _handle.layout(BoxConstraints.tight(Size.zero), parentUsesSize: true);
         parentDataFor(_handle).visible = false;
       }
     }
+
+    _upButtonSize = _upButton.size;
+    _downButtonSize = _downButton.size;
+    _handleSize = _handle.size;
   }
 
   @override
@@ -796,8 +804,8 @@ class _RenderScrollBarHandle extends RenderBox
   void _onPointerDown(PointerDownEvent event) {
     if (event.buttons & kPrimaryMouseButton != 0) {
       _dragOffset = orientation == Axis.horizontal
-          ? event.position.dx - parentData!.offset.dx + parent!._upButton.size.width - 1
-          : event.position.dy - parentData!.offset.dy + parent!._upButton.size.height - 1;
+          ? event.position.dx - parentData!.offset.dx + parent!._upButtonSize.width - 1
+          : event.position.dy - parentData!.offset.dy + parent!._upButtonSize.height - 1;
     }
   }
 
