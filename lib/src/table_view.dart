@@ -547,6 +547,8 @@ class TableViewSortController with ListenerNotifier<TableViewSortListener> {
 
   bool get isEmpty => _sortMap.isEmpty;
 
+  bool get isNotEmpty => _sortMap.isNotEmpty;
+
   int get length => _sortMap.length;
 
   Iterable<String> get keys => _sortMap.keys;
