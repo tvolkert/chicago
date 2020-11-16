@@ -96,6 +96,8 @@ typedef TableViewEditFinishedHandler = void Function(
   TableViewEditOutcome outcome,
 );
 
+typedef RowDoubleTapHandler = void Function(int row);
+
 @immutable
 class TableViewEditorListener {
   const TableViewEditorListener({
@@ -658,6 +660,7 @@ class ScrollableTableView extends StatelessWidget {
     this.scrollController,
     this.roundColumnWidthsToWholePixel = false,
     this.includeHeader = true,
+    this.onDoubleTapRow,
   }) : super(key: key);
 
   final double rowHeight;
@@ -672,6 +675,7 @@ class ScrollableTableView extends StatelessWidget {
   final ScrollController? scrollController;
   final bool roundColumnWidthsToWholePixel;
   final bool includeHeader;
+  final RowDoubleTapHandler? onDoubleTapRow;
 
   @override
   Widget build(BuildContext context) {
@@ -685,23 +689,26 @@ class ScrollableTableView extends StatelessWidget {
       );
     }
 
+    Widget table = TableView(
+      length: length,
+      rowHeight: rowHeight,
+      columns: columns,
+      roundColumnWidthsToWholePixel: roundColumnWidthsToWholePixel,
+      metricsController: metricsController,
+      selectionController: selectionController,
+      sortController: sortController,
+      editorController: editorController,
+      rowDisabledController: rowDisabledController,
+      platform: platform,
+      onDoubleTapRow: onDoubleTapRow,
+    );
+
     return ScrollPane(
       horizontalScrollBarPolicy: ScrollBarPolicy.expand,
       verticalScrollBarPolicy: ScrollBarPolicy.auto,
       scrollController: scrollController,
       columnHeader: columnHeader,
-      view: TableView(
-        length: length,
-        rowHeight: rowHeight,
-        columns: columns,
-        roundColumnWidthsToWholePixel: roundColumnWidthsToWholePixel,
-        metricsController: metricsController,
-        selectionController: selectionController,
-        sortController: sortController,
-        editorController: editorController,
-        rowDisabledController: rowDisabledController,
-        platform: platform,
-      ),
+      view: table,
     );
   }
 }
@@ -719,6 +726,7 @@ class TableView extends StatefulWidget {
     this.rowDisabledController,
     this.roundColumnWidthsToWholePixel = false,
     this.platform,
+    this.onDoubleTapRow,
   }) : super(key: key);
 
   final double rowHeight;
@@ -731,6 +739,7 @@ class TableView extends StatefulWidget {
   final TableViewRowDisablerController? rowDisabledController;
   final bool roundColumnWidthsToWholePixel;
   final TargetPlatform? platform;
+  final RowDoubleTapHandler? onDoubleTapRow;
 
   @override
   _TableViewState createState() => _TableViewState();
@@ -748,6 +757,7 @@ typedef ObserveNavigator = NavigatorListenerRegistration Function({
 class _TableViewState extends State<TableView> {
   late StreamController<PointerEvent> _pointerEvents;
   late StreamController<Offset> _doubleTapEvents;
+  TableViewMetricsController? _metricsController;
   late Offset _doubleTapPosition;
 
   void _handleDoubleTapDown(TapDownDetails details) {
@@ -756,6 +766,22 @@ class _TableViewState extends State<TableView> {
 
   void _handleDoubleTap() {
     _doubleTapEvents.add(_doubleTapPosition);
+    if (widget.onDoubleTapRow != null) {
+      final int row = metricsController!.metrics.getRowAt(_doubleTapPosition.dy);
+      if (row >= 0) {
+        widget.onDoubleTapRow!(row);
+      }
+    }
+  }
+
+  TableViewMetricsController? get metricsController {
+    return _metricsController ?? widget.metricsController;
+  }
+
+  void _disposeOfLocalMetricsController() {
+    assert(_metricsController != null);
+    _metricsController!.dispose();
+    _metricsController = null;
   }
 
   @override
@@ -763,12 +789,39 @@ class _TableViewState extends State<TableView> {
     super.initState();
     _pointerEvents = StreamController<PointerEvent>();
     _doubleTapEvents = StreamController<Offset>();
+    if (widget.onDoubleTapRow != null && widget.metricsController == null) {
+      _metricsController = TableViewMetricsController();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant TableView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.onDoubleTapRow != null) {
+      if (widget.metricsController != null && _metricsController != null) {
+        assert(oldWidget.onDoubleTapRow != null);
+        assert(oldWidget.metricsController == null);
+        _disposeOfLocalMetricsController();
+      } else if (widget.metricsController == null && _metricsController == null) {
+        assert(oldWidget.onDoubleTapRow == null || oldWidget.metricsController != null);
+        _metricsController = TableViewMetricsController();
+      }
+    } else if (_metricsController != null) {
+      assert(oldWidget.onDoubleTapRow != null);
+      assert(oldWidget.metricsController == null);
+      _disposeOfLocalMetricsController();
+    }
   }
 
   @override
   void dispose() {
     _pointerEvents.close();
     _doubleTapEvents.close();
+    if (_metricsController != null) {
+      assert(widget.onDoubleTapRow != null);
+      assert(widget.metricsController == null);
+      _disposeOfLocalMetricsController();
+    }
     super.dispose();
   }
 
@@ -778,7 +831,7 @@ class _TableViewState extends State<TableView> {
       rowHeight: widget.rowHeight,
       length: widget.length,
       columns: widget.columns,
-      metricsController: widget.metricsController,
+      metricsController: metricsController,
       selectionController: widget.selectionController,
       sortController: widget.sortController,
       editorController: widget.editorController,
@@ -799,8 +852,9 @@ class _TableViewState extends State<TableView> {
       );
     }
 
-    if (widget.editorController != null &&
-        widget.editorController!.behavior != TableViewEditorBehavior.none) {
+    final bool isEditingActive = widget.editorController != null &&
+        widget.editorController!.behavior != TableViewEditorBehavior.none;
+    if (widget.onDoubleTapRow != null || isEditingActive) {
       result = GestureDetector(
         onDoubleTapDown: _handleDoubleTapDown,
         onDoubleTap: _handleDoubleTap,
