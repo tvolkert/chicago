@@ -293,6 +293,7 @@ class ScrollController with ListenerNotifier<ScrollPaneListener> {
   }) {
     _viewSize = viewSize;
     _viewportSize = viewportSize;
+    // This will bounds-check the value and notify listeners.
     this.scrollOffset = scrollOffset;
   }
 
@@ -1008,7 +1009,7 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
     assert(value.dy <= controller._maxScrollTop);
     horizontalScrollBar!.value = value.dx;
     verticalScrollBar!.value = value.dy;
-    markNeedsLayoutDeferred();
+    markNeedsLayoutDeferred(); // https://github.com/flutter/flutter/issues/64661
   }
 
   void _onPointerScroll(PointerScrollEvent event) {
