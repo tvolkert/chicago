@@ -1009,11 +1009,13 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
     assert(value.dy <= controller._maxScrollTop);
     horizontalScrollBar!.value = value.dx;
     verticalScrollBar!.value = value.dy;
-    markNeedsLayoutDeferred(); // https://github.com/flutter/flutter/issues/64661
+    markNeedsLayout();
   }
 
   void _onPointerScroll(PointerScrollEvent event) {
-    scrollController.scrollOffset += event.scrollDelta;
+    deferMarkNeedsLayout(() {
+      scrollController.scrollOffset += event.scrollDelta;
+    });
   }
 
   @override
