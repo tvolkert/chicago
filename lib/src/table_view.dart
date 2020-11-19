@@ -1149,9 +1149,13 @@ class RenderTableView extends RenderSegment
   Stream<PointerEvent> get pointerEvents => _pointerEvents!;
   set pointerEvents(Stream<PointerEvent> value) {
     if (_pointerEvents == value) return;
-    _pointerEventsSubscription.cancel();
+    if (attached) {
+      _pointerEventsSubscription.cancel();
+    }
     _pointerEvents = value;
-    _pointerEventsSubscription = _pointerEvents!.listen(_onPointerEvent);
+    if (attached) {
+      _pointerEventsSubscription = _pointerEvents!.listen(_onPointerEvent);
+    }
   }
 
   StreamSubscription<Offset> _doubleTapEventsSubscription = const FakeSubscription<Offset>();
@@ -1159,9 +1163,13 @@ class RenderTableView extends RenderSegment
   Stream<Offset> get doubleTapEvents => _doubleTapEvents!;
   set doubleTapEvents(Stream<Offset> value) {
     if (_doubleTapEvents == value) return;
-    _doubleTapEventsSubscription.cancel();
+    if (attached) {
+      _doubleTapEventsSubscription.cancel();
+    }
     _doubleTapEvents = value;
-    _doubleTapEventsSubscription = _doubleTapEvents!.listen(_onDoubleTap);
+    if (attached) {
+      _doubleTapEventsSubscription = _doubleTapEvents!.listen(_onDoubleTap);
+    }
   }
 
   TargetPlatform? _platform;
@@ -1381,6 +1389,12 @@ class RenderTableView extends RenderSegment
     if (_editorController != null) {
       _editorController!._attach(this);
     }
+    if (_pointerEvents != null) {
+      _pointerEventsSubscription = _pointerEvents!.listen(_onPointerEvent);
+    }
+    if (_doubleTapEvents != null) {
+      _doubleTapEventsSubscription = _doubleTapEvents!.listen(_onDoubleTap);
+    }
   }
 
   @override
@@ -1390,6 +1404,12 @@ class RenderTableView extends RenderSegment
     }
     if (_editorController != null) {
       _editorController!._detach();
+    }
+    if (_pointerEvents != null) {
+      _pointerEventsSubscription.cancel();
+    }
+    if (_doubleTapEvents != null) {
+      _doubleTapEventsSubscription.cancel();
     }
     super.detach();
   }
