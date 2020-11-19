@@ -31,7 +31,10 @@ class LinkButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;
 
-  Widget _buildContent({required Color color, required TextDecoration textDecoration}) {
+  Widget _buildContent({
+    required Color color,
+    bool hover = false,
+  }) {
     Widget? imageWidget;
     if (image != null) {
       imageWidget = Padding(
@@ -46,17 +49,25 @@ class LinkButton extends StatelessWidget {
       }
     }
 
+    Widget link = Text(text, style: TextStyle(color: color));
+    if (hover) {
+      link = DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: color)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 1),
+          child: link,
+        ),
+      );
+    }
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         if (imageWidget != null) imageWidget,
-        Text(
-          text,
-          style: TextStyle(
-            color: color,
-            decoration: textDecoration,
-          ),
-        ),
+        link,
       ],
     );
   }
@@ -66,20 +77,25 @@ class LinkButton extends StatelessWidget {
     if (onPressed == null) {
       return _buildContent(
         color: const Color(0xff999999),
-        textDecoration: TextDecoration.none,
       );
     } else {
-      return HoverBuilder(
-        cursor: SystemMouseCursors.click,
-        builder: (BuildContext context, bool hover) {
-          return GestureDetector(
-              onTap: onPressed,
-              child: _buildContent(
-                color: const Color(0xff2b5580),
-                textDecoration: hover ? TextDecoration.underline : TextDecoration.none,
-              )
-          );
-        },
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          HoverBuilder(
+            cursor: SystemMouseCursors.click,
+            builder: (BuildContext context, bool hover) {
+              return GestureDetector(
+                onTap: onPressed,
+                child: _buildContent(
+                  color: const Color(0xff2b5580),
+                  hover: hover,
+                ),
+              );
+            },
+          ),
+        ],
       );
     }
   }
