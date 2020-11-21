@@ -60,6 +60,21 @@ class WidgetSurveyor {
     Widget widget, {
     BoxConstraints constraints = const BoxConstraints(),
   }) {
+    final _MeasurementView rendered = _render(widget, constraints);
+    assert(rendered.hasSize);
+    return rendered.size;
+  }
+
+  double? measureDistanceToActualBaseline(
+    Widget widget, {
+    TextBaseline baseline = TextBaseline.alphabetic,
+    BoxConstraints constraints = const BoxConstraints(),
+  }) {
+    final _MeasurementView rendered = _render(widget, constraints);
+    return rendered.getDistanceToActualBaseline(baseline);
+  }
+
+  _MeasurementView _render(Widget widget, BoxConstraints constraints) {
     PipelineOwner pipelineOwner = PipelineOwner(
       onNeedVisualUpdate: () {},
       onSemanticsOwnerCreated: () {},
@@ -76,13 +91,12 @@ class WidgetSurveyor {
     rootView.scheduleInitialLayout();
     rootView.childConstraints = constraints;
     pipelineOwner.flushLayout();
-    assert(rootView.size != null);
-    return rootView.size!;
+    assert(rootView.child != null);
+    return rootView;
   }
 }
 
-class _MeasurementView extends RenderObject with RenderObjectWithChildMixin<RenderBox> {
-  Size? size;
+class _MeasurementView extends RenderBox with RenderObjectWithChildMixin<RenderBox> {
   BoxConstraints? childConstraints;
 
   @override
@@ -94,18 +108,10 @@ class _MeasurementView extends RenderObject with RenderObjectWithChildMixin<Rend
   }
 
   @override
-  void debugAssertDoesMeetConstraints() {
-    assert(false);
+  double? getDistanceToActualBaseline(TextBaseline baseline) {
+    return super.getDistanceToActualBaseline(baseline);
   }
 
   @override
-  void performResize() {
-    assert(false);
-  }
-
-  @override
-  Rect get paintBounds => Rect.zero;
-
-  @override
-  Rect get semanticBounds => Rect.zero;
+  void debugAssertDoesMeetConstraints() => true;
 }

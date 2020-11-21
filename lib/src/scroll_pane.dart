@@ -1294,6 +1294,33 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
   double computeMaxIntrinsicHeight(double width) => computeMinIntrinsicHeight(width);
 
   @override
+  double? computeDistanceToActualBaseline(TextBaseline baseline) {
+    double? result;
+
+    double columnHeaderHeight = 0;
+    if (columnHeader != null) {
+      columnHeaderHeight = columnHeader!.size.height;
+      result = columnHeader!.getDistanceToActualBaseline(baseline);
+    }
+
+    if (result == null && rowHeader != null) {
+      result = rowHeader!.getDistanceToActualBaseline(baseline);
+      if (result != null) {
+        result += columnHeaderHeight;
+      }
+    }
+
+    if (result == null && view != null) {
+      result = view!.getDistanceToActualBaseline(baseline);
+      if (result != null) {
+        result += columnHeaderHeight;
+      }
+    }
+
+    return result;
+  }
+
+  @override
   void performLayout() {
     double rowHeaderWidth = 0;
     if (rowHeader != null) {
