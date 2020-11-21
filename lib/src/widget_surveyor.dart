@@ -113,5 +113,10 @@ class _MeasurementView extends RenderBox with RenderObjectWithChildMixin<RenderB
   }
 
   @override
+  double? computeDistanceToActualBaseline(TextBaseline baseline) {
+    return child!.getDistanceToActualBaseline(baseline);
+  }
+
+  @override
   void debugAssertDoesMeetConstraints() => true;
 }
