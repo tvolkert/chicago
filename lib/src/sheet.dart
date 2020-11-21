@@ -95,7 +95,7 @@ class Prompt extends StatelessWidget {
   final int? selectedOption;
 
   void _setSelectedOption(BuildContext context, int index) {
-    Navigator.of(context)!.pop<int>(index);
+    Navigator.of(context).pop<int>(index);
   }
 
   @override

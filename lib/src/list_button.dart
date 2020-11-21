@@ -312,7 +312,7 @@ class _ListButtonState<T> extends State<ListButton<T>> {
       disabledItemFilter: _adaptDisabledItemFilter(widget.disabledItemFilter),
       showMenuContext: context,
     );
-    Navigator.of(context)!.push<int>(popupListRoute).then((int? selectedIndex) {
+    Navigator.of(context).push<int>(popupListRoute).then((int? selectedIndex) {
       if (mounted) {
         setState(() {
           _pressed = false;
@@ -580,7 +580,7 @@ class _PopupListState<T> extends State<_PopupList<T>> {
   late double _itemHeight;
 
   void _handleTap() {
-    Navigator.of(context)!.pop(_selectionController.selectedIndex);
+    Navigator.of(context).pop(_selectionController.selectedIndex);
   }
 
   void _updateListViewMetrics() {

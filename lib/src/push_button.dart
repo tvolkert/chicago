@@ -104,7 +104,7 @@ class _PushButtonState<T extends Object> extends State<PushButton<T>> {
       hover = false;
       pressed = false;
       if (menuActive) {
-        Navigator.of(context)!.pop();
+        Navigator.of(context).pop();
         menuActive = false;
       }
     }
