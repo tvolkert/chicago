@@ -37,3 +37,4 @@ export 'src/tab_pane.dart';
 export 'src/table_pane.dart' hide main;
 export 'src/table_view.dart';
 export 'src/text_input.dart';
+export 'src/widget_surveyor.dart';
