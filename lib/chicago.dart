@@ -30,6 +30,7 @@ export 'src/navigator_listener.dart';
 export 'src/push_button.dart';
 export 'src/scroll_bar.dart';
 export 'src/scroll_pane.dart';
+export 'src/set_baseline.dart';
 export 'src/sheet.dart';
 export 'src/sorting.dart';
 export 'src/tab_pane.dart';

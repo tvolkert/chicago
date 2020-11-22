@@ -65,16 +65,29 @@ class WidgetSurveyor {
     return rendered.size;
   }
 
+  double measureDistanceToBaseline(
+    Widget widget, {
+    TextBaseline baseline = TextBaseline.alphabetic,
+    BoxConstraints constraints = const BoxConstraints(),
+  }) {
+    final _MeasurementView rendered = _render(widget, constraints, baselineToCalculate: baseline);
+    return rendered.childBaseline ?? rendered.size.height;
+  }
+
   double? measureDistanceToActualBaseline(
     Widget widget, {
     TextBaseline baseline = TextBaseline.alphabetic,
     BoxConstraints constraints = const BoxConstraints(),
   }) {
-    final _MeasurementView rendered = _render(widget, constraints);
-    return rendered.getDistanceToActualBaseline(baseline);
+    final _MeasurementView rendered = _render(widget, constraints, baselineToCalculate: baseline);
+    return rendered.childBaseline;
   }
 
-  _MeasurementView _render(Widget widget, BoxConstraints constraints) {
+  _MeasurementView _render(
+    Widget widget,
+    BoxConstraints constraints, {
+    TextBaseline? baselineToCalculate,
+  }) {
     PipelineOwner pipelineOwner = PipelineOwner(
       onNeedVisualUpdate: () {},
       onSemanticsOwnerCreated: () {},
@@ -88,6 +101,7 @@ class WidgetSurveyor {
       child: widget,
     ).attachToRenderTree(buildOwner);
     _MeasurementView rootView = pipelineOwner.rootNode as _MeasurementView;
+    rootView.baselineToCalculate = baselineToCalculate;
     rootView.scheduleInitialLayout();
     rootView.childConstraints = constraints;
     pipelineOwner.flushLayout();
@@ -98,23 +112,18 @@ class WidgetSurveyor {
 
 class _MeasurementView extends RenderBox with RenderObjectWithChildMixin<RenderBox> {
   BoxConstraints? childConstraints;
+  TextBaseline? baselineToCalculate;
+  double? childBaseline;
 
   @override
   void performLayout() {
     assert(child != null);
     assert(childConstraints != null);
     child!.layout(childConstraints!, parentUsesSize: true);
+    if (baselineToCalculate != null) {
+      childBaseline = child!.getDistanceToBaseline(baselineToCalculate!);
+    }
     size = child!.size;
-  }
-
-  @override
-  double? getDistanceToActualBaseline(TextBaseline baseline) {
-    return super.getDistanceToActualBaseline(baseline);
-  }
-
-  @override
-  double? computeDistanceToActualBaseline(TextBaseline baseline) {
-    return child!.getDistanceToActualBaseline(baseline);
   }
 
   @override
