@@ -281,6 +281,7 @@ class TableColumnController extends TableColumn with ChangeNotifier {
   TableColumnController({
     required this.key,
     required this.cellRenderer,
+    this.prototypeCellBuilder,
     this.headerRenderer,
     TableColumnWidth width = const FlexTableColumnWidth(),
   }) : _width = width;
@@ -292,6 +293,25 @@ class TableColumnController extends TableColumn with ChangeNotifier {
 
   /// The renderer responsible for the look & feel of cells in this column.
   final TableCellRenderer cellRenderer;
+
+  /// The builder responsible for building the "prototype cell" for this
+  /// column.
+  ///
+  /// The prototype cell is a cell with sample data that is appropriate for the
+  /// column.  The prototype cells for every column join to form a "prototype
+  /// row".  The prototype row is used for things like calculating the fixed
+  /// row height of a table view or for calculating a table view's baseline.
+  ///
+  /// Prototype cells are rendered in a standalone widget tree, so any widgets
+  /// that require inherited data (such a [DefaultTextStyle] or
+  /// [Directionality]) should be explicitly passed such information, or the
+  /// builder should explicitly include such inherited widgets in the built
+  /// hierarchy.
+  ///
+  /// If this is not specified, this column wll not contribute data towards the
+  /// prototype row. If the prototype row contains no cells, then the table
+  /// view will report no baseline.
+  final WidgetBuilder? prototypeCellBuilder;
 
   /// The renderer responsible for the look & feel of the header for this column.
   ///
@@ -966,17 +986,9 @@ class TableViewElement extends RenderObjectElement with TableViewElementMixin {
 
   @override
   @protected
-  Widget buildPrototypeCell(int columnIndex) {
+  Widget? buildPrototypeCell(int columnIndex) {
     final TableColumnController column = widget.columns[columnIndex];
-    return column.cellRenderer(
-      context: this,
-      rowIndex: -1,
-      columnIndex: columnIndex,
-      rowHighlighted: false,
-      rowSelected: false,
-      isEditing: false,
-      isRowDisabled: false,
-    );
+    return column.prototypeCellBuilder != null ? column.prototypeCellBuilder!(this) : null;
   }
 
   @override
@@ -1656,8 +1668,9 @@ class TableViewHeaderElement extends RenderObjectElement with TableViewElementMi
 
   @override
   @protected
-  Widget buildPrototypeCell(int columnIndex) {
-    return renderCell(-1, columnIndex);
+  Widget? buildPrototypeCell(int columnIndex) {
+    final TableColumnController column = widget.columns[columnIndex];
+    return column.prototypeCellBuilder != null ? column.prototypeCellBuilder!(this) : null;
   }
 }
 
