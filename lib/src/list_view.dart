@@ -22,6 +22,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart' hide ScrollController;
 
 import 'basic_list_view.dart';
+import 'deferred_layout.dart';
 import 'foundation.dart';
 import 'listener_list.dart';
 import 'scroll_pane.dart';
@@ -387,7 +388,7 @@ class ListViewElement extends RenderObjectElement with ListViewElementMixin {
   }
 }
 
-class RenderListView extends RenderBasicListView {
+class RenderListView extends RenderBasicListView with DeferredLayoutMixin {
   RenderListView({
     required double itemHeight,
     required int length,
@@ -490,20 +491,26 @@ class RenderListView extends RenderBasicListView {
 
   void _onPointerExit(PointerExitEvent event) {
     if (selectionController != null) {
-      highlightedItem = null;
+      deferMarkNeedsLayout(() {
+        highlightedItem = null;
+      });
     }
   }
 
   void _onPointerScroll(PointerScrollEvent event) {
     if (event.scrollDelta != Offset.zero) {
-      highlightedItem = null;
+      deferMarkNeedsLayout(() {
+        highlightedItem = null;
+      });
     }
   }
 
   void _onPointerHover(PointerHoverEvent event) {
     if (selectionController != null) {
-      final int index = getItemAt(event.localPosition.dy);
-      highlightedItem = index != -1 && !_isItemDisabled(index) ? index : null;
+      deferMarkNeedsLayout(() {
+        final int index = getItemAt(event.localPosition.dy);
+        highlightedItem = index != -1 && !_isItemDisabled(index) ? index : null;
+      });
     }
   }
 
