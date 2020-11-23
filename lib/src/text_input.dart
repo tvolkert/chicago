@@ -22,6 +22,7 @@ class TextInput extends StatelessWidget {
     Key? key,
     this.controller,
     this.onKeyEvent,
+    this.focusNode,
     this.backgroundColor = const Color(0xffffffff),
     this.obscureText = false,
     this.autofocus = false,
@@ -30,6 +31,7 @@ class TextInput extends StatelessWidget {
 
   final TextEditingController? controller;
   final ValueChanged<RawKeyEvent>? onKeyEvent;
+  final FocusNode? focusNode;
   final Color backgroundColor;
   final bool obscureText;
   final bool autofocus;
@@ -39,6 +41,7 @@ class TextInput extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget result = _TextField(
       controller: controller,
+      focusNode: focusNode,
       backgroundColor: backgroundColor,
       obscureText: obscureText,
       enabled: enabled,
@@ -74,28 +77,49 @@ class _Autofocus extends StatefulWidget {
 }
 
 class _AutofocusState extends State<_Autofocus> {
-  late FocusNode _focusNode;
+  FocusNode? _focusNode;
+
+  FocusNode get focusNode => widget.textField.focusNode ?? _focusNode!;
 
   @override
   void initState() {
     super.initState();
-    _focusNode = FocusNode();
+    if (widget.textField.focusNode == null) {
+      _focusNode = FocusNode();
+    }
     SchedulerBinding.instance!.addPostFrameCallback((Duration timeStamp) {
-      _focusNode.requestFocus();
+      focusNode.requestFocus();
     });
   }
 
   @override
+  void didUpdateWidget(covariant _Autofocus oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.textField.focusNode != oldWidget.textField.focusNode) {
+      if (widget.textField.focusNode == null) {
+        assert(_focusNode == null);
+        _focusNode = FocusNode();
+      } else if (oldWidget.textField.focusNode == null) {
+        assert(_focusNode != null);
+        _focusNode!.dispose();
+        _focusNode = null;
+      }
+    }
+  }
+
+  @override
   void dispose() {
-    _focusNode.dispose();
+    _focusNode?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return widget.textField.copyWith(
-      focusNode: _focusNode,
-    );
+    _TextField result = widget.textField;
+    if (_focusNode != null) {
+      result = result.copyWith(focusNode: _focusNode!);
+    }
+    return result;
   }
 }
 
