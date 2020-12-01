@@ -285,7 +285,7 @@ class _ListViewState extends State<ListView> {
   @override
   void initState() {
     super.initState();
-    _pointerEvents = StreamController<PointerEvent>();
+    _pointerEvents = StreamController<PointerEvent>.broadcast();
   }
 
   @override

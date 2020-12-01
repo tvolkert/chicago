@@ -808,8 +808,8 @@ class _TableViewState extends State<TableView> {
   @override
   void initState() {
     super.initState();
-    _pointerEvents = StreamController<PointerEvent>();
-    _doubleTapEvents = StreamController<Offset>();
+    _pointerEvents = StreamController<PointerEvent>.broadcast();
+    _doubleTapEvents = StreamController<Offset>.broadcast();
     if (widget.onDoubleTapRow != null && widget.metricsController == null) {
       _metricsController = TableViewMetricsController();
     }
