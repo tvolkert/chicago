@@ -748,4 +748,9 @@ class _NoFlag extends LeafRenderObjectWidget {
 class _RenderNoFlag extends RenderBox {
   @override
   bool get sizedByParent => true;
+
+  @override
+  Size computeDryLayout(BoxConstraints constraints) {
+    return constraints.smallest;
+  }
 }

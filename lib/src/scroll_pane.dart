@@ -568,6 +568,11 @@ class _RenderEmptyCorner extends RenderBox {
   bool get sizedByParent => true;
 
   @override
+  Size computeDryLayout(BoxConstraints constraints) {
+    return constraints.smallest;
+  }
+
+  @override
   void paint(PaintingContext context, Offset offset) {
     final Paint paint = Paint()
       ..style = PaintingStyle.fill
