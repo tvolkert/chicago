@@ -400,7 +400,7 @@ class _ListButtonState<T> extends State<ListButton<T>> {
 
   @override
   Widget build(BuildContext context) {
-    final BasicListItemBuilder builder = _adaptBuilder(widget.builder);
+    final BasicListItemBuilder itemBuilder = _adaptBuilder(widget.builder);
 
     late final BoxDecoration decoration;
     if (widget.isEnabled) {
@@ -419,7 +419,7 @@ class _ListButtonState<T> extends State<ListButton<T>> {
             _buttonWidth,
             const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
             Builder(builder: (BuildContext context) {
-              return builder(context: context, index: _selectedIndex);
+              return itemBuilder(context: context, index: _selectedIndex);
             }),
           ),
           SizedBox(
@@ -615,15 +615,21 @@ class _PopupListState<T> extends State<_PopupList<T>> {
   }
 
   @override
-  void dispose() {
-    _selectionController.dispose();
-    super.dispose();
-  }
-
-  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _updateListViewMetrics();
+  }
+
+  @override
+  void didUpdateWidget(covariant _PopupList<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _updateListViewMetrics();
+  }
+
+  @override
+  void dispose() {
+    _selectionController.dispose();
+    super.dispose();
   }
 
   @override
@@ -660,7 +666,7 @@ class _PopupListState<T> extends State<_PopupList<T>> {
                       length: widget.length,
                       itemBuilder: widget.itemBuilder,
                       selectionController: _selectionController,
-                      // itemDisabledController: disabledItemFilter,
+                      // itemDisabledController: disabledItemFilter, TODO is this needed?
                     ),
                   ),
                 ),
