@@ -1441,10 +1441,10 @@ class RenderTablePane extends RenderBox
   }
 
   bool _needsMetrics = true;
-  late TablePaneMetrics _metrics;
+  TablePaneMetrics? _metrics;
 
   @protected
-  TablePaneMetrics get metrics => _metrics;
+  TablePaneMetrics get metrics => _metrics!;
 
   @protected
   void markNeedsMetrics() {
@@ -1455,7 +1455,7 @@ class RenderTablePane extends RenderBox
   @protected
   void calculateMetricsIfNecessary() {
     assert(debugDoingThisLayout);
-    if (_needsMetrics || _metrics.constraints != constraints) {
+    if (_needsMetrics || metrics.constraints != constraints) {
       _metrics = TablePaneMetrics(this);
       _needsMetrics = false;
     }
@@ -1570,7 +1570,7 @@ class RenderTablePane extends RenderBox
     properties.add(EnumProperty<MainAxisSize>('horizontalRelativeSize', horizontalRelativeSize));
     properties.add(EnumProperty<MainAxisSize>('verticalIntrinsicSize', verticalIntrinsicSize));
     properties.add(EnumProperty<MainAxisSize>('verticalRelativeSize', verticalRelativeSize));
-    properties.add(DiagnosticsProperty<TablePaneMetrics>('metrics', metrics));
+    properties.add(DiagnosticsProperty<TablePaneMetrics?>('metrics', _metrics));
   }
 }
 
