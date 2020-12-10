@@ -14,7 +14,7 @@
 // limitations under the License.
 
 export 'src/activity_indicator.dart';
-export 'src/basic_list_view.dart';
+export 'src/basic_list_view.dart' hide main;
 export 'src/basic_table_view.dart';
 export 'src/border.dart';
 export 'src/calendar.dart';
