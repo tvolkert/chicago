@@ -283,9 +283,9 @@ class TableCell extends ParentDataWidget<TableCellParentData> {
     this.rowSpan = 1,
     this.columnSpan = 1,
     required Widget child,
-  })  : assert(rowSpan > 0),
-        assert(columnSpan > 0),
-        super(key: key, child: child);
+  }) : assert(rowSpan > 0),
+       assert(columnSpan > 0),
+       super(key: key, child: child);
 
   /// The number of rows this cell occupies.
   final int rowSpan;
@@ -327,6 +327,9 @@ class EmptyTableCell extends LeafRenderObjectWidget {
   RenderObject createRenderObject(BuildContext context) => RenderEmptyTableCell();
 }
 
+/// TablePane's layout is "width in, height out", meaning it will compute its
+/// column widths first with unconstrained height, then compute the row heights
+/// using those column widths as the width constraints.
 class TablePane extends MultiChildRenderObjectWidget {
   TablePane({
     Key? key,
@@ -334,11 +337,11 @@ class TablePane extends MultiChildRenderObjectWidget {
     this.horizontalSpacing = 0,
     this.verticalSpacing = 0,
     this.horizontalIntrinsicSize = MainAxisSize.max,
-    this.horizontalRelativeSize = MainAxisSize.min,
+    this.horizontalRelativeSize = MainAxisSize.max,
     this.verticalIntrinsicSize = MainAxisSize.max,
-    this.verticalRelativeSize = MainAxisSize.min,
+    this.verticalRelativeSize = MainAxisSize.max,
     required List<Widget> children,
-  })  : super(key: key, children: children);
+  }) : super(key: key, children: children);
 
   final List<TablePaneColumn> columns;
   final double horizontalSpacing;
@@ -573,6 +576,17 @@ class RenderTableRow extends RenderBox
   }
 
   @override
+  void markNeedsLayout() {
+    RenderTablePane? parent = this.parent;
+    if (parent != null) {
+      parent.markNeedsMetrics();
+      markParentNeedsLayout();
+      return;
+    }
+    super.markNeedsLayout();
+  }
+
+  @override
   void performLayout() {
     // RenderTablePane will always give us tight constraints
     assert(constraints.isTight);
@@ -608,9 +622,9 @@ class RenderTablePane extends RenderBox
     double horizontalSpacing = 0,
     double verticalSpacing = 0,
     MainAxisSize horizontalIntrinsicSize = MainAxisSize.max,
-    MainAxisSize horizontalRelativeSize = MainAxisSize.min,
+    MainAxisSize horizontalRelativeSize = MainAxisSize.max,
     MainAxisSize verticalIntrinsicSize = MainAxisSize.max,
-    MainAxisSize verticalRelativeSize = MainAxisSize.min,
+    MainAxisSize verticalRelativeSize = MainAxisSize.max,
   }) {
     this.columns = columns;
     this.horizontalSpacing = horizontalSpacing;
@@ -621,7 +635,7 @@ class RenderTablePane extends RenderBox
     this.verticalRelativeSize = verticalRelativeSize;
   }
 
-  List<TablePaneColumn> _columns = <TablePaneColumn>[];
+  List<TablePaneColumn> _columns = const <TablePaneColumn>[];
   List<TablePaneColumn> get columns => _columns;
   set columns(List<TablePaneColumn> value) {
     if (!const ListEquality().equals(value, _columns)) {
@@ -657,7 +671,7 @@ class RenderTablePane extends RenderBox
     }
   }
 
-  MainAxisSize _horizontalRelativeSize = MainAxisSize.min;
+  MainAxisSize _horizontalRelativeSize = MainAxisSize.max;
   MainAxisSize get horizontalRelativeSize => _horizontalRelativeSize;
   set horizontalRelativeSize(MainAxisSize value) {
     if (value != _horizontalRelativeSize) {
@@ -675,7 +689,7 @@ class RenderTablePane extends RenderBox
     }
   }
 
-  MainAxisSize _verticalRelativeSize = MainAxisSize.min;
+  MainAxisSize _verticalRelativeSize = MainAxisSize.max;
   MainAxisSize get verticalRelativeSize => _verticalRelativeSize;
   set verticalRelativeSize(MainAxisSize value) {
     if (value != _verticalRelativeSize) {
@@ -684,11 +698,19 @@ class RenderTablePane extends RenderBox
     }
   }
 
+  /// Computes the intrinsic height of a table pane row, which is defined as
+  /// the maximum intrinsic height of the row's cells.
+  ///
+  /// Because their intrinsic height relates to the intrinsic heights of other
+  /// rows, cells that span multiple rows will not be considered in this
+  /// calculation (even if they live in the row directly). It is up to the
+  /// caller to factor such cells into the row heights calculation.
   double _computeIntrinsicRowHeight(
     int rowIndex,
     List<double> columnWidths,
     _IntrinsicComputer computeIntrinsicCellHeight,
   ) {
+    assert(rowIndex >= 0 && rowIndex < rows.length);
     final RenderTableRow row = rows[rowIndex];
     double result = 0;
     for (int j = 0, n = row.length, m = columns.length; j < n && j < m; j++) {
@@ -701,6 +723,13 @@ class RenderTablePane extends RenderBox
     return result;
   }
 
+  /// Gets the intrinsic width of a table pane column, which is defined as the
+  /// maximum intrinsic width of the column's cells.
+  ///
+  /// Because their intrinsic width relates to the intrinsic widths of other
+  /// columns, cells that span multiple columns will not be considered in
+  /// this calculation (even if they live in the column directly). It is up to
+  /// the caller to factor such cells into the column widths calculation.
   double _computeIntrinsicColumnWidth(
     int columnIndex,
     _IntrinsicComputer computeIntrinsicCellWidth,
@@ -726,38 +755,105 @@ class RenderTablePane extends RenderBox
     assert(!width.isNegative);
     final List<double> rowHeights = List<double>.filled(rows.length, 0);
     final List<double> relativeWeights = List<double>.filled(rows.length, 0);
-    final List<bool> defaultHeightRows = List<bool>.filled(rows.length, false);
+    final List<bool> intrinsicHeightRows = List<bool>.filled(rows.length, false);
     final List<double> columnWidths = width.isFinite
         ? _computeActualColumnWidths(LinearConstraints.tight(width))
-        : _computeIntrinsicColumnWidths(double.infinity, (RenderBox child, double height) {
-            return child.getMaxIntrinsicWidth(height);
-          });
+        : _computeIntrinsicColumnWidths(_computeIntrinsicChildWidth);
 
     // First, we calculate the base heights of the rows, giving relative
-    // rows their preferred height
+    // rows their intrinsic height. Spanning cells will be ignored in this
+    // pass.
     double totalRelativeWeight = 0;
     for (int i = 0; i < rows.length; i++) {
       final TablePaneRowHeight heightSpec = rows[i].height;
       final double rowHeight = heightSpec.height;
       final bool isRelative = heightSpec.isRelative;
-
-      defaultHeightRows[i] = (rowHeight < 0);
+      final bool isIntrinsic = intrinsicHeightRows[i] = rowHeight < 0;
 
       if (isRelative) {
         relativeWeights[i] = rowHeight;
         totalRelativeWeight += rowHeight;
       }
 
-      if (rowHeight < 0 || isRelative) {
+      if (isIntrinsic || isRelative) {
         rowHeights[i] = _computeIntrinsicRowHeight(i, columnWidths, computeIntrinsicCellHeight);
       } else {
         rowHeights[i] = rowHeight;
       }
     }
 
-    // Next, we adjust the heights of the relative rows upwards where
+    // Next, we account for spanning cells, which have been ignored thus
+    // far. If any spanned cell is intrinsic-height (including relative height
+    // rows), then we ensure that the sum of the heights of the spanned cells
+    // is enough to satisfy the intrinsic height of the spanning content.
+    for (int i = 0; i < rows.length; i++) {
+      final RenderTableRow row = rows[i];
+      for (int j = 0, n = row.length, m = columns.length; j < n && j < m; j++) {
+        final RenderBox child = row[j];
+
+        if (child is! RenderEmptyTableCell) {
+          final TableCellParentData childParentData = child.parentData as TableCellParentData;
+          final int rowSpan = childParentData.rowSpan;
+
+          if (rowSpan > 1) {
+            // We might need to adjust row heights to accommodate this spanning
+            // cell. First, we find out if any of the spanned cells are
+            // intrinsic height or relative height and how much space we've
+            // allocated thus far for those cells.
+            int spannedIntrinsicHeightCellCount = 0;
+            double spannedRelativeWeight = 0;
+            double spannedHeight = 0;
+            for (int k = 0; k < rowSpan && i + k < rows.length; k++) {
+              spannedRelativeWeight += relativeWeights[i + k];
+              spannedHeight += rowHeights[i + k];
+              if (intrinsicHeightRows[i + k]) {
+                spannedIntrinsicHeightCellCount++;
+              }
+            }
+
+            if (spannedRelativeWeight > 0 || spannedIntrinsicHeightCellCount > 0) {
+              final int columnSpan = childParentData.columnSpan;
+              double childWidth = columnWidths.skip(j).take(columnSpan).fold<double>(0, _sum);
+              childWidth += math.max(columnSpan - 1, 0) * horizontalSpacing;
+              final double childIntrinsicHeight = computeIntrinsicCellHeight(child, childWidth);
+
+              if (childIntrinsicHeight > spannedHeight) {
+                // The child's intrinsic height is larger than the height we've
+                // allocated thus far, so an adjustment is necessary.
+                final double adjustment = childIntrinsicHeight - spannedHeight;
+
+                if (spannedRelativeWeight > 0) {
+                  // We'll distribute the adjustment across the spanned
+                  // relative rows and adjust other relative row heights to
+                  // keep all relative row heights reconciled.
+                  final double unitAdjustment = adjustment / spannedRelativeWeight;
+                  for (int k = 0; k < rowSpan && i + k < rows.length; k++) {
+                    final double relativeWeight = relativeWeights[i + k];
+                    if (relativeWeight > 0) {
+                      final double rowAdjustment = unitAdjustment * relativeWeight;
+                      rowHeights[i + k] += rowAdjustment;
+                    }
+                  }
+                } else {
+                  // We'll distribute the adjustment evenly among the
+                  // intrinsic-height rows.
+                  for (int k = 0; k < rowSpan && i + k < rows.length; k++) {
+                    if (intrinsicHeightRows[i + k]) {
+                      final double rowAdjustment = adjustment / spannedIntrinsicHeightCellCount;
+                      rowHeights[i + k] += rowAdjustment;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Finally, we adjust the heights of the relative rows upwards where
     // necessary to reconcile their heights relative to one another while
-    // ensuring that they still get at least their preferred height
+    // ensuring that they still get at least their intrinsic height.
     if (totalRelativeWeight > 0) {
       // Calculate total relative height after the required upward adjustments
       double totalRelativeHeight = 0;
@@ -780,77 +876,6 @@ class RenderTablePane extends RenderBox
       }
     }
 
-    // Finally, we account for spanning cells, which have been ignored thus
-    // far. If any spanned cell is default-height (including relative height
-    // rows), then we ensure that the sum of the heights of the spanned cells
-    // is enough to satisfy the preferred height of the spanning content
-    for (int i = 0; i < rows.length; i++) {
-      final RenderTableRow row = rows[i];
-      for (int j = 0, n = row.length; j < n && j < columns.length; j++) {
-        final RenderBox child = row[j];
-
-        if (child is! RenderEmptyTableCell) {
-          final TableCellParentData childParentData = child.parentData as TableCellParentData;
-          final int rowSpan = childParentData.rowSpan;
-
-          if (rowSpan > 1) {
-            // We might need to adjust row heights to accommodate this spanning
-            // cell. First, we find out if any of the spanned cells are default
-            // height and how much space we've allocated thus far for those cells
-
-            int spannedDefaultHeightCellCount = 0;
-            double spannedRelativeWeight = 0;
-            double spannedHeight = 0;
-
-            for (int k = 0; k < rowSpan && i + k < rows.length; k++) {
-              spannedRelativeWeight += relativeWeights[i + k];
-              spannedHeight += rowHeights[i + k];
-              if (defaultHeightRows[i + k]) {
-                spannedDefaultHeightCellCount++;
-              }
-            }
-
-            if (spannedRelativeWeight > 0 || spannedDefaultHeightCellCount > 0) {
-              final int columnSpan = childParentData.columnSpan;
-              double childWidth = columnWidths.skip(j).take(columnSpan).fold<double>(0, _sum);
-              childWidth += math.max(columnSpan - 1, 0) * horizontalSpacing;
-              final double childIntrinsicHeight = computeIntrinsicCellHeight(child, childWidth);
-
-              if (childIntrinsicHeight > spannedHeight) {
-                // The component's intrinsic height is larger than the height
-                // we've allocated thus far, so an adjustment is necessary
-                final double adjustment = childIntrinsicHeight - spannedHeight;
-
-                if (spannedRelativeWeight > 0) {
-                  // We'll distribute the adjustment across the spanned
-                  // relative rows and adjust other relative row heights to
-                  // keep all relative row heights reconciled
-                  final double unitAdjustment = adjustment / spannedRelativeWeight;
-
-                  for (int k = 0; k < rows.length; k++) {
-                    final double relativeWeight = relativeWeights[k];
-                    if (relativeWeight > 0) {
-                      final double rowAdjustment = unitAdjustment * relativeWeight;
-                      rowHeights[k] += rowAdjustment;
-                    }
-                  }
-                } else {
-                  // We'll distribute the adjustment evenly among the
-                  // default-height rows
-                  for (int k = 0; k < rowSpan && i + k < rows.length; k++) {
-                    if (defaultHeightRows[i + k]) {
-                      final double rowAdjustment = adjustment / spannedDefaultHeightCellCount;
-                      rowHeights[i + k] += rowAdjustment;
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
     return rowHeights;
   }
 
@@ -858,153 +883,73 @@ class RenderTablePane extends RenderBox
     LinearConstraints heightConstraints,
     List<double> columnWidths,
   ) {
-    assert(heightConstraints.isNormalized);
-    final List<double> rowHeights = List<double>.filled(rows.length, 0);
-    final List<bool> defaultHeightRows = List<bool>.filled(rows.length, false);
+    final double totalRelativeWeight = rows
+        .map<TablePaneRowHeight>((RenderTableRow row) => row.height)
+        .whereType<RelativeTablePaneRowHeight>()
+        .map<double>((RelativeTablePaneRowHeight heightSpec) => heightSpec.height)
+        .fold<double>(0, _sum);
 
-    // First, we allocate the heights of non-relative rows. We store the
-    // heights of relative rows as negative values for later processing
-    double totalRelativeWeight = 0;
-    double reservedHeight = math.max(rows.length - 1, 0) * verticalSpacing;
-    for (int i = 0; i < rows.length; i++) {
-      final TablePaneRowHeight rowHeightSpec = rows[i].height;
-      double rowHeight = rowHeightSpec.height;
+    final double totalWidth = _computeWidth(columnWidths);
+    final List<double> rowHeights = _computeIntrinsicRowHeights(totalWidth, _computeIntrinsicChildHeight);
+    double totalHeight = _computeHeight(rowHeights);
 
-      if (rowHeightSpec.isRelative) {
-        rowHeights[i] = -rowHeight;
-        totalRelativeWeight += rowHeight;
-      } else {
-        if (rowHeightSpec is IntrinsicTablePaneRowHeight) {
-          // Default height row; we must calculate the height
-          defaultHeightRows[i] = true;
-          switch (rowHeightSpec.mainAxisSize) {
-            case MainAxisSize.min:
-              rowHeight = computeMinIntrinsicRowHeight(i, columnWidths);
-              break;
-            case MainAxisSize.max:
-              rowHeight = computeMaxIntrinsicRowHeight(i, columnWidths);
-              break;
-          }
-        }
-        rowHeights[i] = rowHeight;
-        reservedHeight += rowHeight;
-      }
-    }
-
-    // Next, we we account for default-width columns containing spanning
-    // cells, which have been ignored thus far. We ensure that the sum of
-    // the widths of the spanned cells is enough to satisfy the preferred
-    // width of the spanning content.
-    for (int i = 0; i < rows.length; i++) {
-      final RenderTableRow row = rows[i];
-      for (int j = 0, n = row.length; j < n && j < columns.length; j++) {
-        final RenderBox child = row[j];
-        row.setupParentData(child);
-        final TableCellParentData childParentData = child.parentData as TableCellParentData;
-        final int rowSpan = childParentData.rowSpan;
-
-        if (rowSpan > 1) {
-          // We might need to adjust row heights to accommodate this spanning
-          // cell. First, we find out if any of the spanned cells are default
-          // height and how much space we've allocated thus far for those cells
-          bool didSpanRelativeRows = false;
-          int spannedDefaultHeightCellCount = 0;
-          double spannedHeight = 0;
-
-          for (int k = 0; k < rowSpan && i + k < rows.length; k++) {
-            if (rowHeights[i + k] < 0) {
-              // See comment below about relative-height rows.
-              didSpanRelativeRows = true;
-              break;
-            }
-
-            if (defaultHeightRows[i + k]) {
-              spannedDefaultHeightCellCount++;
-            }
-
-            spannedHeight += rowHeights[i + k];
-          }
-
-          // If we span any relative-height rows, we assume that we'll achieve
-          // the desired spanning height when we divvy up the remaining space,
-          // so there's no need to make an adjustment here. This assumption is
-          // safe because our preferred height policy is to *either* divide the
-          // adjustment among the relative-height rows *or* among the
-          // default-height rows if we don't span any relative-height rows.
-          if (!didSpanRelativeRows && spannedDefaultHeightCellCount > 0) {
-            final int columnSpan = childParentData.columnSpan;
-            double childWidth = columnWidths.skip(j).take(columnSpan).fold<double>(0, _sum);
-            childWidth += math.max(columnSpan - 1, 0) * horizontalSpacing;
-            late final double childIntrinsicHeight;
-            switch (verticalIntrinsicSize) {
-              case MainAxisSize.min:
-                childIntrinsicHeight = child.getMinIntrinsicHeight(childWidth);
-                break;
-              case MainAxisSize.max:
-                childIntrinsicHeight = child.getMaxIntrinsicHeight(childWidth);
-                break;
-            }
-
-            if (childIntrinsicHeight > spannedHeight) {
-              // The child's intrinsic height is larger than the height we've
-              // allocated thus far, so an adjustment is necessary.
-              final double adjustment = childIntrinsicHeight - spannedHeight;
-
-              // We'll distribute the adjustment evenly among the
-              // default-height rows
-              for (int k = 0; k < rowSpan && i + k < rows.length; k++) {
-                if (defaultHeightRows[i + k]) {
-                  final double rowAdjustment = adjustment / spannedDefaultHeightCellCount;
-                  rowHeights[i + k] += rowAdjustment;
-                  reservedHeight += rowAdjustment;
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    // Finally, we allocate the heights of the relative rows by divvying
-    // up the remaining height
-    final double height = heightConstraints.constrainMainAxisSize(verticalRelativeSize);
-    final double remainingHeight = math.max(height - reservedHeight, 0);
-    if (totalRelativeWeight > 0) {
-      assert(() {
-        if (remainingHeight.isInfinite) {
-          throw FlutterError.fromParts(<DiagnosticsNode>[
-            ErrorSummary('RenderTablePane was given infinite height constraints with '
-                'relative-height rows'),
-            ErrorDescription(
-                'Relative-height TableRow instances will fill the remaining space when a '
-                'TablePane is laid out. If there is infinite space remaining, they have no '
-                'way of knowing what height to be.'),
-            ErrorSpacer(),
-            DiagnosticsProperty<Object>(
-              'The $runtimeType that contained a default-height row was created by',
-              debugCreator,
-              style: DiagnosticsTreeStyle.errorProperty,
-            ),
-            ErrorSpacer(),
-            DiagnosticsProperty<Object>(
-              'The default-height row was created by',
-              rows.firstWhere((RenderTableRow row) => row.height.isRelative).debugCreator,
-              style: DiagnosticsTreeStyle.errorProperty,
-            ),
-          ]);
-        }
-        return true;
-      }());
+    void growRelativeRowsToMeetMinimumTotalHeight(double minimumHeight) {
+      final double remainingHeight = minimumHeight - totalHeight;
+      assert(remainingHeight >= 0);
       for (int i = 0; i < rows.length; i++) {
-        if (rowHeights[i] < 0) {
-          if (remainingHeight > 0) {
-            final double relativeWeight = -rowHeights[i];
+        final TablePaneRowHeight rowHeightSpec = rows[i].height;
+        if (rowHeightSpec.isRelative) {
+          final double relativeWeight = rowHeightSpec.height;
+          final double weightPercentage = relativeWeight / totalRelativeWeight;
+          assert(weightPercentage > 0 && weightPercentage <= 1);
+          final double addHeight = remainingHeight * weightPercentage;
+          rowHeights[i] += addHeight;
+          totalHeight += addHeight;
+        }
+      }
+    }
+
+    if (heightConstraints.isSatisfiedBy(totalHeight)) {
+      if (verticalRelativeSize == MainAxisSize.max &&
+          heightConstraints.isBounded &&
+          totalRelativeWeight > 0) {
+        // Grow the relative-height rows to fill the max height constraint.
+        growRelativeRowsToMeetMinimumTotalHeight(heightConstraints.max);
+      }
+    } else if (heightConstraints < totalHeight) {
+      if (totalRelativeWeight > 0) {
+        // Shrink the relative-height rows to meet the max height constraints.
+        final double overflowHeight = totalHeight - heightConstraints.max;
+        assert(overflowHeight >= 0);
+        bool? excessiveOverflow;
+        for (int i = 0; i < rows.length; i++) {
+          final TablePaneRowHeight rowHeightSpec = rows[i].height;
+          if (rowHeightSpec.isRelative) {
+            final double relativeWeight = rowHeightSpec.height;
             final double weightPercentage = relativeWeight / totalRelativeWeight;
-            rowHeights[i] = remainingHeight * weightPercentage;
-          } else {
-            rowHeights[i] = 0;
+            assert(weightPercentage > 0 && weightPercentage <= 1);
+            double subtractHeight = overflowHeight * weightPercentage;
+            final bool localOverflow = subtractHeight > rowHeights[i];
+            assert(excessiveOverflow == null || excessiveOverflow == localOverflow);
+            excessiveOverflow = (excessiveOverflow ?? false) || localOverflow;
+            if (excessiveOverflow) {
+              subtractHeight = rowHeights[i];
+            }
+            rowHeights[i] -= subtractHeight;
+            totalHeight -= subtractHeight;
           }
         }
+        assert(excessiveOverflow == (heightConstraints < totalHeight));
+        if (excessiveOverflow!) {
+          // TODO: handle overflow
+        }
+      } else {
+        // TODO: handle overflow
+      }
+    } else if (heightConstraints > totalHeight) {
+      if (totalRelativeWeight > 0) {
+        // Grow the relative-height rows to meet the min height constraints.
+        growRelativeRowsToMeetMinimumTotalHeight(heightConstraints.min);
       }
     }
 
@@ -1027,65 +972,37 @@ class RenderTablePane extends RenderBox
     return rowHeights;
   }
 
-  List<double> _computeIntrinsicColumnWidths(
-    double height,
-    _IntrinsicComputer computeIntrinsicCellWidth,
-  ) {
+  List<double> _computeIntrinsicColumnWidths(_IntrinsicComputer computeIntrinsicCellWidth) {
     final List<double> columnWidths = List<double>.filled(columns.length, 0);
     final List<double> relativeWeights = List<double>.filled(columns.length, 0);
-    final List<bool> defaultWidthColumns = List<bool>.filled(columns.length, false);
+    final List<bool> intrinsicWidthColumns = List<bool>.filled(columns.length, false);
 
     // First, we calculate the base widths of the columns, giving relative
-    // columns their preferred width
+    // columns their intrinsic width. Spanning cells will be ignored in this
+    // pass.
     double totalRelativeWeight = 0;
     for (int i = 0; i < columns.length; i++) {
       final TablePaneColumnWidth columnWidthSpec = columns[i].width;
       final double columnWidth = columnWidthSpec.width;
       final bool isRelative = columnWidthSpec.isRelative;
-
-      defaultWidthColumns[i] = (columnWidth < 0);
+      final bool isIntrinsic = intrinsicWidthColumns[i] = columnWidth < 0;
 
       if (isRelative) {
         relativeWeights[i] = columnWidth;
         totalRelativeWeight += columnWidth;
       }
 
-      if (columnWidth < 0 || isRelative) {
+      if (isIntrinsic || isRelative) {
         columnWidths[i] = _computeIntrinsicColumnWidth(i, computeIntrinsicCellWidth);
       } else {
         columnWidths[i] = columnWidth;
       }
     }
 
-    // Next, we adjust the widths of the relative columns upwards where
-    // necessary to reconcile their widths relative to one another while
-    // ensuring that they still get at least their intrinsic width
-    if (totalRelativeWeight > 0) {
-      // Calculate total relative width after the required upward adjustments
-      double totalRelativeWidth = 0;
-      for (int i = 0; i < columns.length; i++) {
-        final double relativeWeight = relativeWeights[i];
-        if (relativeWeight > 0) {
-          final double columnWidth = columnWidths[i];
-          final double weightPercentage = relativeWeight / totalRelativeWeight;
-          totalRelativeWidth = math.max(totalRelativeWidth, columnWidth / weightPercentage);
-        }
-      }
-
-      // Perform the upward adjustments using the total relative width
-      for (int i = 0; i < columns.length; i++) {
-        final double relativeWeight = relativeWeights[i];
-        if (relativeWeight > 0) {
-          final double weightPercentage = relativeWeight / totalRelativeWeight;
-          columnWidths[i] = weightPercentage * totalRelativeWidth;
-        }
-      }
-    }
-
-    // Finally, we account for spanning cells, which have been ignored thus
-    // far. If any spanned cell is default-width (including relative width
+    // Next, we account for spanning cells, which have been ignored thus
+    // far. If any spanned cell is intrinsic-width (including relative width
     // columns), then we ensure that the sum of the widths of the spanned
-    // cells is enough to satisfy the preferred width of the spanning content
+    // cells is enough to satisfy the intrinsic width of the spanning content
     for (int i = 0; i < rows.length; i++) {
       final RenderTableRow row = rows[i];
       for (int j = 0, n = row.length; j < n && j < columns.length; j++) {
@@ -1098,21 +1015,20 @@ class RenderTablePane extends RenderBox
           if (columnSpan > 1) {
             // We might need to adjust column widths to accommodate this
             // spanning cell. First, we find out if any of the spanned cells
-            // are default width and how much space we've allocated thus far
-            // for those cells.
-
-            int spannedDefaultWidthCellCount = 0;
+            // are intrinsic width or relative width and how much space we've
+            // allocated thus far for those cells.
+            int spannedIntrinsicWidthCellCount = 0;
             double spannedRelativeWeight = 0;
             double spannedWidth = 0;
             for (int k = 0; k < columnSpan && j + k < columns.length; k++) {
               spannedRelativeWeight += relativeWeights[j + k];
               spannedWidth += columnWidths[j + k];
-              if (defaultWidthColumns[j + k]) {
-                spannedDefaultWidthCellCount++;
+              if (intrinsicWidthColumns[j + k]) {
+                spannedIntrinsicWidthCellCount++;
               }
             }
 
-            if (spannedRelativeWeight > 0 || spannedDefaultWidthCellCount > 0) {
+            if (spannedRelativeWeight > 0 || spannedIntrinsicWidthCellCount > 0) {
               bool isRelativeOrIntrinsic(TablePaneRowHeight spec) {
                 return spec.isRelative || spec.height.isNegative;
               }
@@ -1139,7 +1055,7 @@ class RenderTablePane extends RenderBox
               final double childIntrinsicWidth = computeIntrinsicCellWidth(child, heightConstraint);
 
               if (childIntrinsicWidth > spannedWidth) {
-                // The child's preferred width is larger than the width we've
+                // The child's intrinsic width is larger than the width we've
                 // allocated thus far, so an adjustment is necessary.
                 final double adjustment = childIntrinsicWidth - spannedWidth;
 
@@ -1148,19 +1064,19 @@ class RenderTablePane extends RenderBox
                   // relative columns and adjust other relative column widths
                   // to keep all relative column widths reconciled.
                   final double unitAdjustment = adjustment / spannedRelativeWeight;
-                  for (int k = 0; k < columns.length; k++) {
-                    final double relativeWeight = relativeWeights[k];
+                  for (int k = 0; k < columnSpan && j + k < columns.length; k++) {
+                    final double relativeWeight = relativeWeights[j + k];
                     if (relativeWeight > 0) {
                       final double columnAdjustment = unitAdjustment * relativeWeight;
-                      columnWidths[k] += columnAdjustment;
+                      columnWidths[j + k] += columnAdjustment;
                     }
                   }
                 } else {
                   // We'll distribute the adjustment evenly among the
-                  // default-width columns
+                  // intrinsic-width columns.
                   for (int k = 0; k < columnSpan && j + k < columns.length; k++) {
-                    if (defaultWidthColumns[j + k]) {
-                      final double columnAdjustment = adjustment / spannedDefaultWidthCellCount;
+                    if (intrinsicWidthColumns[j + k]) {
+                      final double columnAdjustment = adjustment / spannedIntrinsicWidthCellCount;
                       columnWidths[j + k] += columnAdjustment;
                     }
                   }
@@ -1172,147 +1088,101 @@ class RenderTablePane extends RenderBox
       }
     }
 
+    // Finally, we adjust the widths of the relative columns upwards where
+    // necessary to reconcile their widths relative to one another while
+    // ensuring that they still get at least their intrinsic width
+    if (totalRelativeWeight > 0) {
+      // Calculate total relative width after the required upward adjustments
+      double totalRelativeWidth = 0;
+      for (int i = 0; i < columns.length; i++) {
+        final double relativeWeight = relativeWeights[i];
+        if (relativeWeight > 0) {
+          final double columnWidth = columnWidths[i];
+          final double weightPercentage = relativeWeight / totalRelativeWeight;
+          totalRelativeWidth = math.max(totalRelativeWidth, columnWidth / weightPercentage);
+        }
+      }
+
+      // Perform the upward adjustments using the total relative width
+      for (int i = 0; i < columns.length; i++) {
+        final double relativeWeight = relativeWeights[i];
+        if (relativeWeight > 0) {
+          final double weightPercentage = relativeWeight / totalRelativeWeight;
+          columnWidths[i] = weightPercentage * totalRelativeWidth;
+        }
+      }
+    }
+
     return columnWidths;
   }
 
   List<double> _computeActualColumnWidths(LinearConstraints widthConstraints) {
-    assert(widthConstraints.isNormalized);
-    final List<double> columnWidths = List<double>.filled(columns.length, 0);
-    final List<bool> defaultWidthColumns = List<bool>.filled(columns.length, false);
+    final double totalRelativeWeight = columns
+        .map<TablePaneColumnWidth>((TablePaneColumn column) => column.width)
+        .whereType<RelativeTablePaneColumnWidth>()
+        .map<double>((RelativeTablePaneColumnWidth widthSpec) => widthSpec.width)
+        .fold<double>(0, _sum);
 
-    // First, we allocate the widths of non-relative columns. We store the
-    // widths of relative columns as negative values for later processing
-    double totalRelativeWeight = 0;
-    double reservedWidth = math.max(columns.length - 1, 0) * horizontalSpacing;
-    for (int j = 0; j < columns.length; j++) {
-      final TablePaneColumnWidth columnWidthSpec = columns[j].width;
-      double columnWidth = columnWidthSpec.width;
+    final List<double> columnWidths = _computeIntrinsicColumnWidths(_computeIntrinsicChildWidth);
+    double totalWidth = _computeWidth(columnWidths);
 
-      if (columnWidthSpec.isRelative) {
-        columnWidths[j] = -columnWidth;
-        totalRelativeWeight += columnWidth;
-      } else {
-        if (columnWidthSpec is IntrinsicTablePaneColumnWidth) {
-          // Default width column; we must calculate the width
-          defaultWidthColumns[j] = true;
-          switch (columnWidthSpec.mainAxisSize) {
-            case MainAxisSize.min:
-              columnWidth = computeMinIntrinsicColumnWidth(j);
-              break;
-            case MainAxisSize.max:
-              columnWidth = computeMaxIntrinsicColumnWidth(j);
-              break;
-          }
-        }
-        columnWidths[j] = columnWidth;
-        reservedWidth += columnWidth;
-      }
-    }
-
-    // Next, we we account for default-width columns containing spanning
-    // cells, which have been ignored thus far. We ensure that the sum of
-    // the widths of the spanned cells is enough to satisfy the intrinsic
-    // width of the spanning content.
-    for (int i = 0; i < rows.length; i++) {
-      final RenderTableRow row = rows[i];
-      for (int j = 0, n = row.length; j < n && j < columns.length; j++) {
-        final RenderBox child = row[j];
-        row.setupParentData(child);
-        final TableCellParentData childParentData = child.parentData as TableCellParentData;
-        final int columnSpan = childParentData.columnSpan;
-
-        if (columnSpan > 1) {
-          // We might need to adjust column widths to accommodate this spanning
-          // cell. First, we find out if any of the spanned cells are default
-          // width and how much space we've allocated thus far for those cells.
-          bool didSpanRelativeColumns = false;
-          int spannedDefaultWidthCellCount = 0;
-          double spannedWidth = 0;
-
-          for (int k = 0; k < columnSpan && j + k < columns.length; k++) {
-            if (columnWidths[j + k] < 0) {
-              // See comment below about relative-width columns.
-              didSpanRelativeColumns = true;
-              break;
-            }
-
-            if (defaultWidthColumns[j + k]) {
-              spannedDefaultWidthCellCount++;
-            }
-
-            spannedWidth += columnWidths[j + k];
-          }
-
-          // If we span any relative-width columns, we assume that we'll achieve
-          // the desired spanning width when we divvy up the remaining space, so
-          // there's no need to make an adjustment here. This assumption is safe
-          // because our preferred width policy is to *either* divide the
-          // adjustment among the relative-width columns *or* among the
-          // default-width columns if we don't span any relative-width columns
-          if (!didSpanRelativeColumns && spannedDefaultWidthCellCount > 0) {
-            late final double childIntrinsicWidth;
-            switch (horizontalIntrinsicSize) {
-              case MainAxisSize.min:
-                childIntrinsicWidth = child.getMinIntrinsicWidth(double.infinity);
-                break;
-              case MainAxisSize.max:
-                childIntrinsicWidth = child.getMaxIntrinsicWidth(double.infinity);
-                break;
-            }
-
-            if (childIntrinsicWidth > spannedWidth) {
-              // The child's intrinsic width is larger than the width we've
-              // allocated thus far, so an adjustment is necessary.
-              final double adjustment = childIntrinsicWidth - spannedWidth;
-
-              // Distribute adjustment evenly among the default-width columns.
-              for (int k = 0; k < columnSpan && j + k < columns.length; k++) {
-                if (defaultWidthColumns[j + k]) {
-                  final double columnAdjustment = adjustment / spannedDefaultWidthCellCount;
-                  columnWidths[j + k] += columnAdjustment;
-                  reservedWidth += columnAdjustment;
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    // Finally, we allocate the widths of the relative columns by divvying up
-    // the remaining width
-    final double width = widthConstraints.constrainMainAxisSize(horizontalRelativeSize);
-    final double remainingWidth = math.max(width - reservedWidth, 0);
-    if (totalRelativeWeight > 0) {
-      assert(() {
-        if (remainingWidth.isInfinite) {
-          throw FlutterError.fromParts(<DiagnosticsNode>[
-            ErrorSummary('RenderTablePane was given infinite width constraints with '
-                'relative-width columns'),
-            ErrorDescription(
-                'Relative-width TablePaneColumn instances will fill the remaining width when a '
-                'TablePane is laid out. If there is infinite width remaining, they have no '
-                'way of knowing what width to be.'),
-            ErrorSpacer(),
-            DiagnosticsProperty<Object>(
-              'The $runtimeType that contained a default-width column was created by',
-              debugCreator,
-              style: DiagnosticsTreeStyle.errorProperty,
-            ),
-          ]);
-        }
-        return true;
-      }());
+    void growRelativeColumnsToMeetMinimumTotalWidth(double minimumWidth) {
+      final double remainingWidth = minimumWidth - totalWidth;
+      assert(remainingWidth >= 0);
       for (int j = 0; j < columns.length; j++) {
-        if (columnWidths[j] < 0) {
-          if (remainingWidth > 0) {
-            final double relativeWeight = -columnWidths[j];
+        final TablePaneColumnWidth columnWidthSpec = columns[j].width;
+        if (columnWidthSpec.isRelative) {
+          final double relativeWeight = columnWidthSpec.width;
+          final double weightPercentage = relativeWeight / totalRelativeWeight;
+          assert(weightPercentage > 0 && weightPercentage <= 1);
+          final double addWidth = remainingWidth * weightPercentage;
+          columnWidths[j] += addWidth;
+          totalWidth += addWidth;
+        }
+      }
+    }
+
+    if (widthConstraints.isSatisfiedBy(totalWidth)) {
+      if (horizontalRelativeSize == MainAxisSize.max &&
+          widthConstraints.isBounded &&
+          totalRelativeWeight > 0) {
+        // Grow the relative-width columns to fill the max width constraint.
+        growRelativeColumnsToMeetMinimumTotalWidth(widthConstraints.max);
+      }
+    } else if (widthConstraints < totalWidth) {
+      if (totalRelativeWeight > 0) {
+        // Shrink the relative-width columns to meet the max width constraints.
+        final double overflowWidth = totalWidth - widthConstraints.max;
+        assert(overflowWidth >= 0);
+        bool? excessiveOverflow;
+        for (int j = 0; j < columns.length; j++) {
+          final TablePaneColumnWidth columnWidthSpec = columns[j].width;
+          if (columnWidthSpec.isRelative) {
+            final double relativeWeight = columnWidthSpec.width;
             final double weightPercentage = relativeWeight / totalRelativeWeight;
-            columnWidths[j] = remainingWidth * weightPercentage;
-          } else {
-            columnWidths[j] = 0;
+            assert(weightPercentage > 0 && weightPercentage <= 1);
+            double subtractWidth = overflowWidth * weightPercentage;
+            final bool localOverflow = subtractWidth > columnWidths[j];
+            assert(excessiveOverflow == null || excessiveOverflow == localOverflow);
+            excessiveOverflow = (excessiveOverflow ?? false) || localOverflow;
+            if (excessiveOverflow) {
+              subtractWidth = columnWidths[j];
+            }
+            columnWidths[j] -= subtractWidth;
+            totalWidth -= subtractWidth;
           }
         }
+        assert(excessiveOverflow == (widthConstraints < totalWidth));
+        if (excessiveOverflow!) {
+          // TODO: handle overflow
+        }
+      } else {
+        // TODO: handle overflow
+      }
+    } else if (widthConstraints > totalWidth) {
+      if (totalRelativeWeight > 0) {
+        // Grow the relative-width columns to meet the min width constraints.
+        growRelativeColumnsToMeetMinimumTotalWidth(widthConstraints.min);
       }
     }
 
@@ -1343,12 +1213,46 @@ class RenderTablePane extends RenderBox
     return _computeHeight(_computeIntrinsicRowHeights(width, computeIntrinsicCellHeight));
   }
 
+  double _computeIntrinsicChildHeight(RenderBox child, double width) {
+    switch (verticalIntrinsicSize) {
+      case MainAxisSize.min:
+        return child.getMinIntrinsicHeight(width);
+      case MainAxisSize.max:
+        return child.getMaxIntrinsicHeight(width);
+    }
+  }
+
+  double _computeMinIntrinsicChildHeight(RenderBox child, double width) {
+    return child.getMinIntrinsicHeight(width);
+  }
+
+  double _computeMaxIntrinsicChildHeight(RenderBox child, double width) {
+    return child.getMaxIntrinsicHeight(width);
+  }
+
   double _computeWidth(List<double> columnWidths) {
     return columnWidths.fold<double>(0, _sum) + math.max(columns.length - 1, 0) * horizontalSpacing;
   }
 
   double _computeIntrinsicWidth(double height, _IntrinsicComputer computeIntrinsicCellWidth) {
-    return _computeWidth(_computeIntrinsicColumnWidths(height, computeIntrinsicCellWidth));
+    return _computeWidth(_computeIntrinsicColumnWidths(computeIntrinsicCellWidth));
+  }
+
+  double _computeIntrinsicChildWidth(RenderBox child, double height) {
+    switch (horizontalIntrinsicSize) {
+      case MainAxisSize.min:
+        return child.getMinIntrinsicWidth(height);
+      case MainAxisSize.max:
+        return child.getMaxIntrinsicWidth(height);
+    }
+  }
+
+  double _computeMinIntrinsicChildWidth(RenderBox child, double height) {
+    return child.getMinIntrinsicWidth(height);
+  }
+
+  double _computeMaxIntrinsicChildWidth(RenderBox child, double height) {
+    return child.getMaxIntrinsicWidth(height);
   }
 
   @protected
@@ -1368,64 +1272,28 @@ class RenderTablePane extends RenderBox
     markNeedsMetrics();
   }
 
-  @protected
-  double computeMinIntrinsicRowHeight(int rowIndex, List<double> columnWidths) {
-    return _computeIntrinsicRowHeight(rowIndex, columnWidths, (RenderBox child, double width) {
-      return child.getMinIntrinsicHeight(width);
-    });
-  }
-
-  @protected
-  double computeMaxIntrinsicRowHeight(int rowIndex, List<double> columnWidths) {
-    return _computeIntrinsicRowHeight(rowIndex, columnWidths, (RenderBox child, double width) {
-      return child.getMaxIntrinsicHeight(width);
-    });
-  }
-
-  @protected
-  double computeMinIntrinsicColumnWidth(int columnIndex) {
-    return _computeIntrinsicColumnWidth(columnIndex, (RenderBox child, double height) {
-      return child.getMinIntrinsicWidth(height);
-    });
-  }
-
-  @protected
-  double computeMaxIntrinsicColumnWidth(int columnIndex) {
-    return _computeIntrinsicColumnWidth(columnIndex, (RenderBox child, double height) {
-      return child.getMaxIntrinsicWidth(height);
-    });
-  }
-
   @override
   @protected
   double computeMinIntrinsicHeight(double width) {
-    return _computeIntrinsicHeight(width, (RenderBox child, double width) {
-      return child.getMinIntrinsicHeight(width);
-    });
+    return _computeIntrinsicHeight(width, _computeMinIntrinsicChildHeight);
   }
 
   @override
   @protected
   double computeMaxIntrinsicHeight(double width) {
-    return _computeIntrinsicHeight(width, (RenderBox child, double width) {
-      return child.getMaxIntrinsicHeight(width);
-    });
+    return _computeIntrinsicHeight(width, _computeMaxIntrinsicChildHeight);
   }
 
   @override
   @protected
   double computeMinIntrinsicWidth(double height) {
-    return _computeIntrinsicWidth(height, (RenderBox child, double height) {
-      return child.getMinIntrinsicWidth(height);
-    });
+    return _computeIntrinsicWidth(height, _computeMinIntrinsicChildWidth);
   }
 
   @override
   @protected
   double computeMaxIntrinsicWidth(double height) {
-    return _computeIntrinsicWidth(height, (RenderBox child, double height) {
-      return child.getMaxIntrinsicWidth(height);
-    });
+    return _computeIntrinsicWidth(height, _computeMaxIntrinsicChildWidth);
   }
 
   @override
@@ -1443,7 +1311,7 @@ class RenderTablePane extends RenderBox
   bool _needsMetrics = true;
   TablePaneMetrics? _metrics;
 
-  @protected
+  @visibleForTesting // otherwise @protected
   TablePaneMetrics get metrics => _metrics!;
 
   @protected
@@ -1511,6 +1379,7 @@ class RenderTablePane extends RenderBox
       final List<BoxConstraints> cellConstraints = <BoxConstraints>[];
       final List<Offset> cellPositions = <Offset>[];
       double childX = 0;
+      double expandedRowWidth = 0;
       double expandedRowHeight = 0;
       for (int j = 0; j < row.length && j < columns.length; j++) {
         final RenderBox child = row[j];
@@ -1535,15 +1404,15 @@ class RenderTablePane extends RenderBox
           cellConstraints.add(BoxConstraints.tightFor(width: childWidth, height: childHeight));
           cellPositions.add(Offset(childX, 0));
 
+          expandedRowWidth = math.max(expandedRowWidth, childX + childWidth);
           expandedRowHeight = math.max(expandedRowHeight, childHeight);
         }
 
         childX += (metrics.columnWidths[j] + horizontalSpacing);
       }
 
-      final double rowWidth = childX - horizontalSpacing;
       row.layout(TableRowConstraints.tightFor(
-        width: rowWidth,
+        width: expandedRowWidth,
         height: expandedRowHeight,
         cellConstraints: cellConstraints,
         cellPositions: cellPositions,
