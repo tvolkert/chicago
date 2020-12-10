@@ -99,23 +99,24 @@ class _SpinnerState extends State<Spinner> {
   void _updateContentWidth() {
     if (!widget.sizeToContent) {
       _contentWidth = null;
+    } else {
+      final TextDirection textDirection = Directionality.of(context);
+      final TextStyle style = DefaultTextStyle.of(context).style;
+      const WidgetSurveyor surveyor = WidgetSurveyor();
+      double maxWidth = 0;
+      for (int i = 0; i < widget.length; i++) {
+        Widget item = Directionality(
+          textDirection: textDirection,
+          child: DefaultTextStyle(
+            style: style,
+            child: widget.itemBuilder(context, i),
+          ),
+        );
+        final Size itemSize = surveyor.measureWidget(item);
+        maxWidth = math.max(maxWidth, itemSize.width);
+      }
+      _contentWidth = maxWidth;
     }
-    final TextDirection textDirection = Directionality.of(context);
-    final TextStyle style = DefaultTextStyle.of(context).style;
-    const WidgetSurveyor surveyor = WidgetSurveyor();
-    double maxWidth = 0;
-    for (int i = 0; i < widget.length; i++) {
-      Widget item = Directionality(
-        textDirection: textDirection,
-        child: DefaultTextStyle(
-          style: style,
-          child: widget.itemBuilder(context, i),
-        ),
-      );
-      final Size itemSize = surveyor.measureWidget(item);
-      maxWidth = math.max(maxWidth, itemSize.width);
-    }
-    _contentWidth = maxWidth;
   }
 
   @override
