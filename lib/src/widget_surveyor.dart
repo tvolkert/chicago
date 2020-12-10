@@ -88,25 +88,59 @@ class WidgetSurveyor {
     BoxConstraints constraints, {
     TextBaseline? baselineToCalculate,
   }) {
-    PipelineOwner pipelineOwner = PipelineOwner(
-      onNeedVisualUpdate: () {},
-      onSemanticsOwnerCreated: () {},
-      onSemanticsOwnerDisposed: () {},
+    final PipelineOwner pipelineOwner = PipelineOwner(
+      onNeedVisualUpdate: () {
+        assert(() {
+          throw FlutterError.fromParts(<DiagnosticsNode>[
+            ErrorSummary('Visual update was requested during survey.'),
+            ErrorDescription('WidgetSurveyor does not support a render object '
+                'calling markNeedsLayout(), markNeedsPaint(), or '
+                'markNeedsSemanticUpdate() while the widget is being surveyed.'),
+          ]);
+        }());
+      },
     );
-    pipelineOwner.rootNode = _MeasurementView();
-    BuildOwner buildOwner = BuildOwner(onBuildScheduled: () {});
-    RenderObjectToWidgetAdapter<RenderBox>(
-      container: pipelineOwner.rootNode as RenderObjectWithChildMixin<RenderBox>,
+    final _MeasurementView rootView = pipelineOwner.rootNode = _MeasurementView();
+    final BuildOwner buildOwner = _SurveyorBuildOwner();
+    final RenderObjectToWidgetAdapter<RenderBox> adapter = RenderObjectToWidgetAdapter<RenderBox>(
+      container: rootView,
       debugShortDescription: '[root]',
       child: widget,
-    ).attachToRenderTree(buildOwner);
-    _MeasurementView rootView = pipelineOwner.rootNode as _MeasurementView;
-    rootView.baselineToCalculate = baselineToCalculate;
-    rootView.scheduleInitialLayout();
-    rootView.childConstraints = constraints;
-    pipelineOwner.flushLayout();
-    assert(rootView.child != null);
-    return rootView;
+    );
+    final RenderObjectToWidgetElement element = adapter.createElement()..assignOwner(buildOwner);
+    buildOwner.buildScope(element, () {
+      element.mount(null /* parent */, null /* newSlot */);
+    });
+    try {
+      rootView.baselineToCalculate = baselineToCalculate;
+      rootView.childConstraints = constraints;
+      rootView.scheduleInitialLayout();
+      pipelineOwner.flushLayout();
+      assert(rootView.child != null);
+      return rootView;
+    } finally {
+      // Failing to clean up and un-mount the element will lead to leaking
+      // global keys, which are referenced statically.
+      pipelineOwner.rootNode = null;
+      element.deactivate();
+      element.unmount();
+    }
+  }
+}
+
+class _SurveyorBuildOwner extends BuildOwner {
+  _SurveyorBuildOwner() : super(focusManager: _FailingFocusManager());
+}
+
+class _FailingFocusManager implements FocusManager {
+  @override
+  dynamic noSuchMethod(Invocation invocation) {
+    return super.noSuchMethod(invocation);
+  }
+
+  @override
+  String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
+    return '_FakeFocusManager';
   }
 }
 
