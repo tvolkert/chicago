@@ -137,11 +137,23 @@ class LinearConstraints extends Constraints {
     }
   }
 
+  bool isSatisfiedBy(double value) => (min <= value) && (value <= max);
+
+  bool get isBounded => max < double.infinity;
+
   @override
   bool get isNormalized => min >= 0 && min <= max;
 
   @override
   bool get isTight => min >= max;
+
+  bool operator <(double value) => min < value && max < value;
+
+  bool operator <=(double value) => min <= value && max <= value;
+
+  bool operator >(double value) => min > value && max > value;
+
+  bool operator >=(double value) => min >= value && max >= value;
 }
 
 class MessageType {
