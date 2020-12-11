@@ -546,19 +546,13 @@ class _RenderSpinner extends RenderBox {
   /// width, plus the border.
   @override
   double computeMaxIntrinsicWidth(double height) {
-    // Border thickness
-    double width = 2;
-
-    double buttonHeight = (height < 0 ? -1 : height / 2);
-    width += math.max(upButton!.getMaxIntrinsicWidth(buttonHeight),
-        downButton!.getMaxIntrinsicWidth(buttonHeight));
-
-    if (height >= 0) {
-      // Subtract border thickness from height constraint.
-      height = math.max(height - 2, 0);
-    }
-
-    width += content!.getMaxIntrinsicWidth(height);
+    // Border thickness (left, right, and in between the content & the buttons)
+    double width = 3;
+    final double buttonHeightConstraint = (height - 3) / 2;
+    width += math.max(upButton!.getMaxIntrinsicWidth(buttonHeightConstraint),
+        downButton!.getMaxIntrinsicWidth(buttonHeightConstraint));
+    final double contentHeightConstraint = math.max(height - 2, 0);
+    width += content!.getMaxIntrinsicWidth(contentHeightConstraint);
     return width;
   }
 
@@ -574,7 +568,7 @@ class _RenderSpinner extends RenderBox {
     final double downButtonHeight = downButton!.getMaxIntrinsicHeight(double.infinity);
     final double height = math.max(upButtonHeight, downButtonHeight) * 2;
 
-    if (width >= 0) {
+    if (width.isFinite) {
       // Subtract the button and border width from width constraint.
       double buttonWidth = math.max(upButton!.getMaxIntrinsicWidth(double.infinity),
           downButton!.getMaxIntrinsicWidth(double.infinity));
