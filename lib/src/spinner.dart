@@ -175,6 +175,11 @@ class _SpinnerState extends State<Spinner> {
       );
     }
 
+    content = ColoredBox(
+      color: const Color(0xffffffff),
+      child: content,
+    );
+
     return _RawSpinner(
       content: content,
       upButton: _SpinnerButton(
