@@ -13,10 +13,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import 'package:flutter/widgets.dart' hide TableCell, TableRow;
+import 'package:flutter/widgets.dart' hide Border, TableCell, TableRow;
+import 'package:flutter/widgets.dart' as flutter show Border;
 import 'package:intl/intl.dart';
 
+import 'border.dart';
 import 'foundation.dart';
+import 'hover_builder.dart';
 import 'spinner.dart';
 import 'table_pane.dart';
 
@@ -27,6 +30,11 @@ class CalendarDate implements Comparable<CalendarDate> {
     this.month,
     this.day,
   );
+
+  CalendarDate.fromDateTime(DateTime date)
+      : year = date.year,
+        month = date.month - 1,
+        day = date.day - 1;
 
   final int year;
   final int month;
@@ -69,6 +77,10 @@ class CalendarDate implements Comparable<CalendarDate> {
     }
     return daysInMonth;
   }
+
+  bool isBefore(CalendarDate other) => compareTo(other) < 0;
+
+  bool isAfter(CalendarDate other) => compareTo(other) > 0;
 
   DateTime toDateTime() {
     return DateTime(year, month + 1, day + 1);
@@ -140,13 +152,15 @@ class _CalendarState extends State<Calendar> {
   static final DateTime _monday = DateTime(2020, 12, 7);
 
   void _updateCalendarRows() {
+    final CalendarDate today = CalendarDate.fromDateTime(DateTime.now());
     final int year = _yearController.selectedIndex + CalendarDate._gregorianCutoverYear;
     final int month = _monthController.selectedIndex;
     CalendarDate date = CalendarDate(year, month, 0);
     final int daysInMonth = date.daysInMonth;
     final int firstDayOfMonthOffset = (firstDayOfWeek + 1 + date.weekday) % 7;
     final int lastDayOfMonthOffset = (firstDayOfMonthOffset - 1 + daysInMonth) % 7;
-    List<Widget> cells = List<Widget>.filled(firstDayOfMonthOffset, const EmptyTableCell(), growable: true);
+    List<Widget> cells =
+        List<Widget>.filled(firstDayOfMonthOffset, const EmptyTableCell(), growable: true);
     final List<TableRow> rows = <TableRow>[TableRow(children: cells)];
     for (int i = 0; i < daysInMonth; i++) {
       final int rowIndex = (i + firstDayOfMonthOffset) ~/ 7;
@@ -154,10 +168,11 @@ class _CalendarState extends State<Calendar> {
         cells = <Widget>[];
         rows.add(TableRow(children: cells));
       }
-      cells.add(Padding(
-        padding: EdgeInsets.all(4),
-        child: Text('${date.day + 1}', textAlign: TextAlign.center),
-      ));
+      bool isEnabled = true;
+      if (widget.disabledDateFilter != null) {
+        isEnabled = !widget.disabledDateFilter!(date);
+      }
+      cells.add(_DateButton(date, isEnabled: isEnabled, isHighlighted: date == today));
       date++;
     }
     for (int i = lastDayOfMonthOffset + 1; i < 7; i++) {
@@ -242,52 +257,105 @@ class _CalendarState extends State<Calendar> {
 
   @override
   Widget build(BuildContext context) {
-    return TablePane(
-      horizontalRelativeSize: MainAxisSize.max,
-      columns: List<TablePaneColumn>.filled(7, const TablePaneColumn()),
-      children: <Widget>[
-        TableRow(
-          backgroundColor: const Color(0xffdddcd5),
-          children: [
-            TableCell(
-              columnSpan: 7,
-              child: Padding(
-                padding: EdgeInsets.all(3),
-                child: Row(
-                  mainAxisSize: MainAxisSize.max,
-                  children: <Widget>[
-                    Expanded(
-                      child: Spinner(
-                        length: 12,
-                        isCircular: true,
-                        sizeToContent: true,
-                        itemBuilder: buildMonth,
-                        controller: _monthController,
+    return Border(
+      borderColor: const Color(0xff999999),
+      backgroundColor: const Color(0xffffffff),
+      child: TablePane(
+        horizontalRelativeSize: MainAxisSize.max,
+        columns: List<TablePaneColumn>.filled(7, const TablePaneColumn()),
+        children: <Widget>[
+          TableRow(
+            backgroundColor: const Color(0xffdddcd5),
+            children: [
+              TableCell(
+                columnSpan: 7,
+                child: Padding(
+                  padding: EdgeInsets.all(3),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.max,
+                    children: <Widget>[
+                      Expanded(
+                        child: Spinner(
+                          length: 12,
+                          isCircular: true,
+                          sizeToContent: true,
+                          itemBuilder: buildMonth,
+                          controller: _monthController,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 4),
-                    Spinner(
-                      length: 9999 - CalendarDate._gregorianCutoverYear + 1,
-                      itemBuilder: buildYear,
-                      controller: _yearController,
-                    ),
-                  ],
+                      const SizedBox(width: 4),
+                      Spinner(
+                        length: 9999 - CalendarDate._gregorianCutoverYear + 1,
+                        itemBuilder: buildYear,
+                        controller: _yearController,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            const EmptyTableCell(),
-            const EmptyTableCell(),
-            const EmptyTableCell(),
-            const EmptyTableCell(),
-            const EmptyTableCell(),
-            const EmptyTableCell(),
-          ],
-        ),
-        TableRow(
-          children: List<Widget>.generate(7, (int index) => buildDayOfWeekHeader(context, index)),
-        ),
-        ..._calendarRows,
-      ],
+              const EmptyTableCell(),
+              const EmptyTableCell(),
+              const EmptyTableCell(),
+              const EmptyTableCell(),
+              const EmptyTableCell(),
+              const EmptyTableCell(),
+            ],
+          ),
+          TableRow(
+            children: List<Widget>.generate(7, (int index) => buildDayOfWeekHeader(context, index)),
+          ),
+          ..._calendarRows,
+        ],
+      ),
     );
+  }
+}
+
+class _DateButton extends StatelessWidget {
+  const _DateButton(
+    this.date, {
+    this.isEnabled = true,
+    this.isHighlighted = false,
+  });
+
+  final CalendarDate date;
+  final bool isEnabled;
+  final bool isHighlighted;
+
+  Widget _buildFoo(BuildContext context, {TextStyle? style}) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(4, 4, 4, 5),
+      child: Text('${date.day + 1}', style: style, textAlign: TextAlign.center),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (isEnabled) {
+      return HoverBuilder(
+        builder: (BuildContext context, bool hover) {
+          Widget result = _buildFoo(context);
+          if (hover) {
+            result = ColoredBox(
+              color: const Color(0xffdddcdb),
+              child: result,
+            );
+          }
+          if (isHighlighted) {
+            result = DecoratedBox(
+              decoration: BoxDecoration(border: flutter.Border.all(color: const Color(0xffc4c3bc))),
+              position: DecorationPosition.foreground,
+              child: result,
+            );
+          }
+          return result;
+        },
+      );
+    } else {
+      return _buildFoo(
+        context,
+        style: DefaultTextStyle.of(context).style.copyWith(color: const Color(0xff999999)),
+      );
+    }
   }
 }
