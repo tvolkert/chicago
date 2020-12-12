@@ -384,22 +384,29 @@ class TableRow extends MultiChildRenderObjectWidget {
   TableRow({
     Key? key,
     this.height = const IntrinsicTablePaneRowHeight(),
+    this.backgroundColor,
     required List<Widget> children,
   }) : super(key: key, children: children);
 
   final TablePaneRowHeight height;
+  final Color? backgroundColor;
 
   @override
   List<Widget> get children => super.children;
 
   @override
   RenderObject createRenderObject(BuildContext context) {
-    return RenderTableRow(height: height);
+    return RenderTableRow(
+      height: height,
+      backgroundColor: backgroundColor,
+    );
   }
 
   @override
   void updateRenderObject(BuildContext context, RenderTableRow renderObject) {
-    renderObject..height = height;
+    renderObject
+      ..height = height
+      ..backgroundColor = backgroundColor;
   }
 }
 
@@ -534,8 +541,12 @@ class RenderTableRow extends RenderBox
         ContainerRenderObjectMixin<RenderBox, TableCellParentData>,
         RenderBoxContainerDefaultsMixin<RenderBox, TableCellParentData>,
         ChildListRenderObjectMixin<RenderBox, TableCellParentData> {
-  RenderTableRow({required TablePaneRowHeight height}) {
+  RenderTableRow({
+    required TablePaneRowHeight height,
+    Color? backgroundColor,
+  }) {
     this.height = height;
+    this.backgroundColor = backgroundColor;
   }
 
   TablePaneRowHeight _height = const IntrinsicTablePaneRowHeight();
@@ -547,6 +558,15 @@ class RenderTableRow extends RenderBox
       if (parent != null) {
         parent!.markNeedsMetrics();
       }
+    }
+  }
+
+  Color? _backgroundColor;
+  Color? get backgroundColor => _backgroundColor;
+  set backgroundColor(Color? value) {
+    if (value != _backgroundColor) {
+      _backgroundColor = value;
+      markNeedsPaint();
     }
   }
 
@@ -602,6 +622,10 @@ class RenderTableRow extends RenderBox
 
   @override
   void paint(PaintingContext context, Offset offset) {
+    if (backgroundColor != null) {
+     final Paint paint = Paint()..style = PaintingStyle.fill..color = backgroundColor!;
+     context.canvas.drawRect(offset & size, paint);
+    }
     defaultPaint(context, offset);
   }
 
@@ -1341,11 +1365,15 @@ class RenderTablePane extends RenderBox
       if (rows.isNotEmpty) {
         final int cellsPerRow = rows.first.children.length;
         if (rows.any((RenderTableRow row) => row.children.length != cellsPerRow)) {
+          final Iterable<int> rowLengths = rows.map<int>((RenderTableRow row) {
+            return row.length;
+          });
           throw FlutterError.fromParts(<DiagnosticsNode>[
             ErrorSummary('RenderTablePane contains irregular row lengths.'),
             ErrorDescription('Every TableRow in a TablePane must have the same number of '
                 'children, so that every table cell is filled. Otherwise, the table will '
                 'contain holes.'),
+            ErrorDescription('The counts of cells per row in this TablePane were: $rowLengths'),
             ErrorSpacer(),
             DiagnosticsProperty<Object>(
                 'The RenderTablePane in question was created by', debugCreator,
