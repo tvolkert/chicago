@@ -283,7 +283,7 @@ class _SpinnerButtonState extends State<_SpinnerButton> {
       child: HoverBuilder(
         builder: (BuildContext context, bool hover) {
           return CustomPaint(
-            size: const Size(11, 7),
+            size: const Size.fromWidth(11),
             painter: _SpinnerButtonPainter(
               direction: widget.direction,
               isHover: hover,
