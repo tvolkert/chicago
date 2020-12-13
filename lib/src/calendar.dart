@@ -87,18 +87,50 @@ class CalendarDate implements Comparable<CalendarDate> {
   }
 
   CalendarDate operator +(int days) {
-    int year = this.year;
-    int month = this.month;
-    int day = this.day + 1;
-    if (day >= daysInMonth) {
-      day = 0;
-      month++;
-      if (month > 11) {
-        month = 0;
-        year++;
+    if (days == 0) {
+      return this;
+    } else if (days < 0) {
+      return this - (-days);
+    } else {
+      // TODO: handle adding more days than are in a month, such that month will increase more than 1
+      int year = this.year;
+      int month = this.month;
+      int day = this.day + days;
+      if (day >= daysInMonth) {
+        day = day - daysInMonth;
+        month++;
+        if (month > 11) {
+          month = 0;
+          year++;
+        }
       }
+      return CalendarDate(year, month, day);
     }
-    return CalendarDate(year, month, day);
+  }
+
+  CalendarDate operator -(int days) {
+    if (days == 0) {
+      return this;
+    } else if (days < 0) {
+      return this + (-days);
+    } else {
+      // TODO: handle subtracting more days than are in a month, such that month will decrease more than 1
+      int year = this.year;
+      int month = this.month;
+      int day = this.day - days;
+      if (day < 0) {
+        month--;
+        if (month < 0) {
+          month = 11;
+          year--;
+        }
+        day = _monthLengths[month] + day;
+        if (isLeapYear && month == 1) {
+          day++;
+        }
+      }
+      return CalendarDate(year, month, day);
+    }
   }
 
   @override
@@ -152,35 +184,29 @@ class _CalendarState extends State<Calendar> {
   static final DateTime _monday = DateTime(2020, 12, 7);
 
   void _updateCalendarRows() {
-    final CalendarDate today = CalendarDate.fromDateTime(DateTime.now());
     final int year = _yearController.selectedIndex + CalendarDate._gregorianCutoverYear;
     final int month = _monthController.selectedIndex;
-    CalendarDate date = CalendarDate(year, month, 0);
-    final int daysInMonth = date.daysInMonth;
-    final int firstDayOfMonthOffset = (firstDayOfWeek + 1 + date.weekday) % 7;
+    final CalendarDate today = CalendarDate.fromDateTime(DateTime.now());
+    final CalendarDate startOfMonth = CalendarDate(year, month, 0);
+    final int daysInMonth = startOfMonth.daysInMonth;
+    final int firstDayOfMonthOffset = (firstDayOfWeek + 1 + startOfMonth.weekday) % 7;
     final int lastDayOfMonthOffset = (firstDayOfMonthOffset - 1 + daysInMonth) % 7;
-    List<Widget> cells =
-        List<Widget>.filled(firstDayOfMonthOffset, const EmptyTableCell(), growable: true);
-    final List<TableRow> rows = <TableRow>[TableRow(children: cells)];
-    for (int i = 0; i < daysInMonth; i++) {
-      final int rowIndex = (i + firstDayOfMonthOffset) ~/ 7;
-      if (rowIndex >= rows.length) {
-        cells = <Widget>[];
-        rows.add(TableRow(children: cells));
-      }
-      bool isEnabled = true;
-      if (widget.disabledDateFilter != null) {
-        isEnabled = !widget.disabledDateFilter!(date);
-      }
-      cells.add(_DateButton(date, isEnabled: isEnabled, isHighlighted: date == today));
-      date++;
-    }
-    for (int i = lastDayOfMonthOffset + 1; i < 7; i++) {
-      cells.add(const EmptyTableCell());
-    }
+    final int totalDaysShown = daysInMonth + firstDayOfMonthOffset + (6 - lastDayOfMonthOffset);
+    assert(totalDaysShown % 7 == 0);
+    final int numRows = totalDaysShown ~/ 7;
 
     setState(() {
-      _calendarRows = rows;
+      _calendarRows = List<TableRow>.generate(numRows, (int rowIndex) {
+        return TableRow(children: List<Widget>.generate(7, (int columnIndex) {
+          final int offset = rowIndex * 7 + columnIndex - firstDayOfMonthOffset;
+          final CalendarDate date = startOfMonth + offset;
+          bool isEnabled = date.month == month;
+          if (widget.disabledDateFilter != null) {
+            isEnabled &= !widget.disabledDateFilter!(date);
+          }
+          return _DateButton(date, isEnabled: isEnabled, isHighlighted: date == today);
+        }));
+      });
     });
   }
 
