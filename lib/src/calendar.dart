@@ -176,6 +176,7 @@ class Calendar extends StatefulWidget {
 class _CalendarState extends State<Calendar> {
   late SpinnerController _monthController;
   late SpinnerController _yearController;
+  late TablePaneMetricsController _metricsController;
   late List<TableRow> _calendarRows;
 
   static final DateFormat _fullMonth = DateFormat('MMMM');
@@ -234,7 +235,7 @@ class _CalendarState extends State<Calendar> {
     final int offset = firstDayOfWeek + index;
     final DateTime date = _monday.add(Duration(days: offset));
     return Padding(
-      padding: EdgeInsets.fromLTRB(2, 2, 2, 4),
+      padding: EdgeInsets.fromLTRB(2, 2, 2, 5),
       child: Text(
         _dayOfWeekShort.format(date)[0],
         textAlign: TextAlign.center,
@@ -252,6 +253,7 @@ class _CalendarState extends State<Calendar> {
     _yearController.selectedIndex = widget.initialYear - CalendarDate._gregorianCutoverYear;
     _monthController.addListener(_updateCalendarRows);
     _yearController.addListener(_updateCalendarRows);
+    _metricsController = TablePaneMetricsController();
     _updateCalendarRows();
   }
 
@@ -272,6 +274,7 @@ class _CalendarState extends State<Calendar> {
     _yearController.removeListener(_updateCalendarRows);
     _monthController.dispose();
     _yearController.dispose();
+    _metricsController.dispose();
     super.dispose();
   }
 
@@ -286,52 +289,56 @@ class _CalendarState extends State<Calendar> {
     return Border(
       borderColor: const Color(0xff999999),
       backgroundColor: const Color(0xffffffff),
-      child: TablePane(
-        horizontalRelativeSize: MainAxisSize.max,
-        columns: List<TablePaneColumn>.filled(7, const TablePaneColumn()),
-        children: <Widget>[
-          TableRow(
-            backgroundColor: const Color(0xffdddcd5),
-            children: [
-              TableCell(
-                columnSpan: 7,
-                child: Padding(
-                  padding: EdgeInsets.all(3),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.max,
-                    children: <Widget>[
-                      Expanded(
-                        child: Spinner(
-                          length: 12,
-                          isCircular: true,
-                          sizeToContent: true,
-                          itemBuilder: buildMonth,
-                          controller: _monthController,
+      child: CustomPaint(
+        foregroundPainter: _DividerCustomPainter(_metricsController),
+        child: TablePane(
+          horizontalRelativeSize: MainAxisSize.max,
+          metricsController: _metricsController,
+          columns: List<TablePaneColumn>.filled(7, const TablePaneColumn()),
+          children: <Widget>[
+            TableRow(
+              backgroundColor: const Color(0xffdddcd5),
+              children: [
+                TableCell(
+                  columnSpan: 7,
+                  child: Padding(
+                    padding: EdgeInsets.all(3),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.max,
+                      children: <Widget>[
+                        Expanded(
+                          child: Spinner(
+                            length: 12,
+                            isCircular: true,
+                            sizeToContent: true,
+                            itemBuilder: buildMonth,
+                            controller: _monthController,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 4),
-                      Spinner(
-                        length: 9999 - CalendarDate._gregorianCutoverYear + 1,
-                        itemBuilder: buildYear,
-                        controller: _yearController,
-                      ),
-                    ],
+                        const SizedBox(width: 4),
+                        Spinner(
+                          length: 9999 - CalendarDate._gregorianCutoverYear + 1,
+                          itemBuilder: buildYear,
+                          controller: _yearController,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              const EmptyTableCell(),
-              const EmptyTableCell(),
-              const EmptyTableCell(),
-              const EmptyTableCell(),
-              const EmptyTableCell(),
-              const EmptyTableCell(),
-            ],
-          ),
-          TableRow(
-            children: List<Widget>.generate(7, (int index) => buildDayOfWeekHeader(context, index)),
-          ),
-          ..._calendarRows,
-        ],
+                const EmptyTableCell(),
+                const EmptyTableCell(),
+                const EmptyTableCell(),
+                const EmptyTableCell(),
+                const EmptyTableCell(),
+                const EmptyTableCell(),
+              ],
+            ),
+            TableRow(
+              children: List<Widget>.generate(7, (int index) => buildDayOfWeekHeader(context, index)),
+            ),
+            ..._calendarRows,
+          ],
+        ),
       ),
     );
   }
@@ -348,7 +355,7 @@ class _DateButton extends StatelessWidget {
   final bool isEnabled;
   final bool isHighlighted;
 
-  Widget _buildFoo(BuildContext context, {TextStyle? style}) {
+  Widget _buildContent(BuildContext context, {TextStyle? style}) {
     return Padding(
       padding: EdgeInsets.fromLTRB(4, 4, 4, 5),
       child: Text('${date.day + 1}', style: style, textAlign: TextAlign.center),
@@ -360,13 +367,10 @@ class _DateButton extends StatelessWidget {
     if (isEnabled) {
       return HoverBuilder(
         builder: (BuildContext context, bool hover) {
-          Widget result = _buildFoo(context);
-          if (hover) {
-            result = ColoredBox(
-              color: const Color(0xffdddcdb),
-              child: result,
-            );
-          }
+          Widget result = ColoredBox(
+            color: hover ? const Color(0xffdddcdb) : const Color(0x0),
+            child: _buildContent(context),
+          );
           if (isHighlighted) {
             result = DecoratedBox(
               decoration: BoxDecoration(border: flutter.Border.all(color: const Color(0xffc4c3bc))),
@@ -378,10 +382,33 @@ class _DateButton extends StatelessWidget {
         },
       );
     } else {
-      return _buildFoo(
+      return _buildContent(
         context,
         style: DefaultTextStyle.of(context).style.copyWith(color: const Color(0xff999999)),
       );
     }
+  }
+}
+
+class _DividerCustomPainter extends CustomPainter {
+  const _DividerCustomPainter(this.metricsController);
+
+  final TablePaneMetricsController metricsController;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    assert(metricsController.hasMetrics);
+    final Paint paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..color = const Color(0xffc4c3bc);
+    final Rect rowBounds = metricsController.getRowBounds(1)!;
+    final double y = rowBounds.bottom - 1.5;
+    canvas.drawLine(Offset(2.5, y), Offset(size.width - 2.5, y), paint);
+  }
+
+  @override
+  bool shouldRepaint(_DividerCustomPainter oldDelegate) {
+    return false;
   }
 }
