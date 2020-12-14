@@ -146,7 +146,7 @@ class _SpinnerState extends State<Spinner> {
       }
       if (oldWidget.controller == null) {
         assert(widget.controller != null);
-        assert(_controller == null);
+        assert(_controller != null);
         _controller!.dispose();
         _controller = null;
       }
