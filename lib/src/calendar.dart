@@ -16,6 +16,7 @@
 import 'package:flutter/widgets.dart' hide Border, TableCell, TableRow;
 import 'package:flutter/widgets.dart' as flutter show Border;
 import 'package:intl/intl.dart';
+import 'colors.dart';
 
 import 'border.dart';
 import 'foundation.dart';
@@ -153,6 +154,13 @@ class CalendarDate implements Comparable<CalendarDate> {
     }
     return result;
   }
+
+  @override
+  String toString() => '$year-${month + 1}-${day + 1}';
+}
+
+class CalendarSelectionController extends ValueNotifier<CalendarDate?> {
+  CalendarSelectionController([CalendarDate? value]) : super(value);
 }
 
 class Calendar extends StatefulWidget {
@@ -160,14 +168,16 @@ class Calendar extends StatefulWidget {
     Key? key,
     required this.initialYear,
     required this.initialMonth,
-    this.initialSelectedDate,
+    this.selectionController,
     this.disabledDateFilter,
+    this.onDateChanged,
   }) : super(key: key);
 
   final int initialYear;
   final int initialMonth;
-  final CalendarDate? initialSelectedDate;
+  final CalendarSelectionController? selectionController;
   final Predicate<CalendarDate>? disabledDateFilter;
+  final ValueChanged<CalendarDate?>? onDateChanged;
 
   @override
   _CalendarState createState() => _CalendarState();
@@ -178,11 +188,16 @@ class _CalendarState extends State<Calendar> {
   late SpinnerController _yearController;
   late TablePaneMetricsController _metricsController;
   late List<TableRow> _calendarRows;
+  CalendarSelectionController? _selectionController;
 
   static final DateFormat _fullMonth = DateFormat('MMMM');
   static final DateFormat _dayOfWeekShort = DateFormat('E');
   static final int firstDayOfWeek = _dayOfWeekShort.dateSymbols.FIRSTDAYOFWEEK;
   static final DateTime _monday = DateTime(2020, 12, 7);
+
+  CalendarSelectionController get selectionController {
+    return widget.selectionController ?? _selectionController!;
+  }
 
   void _updateCalendarRows() {
     final int year = _yearController.selectedIndex + CalendarDate._gregorianCutoverYear;
@@ -205,10 +220,27 @@ class _CalendarState extends State<Calendar> {
           if (widget.disabledDateFilter != null) {
             isEnabled &= !widget.disabledDateFilter!(date);
           }
-          return _DateButton(date, isEnabled: isEnabled, isHighlighted: date == today);
+          return _DateButton(
+            date,
+            isEnabled: isEnabled,
+            isHighlighted: date == today,
+            isSelected: date == selectionController.value,
+            onTap: () => _handleTapOnDate(date),
+          );
         }));
       });
     });
+  }
+
+  void _handleTapOnDate(CalendarDate date) {
+    selectionController.value = date;
+  }
+
+  void _handleSelectedDateChanged() {
+    if (widget.onDateChanged != null) {
+      widget.onDateChanged!(selectionController.value);
+    }
+    _updateCalendarRows();
   }
 
   static Widget buildMonth(BuildContext context, int index) {
@@ -254,6 +286,10 @@ class _CalendarState extends State<Calendar> {
     _monthController.addListener(_updateCalendarRows);
     _yearController.addListener(_updateCalendarRows);
     _metricsController = TablePaneMetricsController();
+    if (widget.selectionController == null) {
+      _selectionController = CalendarSelectionController();
+    }
+    selectionController.addListener(_handleSelectedDateChanged);
     _updateCalendarRows();
   }
 
@@ -266,15 +302,37 @@ class _CalendarState extends State<Calendar> {
     if (widget.initialYear != oldWidget.initialYear) {
       _yearController.selectedIndex = widget.initialYear - CalendarDate._gregorianCutoverYear;
     }
+    if (oldWidget.selectionController != widget.selectionController) {
+      final CalendarSelectionController oldSelectionController =
+          oldWidget.selectionController ?? _selectionController!;
+      oldSelectionController.removeListener(_handleSelectedDateChanged);
+      if (widget.selectionController == null) {
+        assert(oldWidget.selectionController != null);
+        assert(_selectionController == null);
+        _selectionController = CalendarSelectionController(oldWidget.selectionController!.value);
+      }
+      if (oldWidget.selectionController == null) {
+        assert(widget.selectionController != null);
+        assert(_selectionController != null);
+        _selectionController!.dispose();
+        _selectionController = null;
+      }
+      selectionController.addListener(_handleSelectedDateChanged);
+    }
   }
 
   @override
   void dispose() {
     _monthController.removeListener(_updateCalendarRows);
     _yearController.removeListener(_updateCalendarRows);
+    selectionController.removeListener(_handleSelectedDateChanged);
     _monthController.dispose();
     _yearController.dispose();
     _metricsController.dispose();
+    if (_selectionController != null) {
+      assert(widget.selectionController == null);
+      _selectionController!.dispose();
+    }
     super.dispose();
   }
 
@@ -349,13 +407,17 @@ class _DateButton extends StatelessWidget {
     this.date, {
     this.isEnabled = true,
     this.isHighlighted = false,
+    this.isSelected = false,
+    required this.onTap,
   });
 
   final CalendarDate date;
   final bool isEnabled;
   final bool isHighlighted;
+  final bool isSelected;
+  final VoidCallback onTap;
 
-  Widget _buildContent(BuildContext context, {TextStyle? style}) {
+  Widget _buildContent(BuildContext context, TextStyle style) {
     return Padding(
       padding: EdgeInsets.fromLTRB(4, 4, 4, 5),
       child: Text('${date.day + 1}', style: style, textAlign: TextAlign.center),
@@ -364,28 +426,51 @@ class _DateButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    TextStyle style = DefaultTextStyle.of(context).style;
     if (isEnabled) {
       return HoverBuilder(
         builder: (BuildContext context, bool hover) {
-          Widget result = ColoredBox(
-            color: hover ? const Color(0xffdddcdb) : const Color(0x0),
-            child: _buildContent(context),
-          );
-          if (isHighlighted) {
-            result = DecoratedBox(
-              decoration: BoxDecoration(border: flutter.Border.all(color: const Color(0xffc4c3bc))),
-              position: DecorationPosition.foreground,
-              child: result,
+          Color? color;
+          BoxBorder? border;
+          Gradient? gradient;
+          if (isSelected) {
+            gradient = LinearGradient(
+              begin: Alignment.bottomCenter,
+              end: Alignment.topCenter,
+              colors: <Color>[const Color(0xff14538b), brighten(const Color(0xff14538b))],
             );
+            style = style.copyWith(color: const Color(0xffffffff));
+          } else if (hover) {
+            color = const Color(0xffdddcdb);
           }
-          return result;
+          if (isHighlighted) {
+            border = flutter.Border.all(color: const Color(0xffc4c3bc));
+          }
+          return GestureDetector(
+            onTap: onTap,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: color,
+                border: border,
+                gradient: gradient,
+              ),
+              child: _buildContent(context, style),
+            ),
+          );
         },
       );
     } else {
-      return _buildContent(
+      Widget content = _buildContent(
         context,
-        style: DefaultTextStyle.of(context).style.copyWith(color: const Color(0xff999999)),
+        style.copyWith(color: const Color(0xff999999)),
       );
+      if (isSelected) {
+        content = ColoredBox(
+          color: const Color(0xffdddddd), // TODO: what's the canonical color here?
+          child: content,
+        );
+      }
+      return content;
     }
   }
 }
