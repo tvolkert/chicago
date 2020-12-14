@@ -1371,7 +1371,8 @@ class RenderTablePane extends RenderBox
   bool _needsMetrics = true;
   _TablePaneMetrics? _metrics;
 
-  @visibleForTesting // otherwise @protected
+  @protected
+  @visibleForTesting
   _TablePaneMetrics get metrics => _metrics!;
 
   @protected
