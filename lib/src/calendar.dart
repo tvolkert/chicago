@@ -15,7 +15,7 @@
 
 import 'package:flutter/widgets.dart' hide Border, TableCell, TableRow;
 import 'package:flutter/widgets.dart' as flutter show Border;
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' as intl;
 import 'colors.dart';
 
 import 'border.dart';
@@ -161,6 +161,25 @@ class CalendarDate implements Comparable<CalendarDate> {
   String toString() => '$year-${month + 1}-${day + 1}';
 }
 
+@immutable
+class CalendarDateFormat {
+  const CalendarDateFormat._(this._pattern);
+
+  final String _pattern;
+
+  static const CalendarDateFormat short = CalendarDateFormat._('M/d/yy');
+  static const CalendarDateFormat medium = CalendarDateFormat._('MMM d, yyyy');
+  static const CalendarDateFormat long = CalendarDateFormat._('MMMM d, yyyy');
+  static const CalendarDateFormat ios8601 = CalendarDateFormat._('yyyy-MM-dd');
+
+  static final Map<String, intl.DateFormat> _formats = <String, intl.DateFormat>{};
+
+  String format(CalendarDate date) {
+    final intl.DateFormat format = _formats.putIfAbsent(_pattern, () => intl.DateFormat(_pattern));
+    return format.format(date.toDateTime());
+  }
+}
+
 class CalendarSelectionController extends ValueNotifier<CalendarDate?> {
   CalendarSelectionController([CalendarDate? value]) : super(value);
 }
@@ -192,8 +211,8 @@ class _CalendarState extends State<Calendar> {
   late List<TableRow> _calendarRows;
   CalendarSelectionController? _selectionController;
 
-  static final DateFormat _fullMonth = DateFormat('MMMM');
-  static final DateFormat _dayOfWeekShort = DateFormat('E');
+  static final intl.DateFormat _fullMonth = intl.DateFormat('MMMM');
+  static final intl.DateFormat _dayOfWeekShort = intl.DateFormat('E');
   static final int firstDayOfWeek = _dayOfWeekShort.dateSymbols.FIRSTDAYOFWEEK;
   static final DateTime _monday = DateTime(2020, 12, 7);
 
@@ -355,7 +374,7 @@ class _CalendarState extends State<Calendar> {
       child: CustomPaint(
         foregroundPainter: _DividerCustomPainter(_metricsController),
         child: TablePane(
-          horizontalRelativeSize: MainAxisSize.max,
+          horizontalRelativeSize: MainAxisSize.min,
           metricsController: _metricsController,
           columns: List<TablePaneColumn>.filled(7, const TablePaneColumn()),
           children: <Widget>[
