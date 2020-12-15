@@ -37,6 +37,8 @@ class CalendarDate implements Comparable<CalendarDate> {
         month = date.month - 1,
         day = date.day - 1;
 
+  factory CalendarDate.today() => CalendarDate.fromDateTime(DateTime.now());
+
   final int year;
   final int month;
   final int day;
@@ -303,21 +305,24 @@ class _CalendarState extends State<Calendar> {
       _yearController.selectedIndex = widget.initialYear - CalendarDate._gregorianCutoverYear;
     }
     if (oldWidget.selectionController != widget.selectionController) {
-      final CalendarSelectionController oldSelectionController =
-          oldWidget.selectionController ?? _selectionController!;
-      oldSelectionController.removeListener(_handleSelectedDateChanged);
+      if (oldWidget.selectionController == null) {
+        assert(widget.selectionController != null);
+        assert(_selectionController != null);
+        _selectionController!.removeListener(_handleSelectedDateChanged);
+        _selectionController!.dispose();
+        _selectionController = null;
+      } else {
+        assert(_selectionController == null);
+        oldWidget.selectionController!.removeListener(_handleSelectedDateChanged);
+      }
       if (widget.selectionController == null) {
         assert(oldWidget.selectionController != null);
         assert(_selectionController == null);
         _selectionController = CalendarSelectionController(oldWidget.selectionController!.value);
+        _selectionController!.addListener(_handleSelectedDateChanged);
+      } else {
+        widget.selectionController!.addListener(_handleSelectedDateChanged);
       }
-      if (oldWidget.selectionController == null) {
-        assert(widget.selectionController != null);
-        assert(_selectionController != null);
-        _selectionController!.dispose();
-        _selectionController = null;
-      }
-      selectionController.addListener(_handleSelectedDateChanged);
     }
   }
 
