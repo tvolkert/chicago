@@ -691,11 +691,16 @@ class RenderBasicListView extends RenderSegment {
       return;
     }
 
+    final ListItemRange builtCells = this.builtCells();
     final ListItemSequence viewportItemSequence = _getIntersectingItems(_viewport!);
-    ListItemRange removeCells = builtCells().subtract(viewportItemSequence);
+    ListItemRange removeCells = builtCells.subtract(viewportItemSequence);
     ListItemRange buildCells;
 
     if (_needsBuild) {
+      removeCells = UnionListItemRange(<ListItemRange>[
+        removeCells,
+        builtCells.where((int index) => index >= length)
+      ]);
       buildCells = viewportItemSequence;
       _needsBuild = false;
       _dirtyItems = null;
@@ -719,7 +724,7 @@ class RenderBasicListView extends RenderSegment {
 
     invokeLayoutCallback<SegmentConstraints>((SegmentConstraints _) {
       _layoutCallback!(
-        visitChildrenToRemove: removeCells.where(_isInBounds).where(_isBuilt).visitItems,
+        visitChildrenToRemove: removeCells.where(_isBuilt).visitItems,
         visitChildrenToBuild: buildCells.where(_isInBounds).visitItems,
       );
     });
