@@ -175,13 +175,15 @@ class CalendarDateFormat {
   static const CalendarDateFormat short = CalendarDateFormat._('M/d/yy');
   static const CalendarDateFormat medium = CalendarDateFormat._('MMM d, yyyy');
   static const CalendarDateFormat long = CalendarDateFormat._('MMMM d, yyyy');
-  static const CalendarDateFormat ios8601 = CalendarDateFormat._('yyyy-MM-dd');
+  static const CalendarDateFormat iso8601 = CalendarDateFormat._('yyyy-MM-dd');
 
   static final Map<String, intl.DateFormat> _formats = <String, intl.DateFormat>{};
 
-  String format(CalendarDate date) {
+  String format(CalendarDate date) => formatDateTime(date.toDateTime());
+
+  String formatDateTime(DateTime date) {
     final intl.DateFormat format = _formats.putIfAbsent(_pattern, () => intl.DateFormat(_pattern));
-    return format.format(date.toDateTime());
+    return format.format(date);
   }
 }
 
