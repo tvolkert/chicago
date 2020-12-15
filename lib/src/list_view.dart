@@ -357,8 +357,9 @@ class RawListView extends RenderObjectWidget {
 
   @override
   void updateRenderObject(BuildContext context, RenderListView renderObject) {
-    super.updateRenderObject(context, renderObject);
     renderObject
+      ..itemHeight = itemHeight
+      ..length = length
       ..selectionController = selectionController
       ..itemDisabledController = itemDisabledController
       ..pointerEvents = pointerEvents
