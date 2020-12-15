@@ -154,6 +154,9 @@ class LinearConstraints extends Constraints {
   bool operator >(double value) => min > value && max > value;
 
   bool operator >=(double value) => min >= value && max >= value;
+
+  @override
+  String toString() => 'LinearConstraints($min <= x <= $max)';
 }
 
 class MessageType {
