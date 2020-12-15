@@ -34,7 +34,7 @@ class CalendarButton extends StatefulWidget {
   final CalendarDate? initialSelectedDate;
   final CalendarSelectionController? selectionController;
   final Predicate<CalendarDate>? disabledDateFilter;
-  final ValueChanged<CalendarDate?>? onDateChanged;
+  final ValueChanged<CalendarDate>? onDateChanged;
   final bool isEnabled;
 
   @override

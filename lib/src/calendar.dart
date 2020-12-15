@@ -157,6 +157,11 @@ class CalendarDate implements Comparable<CalendarDate> {
     return result;
   }
 
+  bool operator <(CalendarDate other) => compareTo(other) < 0;
+  bool operator <=(CalendarDate other) => compareTo(other) <= 0;
+  bool operator >(CalendarDate other) => compareTo(other) > 0;
+  bool operator >=(CalendarDate other) => compareTo(other) >= 0;
+
   @override
   String toString() => '$year-${month + 1}-${day + 1}';
 }
