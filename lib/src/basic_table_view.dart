@@ -954,11 +954,16 @@ mixin RenderTableViewMixin on RenderSegment {
       return;
     }
 
+    final TableCellRange builtCells = this.builtCells();
     final TableCellRect viewportCellRect = metrics.intersect(_viewport!);
-    TableCellRange removeCells = builtCells().subtract(viewportCellRect);
+    TableCellRange removeCells = builtCells.subtract(viewportCellRect);
     TableCellRange buildCells;
 
     if (_needsBuild) {
+      removeCells = UnionTableCellRange(<TableCellRange>[
+        removeCells,
+        builtCells.where((int rowIndex, int columnIndex) => rowIndex >= length)
+      ]);
       buildCells = viewportCellRect;
       _needsBuild = false;
       _dirtyCells = null;
@@ -983,7 +988,7 @@ mixin RenderTableViewMixin on RenderSegment {
     // TODO: lowering length causes stranded built cells - figure out why...
     invokeLayoutCallback<SegmentConstraints>((SegmentConstraints _) {
       _layoutCallback!(
-        visitChildrenToRemove: removeCells.where(_isInBounds).where(_isBuilt).visitCells,
+        visitChildrenToRemove: removeCells.where(_isBuilt).visitCells,
         visitChildrenToBuild: buildCells.where(_isInBounds).visitCells,
       );
     });
