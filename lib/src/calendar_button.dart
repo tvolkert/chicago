@@ -59,7 +59,19 @@ class _CalendarButtonState extends State<CalendarButton> {
 
   void _showPopup() {
     final RenderBox button = context.findRenderObject() as RenderBox;
-    final RenderBox overlay = Overlay.of(context)!.context.findRenderObject() as RenderBox;
+    final OverlayState? overlayState = Overlay.of(context);
+    assert(() {
+      if (overlayState == null) {
+        throw FlutterError.fromParts(<DiagnosticsNode>[
+          ErrorSummary('No overlay found in widget ancestry.'),
+          ErrorDescription('Usually the Navigator created by WidgetsApp provides the overlay. '
+              'Perhaps your app content was created above the Navigator with the WidgetsApp '
+              'builder parameter.'),
+        ]);
+      }
+      return true;
+    }());
+    final RenderBox overlay = overlayState!.context.findRenderObject() as RenderBox;
     final Offset buttonGlobalOffset = button.localToGlobal(Offset.zero, ancestor: overlay);
     // TODO: Why do we need to ceil here?
     final Offset buttonPosition = Offset(
@@ -203,7 +215,7 @@ class _CalendarButtonState extends State<CalendarButton> {
               ),
             ],
           );
-        }
+        },
       ),
     );
 
