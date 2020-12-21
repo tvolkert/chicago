@@ -595,16 +595,10 @@ class _RenderSpinner extends RenderBox {
 
   @override
   void performLayout() {
-    BoxConstraints buttonConstraints = BoxConstraints(
-      maxWidth: math.max(constraints.maxWidth - 3, 0),
-      maxHeight: math.max((constraints.maxHeight - 3) / 2, 0),
+    final double buttonWidth = math.min(
+      upButton!.getMaxIntrinsicWidth(double.infinity),
+      math.max(constraints.maxWidth - 3, 0),
     );
-    upButton!.layout(buttonConstraints, parentUsesSize: true);
-    downButton!.layout(buttonConstraints, parentUsesSize: true);
-    final double buttonWidth = math.max(upButton!.size.width, downButton!.size.width);
-    assert(upButton!.size.height == downButton!.size.height);
-    final double buttonHeight = upButton!.size.height;
-
     final BoxConstraints contentConstraints = constraints.deflate(
       EdgeInsets.only(left: buttonWidth + 3, top: 2),
     );
@@ -612,17 +606,24 @@ class _RenderSpinner extends RenderBox {
     BoxParentData contentParentData = content!.parentData as BoxParentData;
     contentParentData.offset = Offset(1, 1);
 
+    final double buttonHeight = (content!.size.height - 1) / 2;
+    BoxConstraints buttonConstraints = BoxConstraints.tightFor(
+      width: buttonWidth,
+      height: buttonHeight,
+    );
+    upButton!.layout(buttonConstraints);
+    downButton!.layout(buttonConstraints);
+
     size = constraints.constrain(Size(
       content!.size.width + buttonWidth + 3,
-      math.max(content!.size.height, buttonHeight * 2 + 1) + 2,
+      content!.size.height + 2,
     ));
 
     BoxParentData upButtonParentData = upButton!.parentData as BoxParentData;
-    upButtonParentData.offset = Offset(size.width - upButton!.size.width - 1, 1);
+    upButtonParentData.offset = Offset(size.width - buttonWidth - 1, 1);
 
     BoxParentData downButtonParentData = downButton!.parentData as BoxParentData;
-    downButtonParentData.offset =
-        Offset(size.width - downButton!.size.width - 1, upButton!.size.height + 2);
+    downButtonParentData.offset = Offset(size.width - buttonWidth - 1, buttonHeight + 2);
   }
 
   @override
