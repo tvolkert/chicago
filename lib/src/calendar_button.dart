@@ -168,11 +168,9 @@ class _CalendarButtonState extends State<CalendarButton> {
 
     Widget result = DecoratedBox(
       decoration: decoration,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Padding(
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          Widget contentArea = Padding(
             padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
             child: Padding(
               padding: EdgeInsets.only(bottom: 1),
@@ -182,20 +180,30 @@ class _CalendarButtonState extends State<CalendarButton> {
                 softWrap: false,
               ),
             ),
-          ),
-          SizedBox(
-            width: 1,
-            height: 20,
-            child: ColoredBox(color: const Color(0xff999999)),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-            child: const CustomPaint(
-              size: Size(7, 4),
-              painter: _ArrowPainter(),
-            ),
-          ),
-        ],
+          );
+          if (constraints.hasBoundedWidth) {
+            contentArea = Expanded(child: contentArea);
+          }
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              contentArea,
+              SizedBox(
+                width: 1,
+                height: 20,
+                child: ColoredBox(color: const Color(0xff999999)),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                child: const CustomPaint(
+                  size: Size(7, 4),
+                  painter: _ArrowPainter(),
+                ),
+              ),
+            ],
+          );
+        }
       ),
     );
 
