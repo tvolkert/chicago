@@ -24,131 +24,64 @@ import 'foundation.dart';
 import 'list_view.dart';
 import 'widget_surveyor.dart';
 
-/// Class that specifies how a [ListButton] will calculate its width.
-@immutable
-abstract class ListButtonWidth {
-  const ListButtonWidth._();
+/// Enum that specifies how a [ListButton] will calculate its width.
+enum ListButtonWidth {
+  /// Specification of [ListButton] width that causes the button to adopt the
+  /// intrinsic width of the currently selected item.
+  ///
+  /// This specification will cause the button width to change as different
+  /// items are selected, if those items have different intrinsic widths.
+  ///
+  /// Along with [expand], this specification is the fastest in  runtime
+  /// efficiency because it doesn't need to pre-calculate the intrinsic widths
+  /// of the list button's items.
+  shrinkWrapCurrentItem,
 
-  /// Calculates the width of the content area of the specified list button.
-  double? _measureWidth<T>(BuildContext context, ListButton<T> listButton);
+  /// Specification of [ListButton] width that causes the button to adopt the
+  /// largest intrinsic width of _all_ the button's items.
+  ///
+  /// This specification will yield a stable button width. As the selected item
+  /// changes, the button width will always be at least as wide as it needs to
+  /// be, sometimes wider.
+  ///
+  /// This specification is relatively expensive in runtime efficiency, because
+  /// it requires pre-calculating the unconstrained widths of the list button's
+  /// items.
+  ///
+  /// This will cause the list button's [ListButton.builder] to be invoked for
+  /// every one of the button's list items in order to measure their widths.
+  /// The list button element will be passed as the build context. When this
+  /// measurement is taken, the widgets will be rendered in a synthetic widget
+  /// tree that doesn't contain the normal application widget ancestry. If any
+  /// of those widgets depend on inherited widgets in their ancestry, this
+  /// measurement will fail.
+  shrinkWrapAllItems,
 
-  Widget _build(double? width, EdgeInsetsGeometry padding, Widget child);
+  /// Specification of [ListButton] width that causes the button to adopt the
+  /// widest possible width given the constraints passed to the list button.
+  ///
+  /// This specification will cause the button width to remain stable as long
+  /// as the input constraints remain stable.
+  ///
+  /// Along with [shrinkWrapCurrentItem], this specification is the fastest in
+  /// runtime efficiency because it doesn't need to pre-calculate the intrinsic
+  /// widths of the list button's items.
+  expand,
 }
 
-/// Specification of [ListButton] width that causes the button to adopt the
-/// intrinsic width of the currently selected item.
-///
-/// This specification will cause the button width to change as different items
-/// are selected, if those items have different intrinsic widths.
-///
-/// Along with [ExpandedListButtonWidth], this specification is the fastest in
-/// runtime efficiency because it doesn't need to pre-calculate the intrinsic
-/// widths of the list button's items.
-class ShrinkWrappedListButtonWidth extends ListButtonWidth {
-  const ShrinkWrappedListButtonWidth() : super._();
+typedef ListButtonBuilder<T> = Widget Function(
+  BuildContext context,
+  T? item,
+  bool isForMeasurementOnly,
+);
 
-  @override
-  double? _measureWidth<T>(BuildContext context, ListButton<T> listButton) => null;
-
-  @override
-  Widget _build(double? width, EdgeInsetsGeometry padding, Widget child) {
-    assert(width == null);
-    return Padding(
-      padding: padding,
-      child: child,
-    );
-  }
-}
-
-/// Specification of [ListButton] width that causes the button to adopt the
-/// widest possible width given the constraints passed to the list button.
-///
-/// This specification will cause the button width to remain stable as long as
-/// the input constraints remain stable.
-///
-/// Along with [ShrinkWrappedListButtonWidth], this specification is the
-/// fastest in runtime efficiency because it doesn't need to pre-calculate the
-/// intrinsic widths of the list button's items.
-class ExpandedListButtonWidth extends ListButtonWidth {
-  const ExpandedListButtonWidth() : super._();
-
-  @override
-  double? _measureWidth<T>(BuildContext context, ListButton<T> listButton) => null;
-
-  @override
-  Widget _build(double? width, EdgeInsetsGeometry padding, Widget child) {
-    assert(width == null);
-    return Expanded(
-      child: Padding(
-        padding: padding,
-        child: child,
-      ),
-    );
-  }
-}
-
-/// Specification of [ListButton] width that causes the button to adopt the
-/// largest intrinsic width of all the button's items.
-///
-/// This specification will yield a stable button width. As the selected item
-/// changes, the button width will always be at least as wide as it needs to
-/// be, sometimes wider.
-///
-/// This specification is relatively expensive in runtime efficiency, because
-/// it requires pre-calculating the unconstrained widths of the list button's
-/// items.
-///
-/// This will call the list button's [ListButton.builder] for every one of the
-/// button's list items, passing the list button element as the build context.
-/// It will then render those widgets in a synthetic tree that doesn't contain
-/// the normal application widget ancestry. If any of those widgets depend on
-/// inherited widgets in their ancestry, callers should specify an
-/// [ancestryBuilder], which allows callers to place required inherited widgets
-/// in the synthetic widget ancestry of the list items for measurement.
-class MaximumListButtonWidth extends ListButtonWidth {
-  const MaximumListButtonWidth({this.ancestryBuilder}) : super._();
-
-  final Widget Function(BuildContext context, Widget child)? ancestryBuilder;
-
-  @override
-  double _measureWidth<T>(BuildContext context, ListButton<T> listButton) {
-    const WidgetSurveyor surveyor = WidgetSurveyor();
-    double maxWidth = 0;
-    for (int i = -1; i < listButton.items.length; i++) {
-      final T? item = i == -1 ? null : listButton.items[i];
-      Widget built = listButton.builder(context: context, item: item);
-      if (ancestryBuilder != null) {
-        built = ancestryBuilder!(context, built);
-      }
-      maxWidth = math.max(maxWidth, surveyor.measureWidget(built).width);
-    }
-    return maxWidth;
-  }
-
-  @override
-  Widget _build(double? width, EdgeInsetsGeometry padding, Widget child) {
-    return Padding(
-      padding: padding,
-      child: SizedBox(
-        width: width,
-        child: child,
-      ),
-    );
-  }
-}
-
-typedef ListButtonBuilder<T> = Widget Function({
-  required BuildContext context,
-  required T? item,
-});
-
-typedef ListButtonItemBuilder<T> = Widget Function({
-  required BuildContext context,
-  required T item,
-  required bool isSelected,
-  required bool isHighlighted,
-  required bool isDisabled,
-});
+typedef ListButtonItemBuilder<T> = Widget Function(
+  BuildContext context,
+  T item,
+  bool isSelected,
+  bool isHighlighted,
+  bool isDisabled,
+);
 
 class ListButton<T> extends StatefulWidget {
   ListButton({
@@ -156,10 +89,11 @@ class ListButton<T> extends StatefulWidget {
     required this.items,
     this.builder = defaultBuilder,
     this.itemBuilder = defaultItemBuilder,
-    this.width = const MaximumListButtonWidth(),
+    this.width = ListButtonWidth.shrinkWrapCurrentItem,
     this.selectionController,
     this.disabledItemFilter,
     this.isEnabled = true,
+    this.roundToWholePixel = false,
   })  : assert(selectionController == null || selectionController.selectMode == SelectMode.single),
         super(key: key);
 
@@ -170,8 +104,9 @@ class ListButton<T> extends StatefulWidget {
   final ListViewSelectionController? selectionController;
   final Predicate<T>? disabledItemFilter;
   final bool isEnabled;
+  final bool roundToWholePixel;
 
-  static Widget defaultBuilder({required BuildContext context, Object? item}) {
+  static Widget defaultBuilder(BuildContext context, Object? item, bool isForMeasurementOnly) {
     if (item == null) {
       return Container();
     }
@@ -189,13 +124,13 @@ class ListButton<T> extends StatefulWidget {
     );
   }
 
-  static Widget defaultItemBuilder({
-    required BuildContext context,
+  static Widget defaultItemBuilder(
+    BuildContext context,
     Object? item,
-    required bool isSelected,
-    required bool isHighlighted,
-    required bool isDisabled,
-  }) {
+    bool isSelected,
+    bool isHighlighted,
+    bool isDisabled,
+  ) {
     TextStyle style = DefaultTextStyle.of(context).style;
     if (isSelected) {
       style = style.copyWith(color: const Color(0xffffffff));
@@ -210,28 +145,29 @@ class ListButton<T> extends StatefulWidget {
   }
 
   static ListButtonBuilder<Map<K, V>> mapBuilderFor<K, V>(K key) {
-    return ({required BuildContext context, Map<K, V>? item}) {
+    return (BuildContext context, Map<K, V>? item, bool isForMeasurementOnly) {
       return defaultBuilder(
-        context: context,
-        item: item == null ? null : item[key],
+        context,
+        item == null ? null : item[key],
+        isForMeasurementOnly,
       );
     };
   }
 
   static ListButtonItemBuilder<Map<K, V>> mapItemBuilderFor<K, V>(K key) {
-    return ({
-      required BuildContext context,
-      required Map<K, V> item,
-      required bool isSelected,
-      required bool isHighlighted,
-      required bool isDisabled,
-    }) {
+    return (
+      BuildContext context,
+      Map<K, V> item,
+      bool isSelected,
+      bool isHighlighted,
+      bool isDisabled,
+    ) {
       return defaultItemBuilder(
-        context: context,
-        item: item[key],
-        isSelected: isSelected,
-        isHighlighted: isHighlighted,
-        isDisabled: isDisabled,
+        context,
+        item[key],
+        isSelected,
+        isHighlighted,
+        isDisabled,
       );
     };
   }
@@ -245,7 +181,7 @@ class _ListButtonState<T> extends State<ListButton<T>> {
 
   int _selectedIndex = -1;
   bool _pressed = false;
-  double? _buttonWidth;
+  _ConstraintsAdjuster _constraintsAdjuster = const _PassthroughAdjuster();
 
   void _handleSelectionChanged() {
     setState(() {
@@ -254,13 +190,33 @@ class _ListButtonState<T> extends State<ListButton<T>> {
   }
 
   void _updateButtonWidth() {
-    _buttonWidth = widget.width._measureWidth<T>(context, widget);
+    switch (widget.width) {
+      case ListButtonWidth.shrinkWrapCurrentItem:
+        _constraintsAdjuster = const _PassthroughAdjuster();
+        break;
+      case ListButtonWidth.shrinkWrapAllItems:
+        const WidgetSurveyor surveyor = WidgetSurveyor();
+        final BasicListItemBuilder itemBuilder = _adaptBuilder(
+          widget.builder,
+          isForMeasurementOnly: true,
+        );
+        double maxWidth = 0;
+        for (int i = -1; i < widget.items.length; i++) {
+          Widget built = _buildContent(itemBuilder, index: i, useLocalBuildContext: true);
+          maxWidth = math.max(maxWidth, surveyor.measureWidget(built).width);
+        }
+        _constraintsAdjuster = _WidthTightener(maxWidth);
+        break;
+      case ListButtonWidth.expand:
+        _constraintsAdjuster = _WidthMaximizer();
+        break;
+    }
   }
 
-  BasicListItemBuilder _adaptBuilder(ListButtonBuilder<T> builder) {
-    return ({required BuildContext context, required int index}) {
+  BasicListItemBuilder _adaptBuilder(ListButtonBuilder<T> builder, {bool isForMeasurementOnly = false}) {
+    return (BuildContext context, int index) {
       final T? item = index == -1 ? null : widget.items[index];
-      return builder(context: context, item: item);
+      return builder(context, item, isForMeasurementOnly);
     };
   }
 
@@ -273,11 +229,11 @@ class _ListButtonState<T> extends State<ListButton<T>> {
       required bool isDisabled,
     }) {
       return itemBuilder(
-        context: context,
-        item: widget.items[index],
-        isSelected: isSelected,
-        isHighlighted: isHighlighted,
-        isDisabled: isDisabled,
+        context,
+        widget.items[index],
+        isSelected,
+        isHighlighted,
+        isDisabled,
       );
     };
   }
@@ -289,6 +245,26 @@ class _ListButtonState<T> extends State<ListButton<T>> {
     return (int index) {
       return predicate(widget.items[index]);
     };
+  }
+
+  Widget _buildContent(
+    BasicListItemBuilder itemBuilder, {
+    int? index,
+    bool useLocalBuildContext = false,
+  }) {
+    Widget result;
+    if (useLocalBuildContext) {
+      result = itemBuilder(context, index ?? _selectedIndex);
+    } else {
+      result = Builder(builder: (BuildContext context) {
+        return itemBuilder(context, index ?? _selectedIndex);
+      });
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+      child: result,
+    );
   }
 
   ListViewSelectionController get selectionController {
@@ -335,17 +311,6 @@ class _ListButtonState<T> extends State<ListButton<T>> {
   }
 
   @override
-  void dispose() {
-    selectionController.removeListener(_handleSelectionChanged);
-    if (_selectionController != null) {
-      assert(widget.selectionController == null);
-      _selectionController!.dispose();
-      _selectionController = null;
-    }
-    super.dispose();
-  }
-
-  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _updateButtonWidth();
@@ -373,6 +338,17 @@ class _ListButtonState<T> extends State<ListButton<T>> {
       }
       _handleSelectionChanged(); // to set the initial value of _selectedIndex
     }
+  }
+
+  @override
+  void dispose() {
+    selectionController.removeListener(_handleSelectionChanged);
+    if (_selectionController != null) {
+      assert(widget.selectionController == null);
+      _selectionController!.dispose();
+      _selectionController = null;
+    }
+    super.dispose();
   }
 
   static const BoxDecoration _enabledDecoration = BoxDecoration(
@@ -411,38 +387,13 @@ class _ListButtonState<T> extends State<ListButton<T>> {
 
     Widget result = DecoratedBox(
       decoration: decoration,
-      child: LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints constraints) {
-          Widget contentArea = widget.width._build(
-            _buttonWidth,
-            const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-            Builder(builder: (BuildContext context) {
-              return itemBuilder(context: context, index: _selectedIndex);
-            }),
-          );
-          if (constraints.hasBoundedWidth) {
-            contentArea = Expanded(child: contentArea);
-          }
-          return Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              contentArea,
-              SizedBox(
-                width: 1,
-                height: 20,
-                child: ColoredBox(color: const Color(0xff999999)),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                child: const CustomPaint(
-                  size: Size(7, 4),
-                  painter: _ArrowPainter(),
-                ),
-              ),
-            ],
-          );
-        }
+      child: Padding(
+        padding: EdgeInsets.all(1),
+        child: _RawListButton(
+          childAdjuster: _constraintsAdjuster,
+          roundToWholePixel: widget.roundToWholePixel,
+          child: _buildContent(itemBuilder),
+        ),
       ),
     );
 
@@ -476,6 +427,208 @@ class _ListButtonState<T> extends State<ListButton<T>> {
     }
 
     return result;
+  }
+}
+
+@immutable
+abstract class _ConstraintsAdjuster {
+  const _ConstraintsAdjuster._();
+
+  BoxConstraints adjust(BoxConstraints constraints);
+}
+
+class _PassthroughAdjuster extends _ConstraintsAdjuster {
+  const _PassthroughAdjuster() : super._();
+
+  @override
+  BoxConstraints adjust(BoxConstraints constraints) => constraints;
+}
+
+class _WidthTightener extends _ConstraintsAdjuster {
+  const _WidthTightener(this.width) : super._();
+
+  final double width;
+
+  @override
+  BoxConstraints adjust(BoxConstraints constraints) => constraints.tighten(width: width);
+}
+
+class _WidthMaximizer extends _ConstraintsAdjuster {
+  const _WidthMaximizer() : super._();
+
+  @override
+  BoxConstraints adjust(BoxConstraints constraints) => constraints.copyWith(minWidth: constraints.maxWidth);
+}
+
+class _RawListButton extends SingleChildRenderObjectWidget {
+  const _RawListButton({
+    Key? key,
+    required Widget child,
+    required this.childAdjuster,
+    this.roundToWholePixel = false,
+  }) : super(key: key, child: child);
+
+  final _ConstraintsAdjuster childAdjuster;
+  final bool roundToWholePixel;
+
+  @override
+  Widget get child => super.child!;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) {
+    return _RenderRawListButton(
+      childAdjuster: childAdjuster,
+      roundToWholePixel: roundToWholePixel,
+    );
+  }
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderRawListButton renderObject) {
+    renderObject
+      ..childConstraintAdjuster = childAdjuster
+      ..roundToWholePixel = roundToWholePixel;
+  }
+}
+
+class _RenderRawListButton extends RenderBox with RenderObjectWithChildMixin<RenderBox>, RenderBoxWithChildDefaultsMixin {
+  _RenderRawListButton({
+    required _ConstraintsAdjuster childAdjuster,
+    bool roundToWholePixel = false,
+  }) {
+    this.childConstraintAdjuster = childAdjuster;
+    this.roundToWholePixel = roundToWholePixel;
+  }
+
+  static const double _kMinHeight = 18;
+  static const double _kPulldownWidth = 15;
+  static const double _kDividerWidth = 1;
+  static const double _kReservedWidth = _kPulldownWidth + _kDividerWidth;
+
+  _ConstraintsAdjuster? _childConstraintAdjuster;
+  _ConstraintsAdjuster get childConstraintAdjuster => _childConstraintAdjuster!;
+  set childConstraintAdjuster(_ConstraintsAdjuster value) {
+    if (_childConstraintAdjuster == value) return;
+    _childConstraintAdjuster = value;
+    markNeedsLayout();
+  }
+
+  bool _roundToWholePixel = false;
+  bool get roundToWholePixel => _roundToWholePixel;
+  set roundToWholePixel(bool value) {
+    if (_roundToWholePixel == value) return;
+    _roundToWholePixel = value;
+    markNeedsLayout();
+  }
+
+  @override
+  double? computeDistanceToActualBaseline(TextBaseline baseline) {
+    if (child != null) {
+      final double? childBaseline = child!.getDistanceToActualBaseline(baseline);
+      if (childBaseline != null) {
+        final BoxParentData childParentData = child!.parentData as BoxParentData;
+        return childBaseline + childParentData.offset.dy;
+      }
+    }
+    return super.computeDistanceToActualBaseline(baseline);
+  }
+
+  @override
+  double computeMinIntrinsicWidth(double height) {
+    return (child == null ? 0 : child!.getMinIntrinsicWidth(height)) + _kReservedWidth;
+  }
+
+  @override
+  double computeMaxIntrinsicWidth(double height) {
+    return (child == null ? 0 : child!.getMinIntrinsicWidth(height)) + _kReservedWidth;
+  }
+
+  @override
+  double computeMinIntrinsicHeight(double width) {
+    return child == null ? _kMinHeight : math.max(child!.getMinIntrinsicHeight(width), _kMinHeight);
+  }
+
+  @override
+  double computeMaxIntrinsicHeight(double width) {
+    return child == null ? _kMinHeight : math.max(child!.getMinIntrinsicHeight(width), _kMinHeight);
+  }
+
+  double _dividerDx = 0;
+
+  @override
+  void performLayout() {
+    Size childSize = Size.zero;
+    if (child != null) {
+      BoxConstraints childConstraints = constraints.deflate(EdgeInsets.only(left: _kReservedWidth));
+      if (roundToWholePixel) {
+        childConstraints = childConstraints.copyWith(maxWidth: childConstraints.maxWidth.floorToDouble());
+      }
+      childConstraints = childConstraintAdjuster.adjust(childConstraints);
+      assert(() {
+        if (childConstraints.minWidth.isInfinite) {
+          child!.layout(BoxConstraints.tight(Size.zero));
+          size = Size.zero; // To avoid ancillary exceptions that will confuse things.
+          throw FlutterError.fromParts(<DiagnosticsNode>[
+            ErrorSummary('ListButtonWidth.expand cannot be used with unbounded with.'),
+            ErrorDescription('ListButtonWidth.expand causes a ListButton to expand to fill the '
+                'available space. It cannot be used in a layout setting where it is given unbounded '
+                '(infinite) width constraints, because doing so would cause the ListButton to have '
+                'infinite width, which is not allowed.'),
+            ErrorSpacer(),
+            DiagnosticsProperty<BoxConstraints>('The constraints passed to the ListButton '
+                'content were', constraints),
+            ErrorSpacer(),
+            DiagnosticsProperty<Object>(
+                'The widget tree that created the ListButton in question was', debugCreator,
+                style: DiagnosticsTreeStyle.errorProperty),
+          ]);
+        }
+        return true;
+      }());
+      child!.layout(childConstraints, parentUsesSize: true);
+      childSize = child!.size;
+      if (roundToWholePixel) {
+        childSize = Size(childSize.width.ceilToDouble(), childSize.height);
+      }
+    }
+    size = constraints.constrainDimensions(
+      childSize.width + _kReservedWidth,
+      math.max(childSize.height, _kMinHeight),
+    );
+    _dividerDx = childSize.width;
+    if (child != null) {
+      final BoxParentData childParentData = child!.parentData as BoxParentData;
+      childParentData.offset = Offset(0, (size.height - childSize.height) / 2);
+    }
+  }
+
+  @override
+  bool hitTestChildren(BoxHitTestResult result, { required Offset position }) {
+    return defaultHitTestChild(result, position: position);
+  }
+
+  @override
+  bool hitTestSelf(Offset position) => true;
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    defaultPaintChild(context, offset);
+
+    Paint paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..color = const Color(0xff999999);
+    context.canvas.drawLine(offset.translate(_dividerDx + 0.5, 0), offset.translate(_dividerDx + 0.5, size.height), paint);
+
+    const _ArrowImage arrow = _ArrowImage();
+    final double pulldownWidth = size.width - (_dividerDx + 1);
+    final double pulldownDx = (pulldownWidth - arrow.preferredSize.width) / 2;
+    final double pulldownDy = (size.height - arrow.preferredSize.height) / 2;
+    context.canvas..save()..translate(offset.dx + _dividerDx + 1 + pulldownDx, offset.dy + pulldownDy);
+    try {
+      arrow.paint(context.canvas, arrow.preferredSize);
+    } finally {
+      context.canvas.restore();
+    }
   }
 }
 
@@ -700,29 +853,6 @@ class _ShadowClipper extends CustomClipper<Rect> {
 
   @override
   bool shouldReclip(_ShadowClipper oldClipper) => false;
-}
-
-class _ArrowPainter extends CustomPainter {
-  const _ArrowPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const _ArrowImage arrow = _ArrowImage();
-    double arrowX = (size.width - arrow.preferredSize.width) / 2;
-    double arrowY = (size.height - arrow.preferredSize.height) / 2;
-    canvas.save();
-    try {
-      canvas.translate(arrowX, arrowY);
-      arrow.paint(canvas, arrow.preferredSize);
-    } finally {
-      canvas.restore();
-    }
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) {
-    return false;
-  }
 }
 
 class _ArrowImage {

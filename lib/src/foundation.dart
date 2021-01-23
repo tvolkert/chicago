@@ -14,6 +14,7 @@
 // limitations under the License.
 
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
@@ -216,5 +217,29 @@ class FakeSubscription<T> implements StreamSubscription<T> {
   @override
   void resume() {
     assert(false);
+  }
+}
+
+mixin RenderBoxWithChildDefaultsMixin on RenderObjectWithChildMixin<RenderBox> {
+  bool defaultHitTestChild(BoxHitTestResult result, {required ui.Offset position}) {
+    if (child == null) {
+      return false;
+    }
+    final BoxParentData childParentData = child!.parentData as BoxParentData;
+    return result.addWithPaintOffset(
+      offset: childParentData.offset,
+      position: position,
+      hitTest: (BoxHitTestResult result, Offset transformed) {
+        assert(transformed == position - childParentData.offset);
+        return child!.hitTest(result, position: transformed);
+      },
+    );
+  }
+
+  void defaultPaintChild(PaintingContext context, Offset offset) {
+    if (child != null) {
+      final BoxParentData childParentData = child!.parentData as BoxParentData;
+      context.paintChild(child!, offset + childParentData.offset);
+    }
   }
 }

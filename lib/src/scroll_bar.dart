@@ -24,6 +24,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 import 'colors.dart' as colorUtils;
+import 'foundation.dart';
 import 'listener_list.dart';
 
 class ScrollBar extends LeafRenderObjectWidget {
@@ -874,23 +875,6 @@ class _RenderScrollBarHandle extends RenderBox
     }
 
     context.paintChild(child!, offset);
-  }
-}
-
-mixin RenderBoxWithChildDefaultsMixin on RenderObjectWithChildMixin<RenderBox> {
-  bool defaultHitTestChild(BoxHitTestResult result, {required ui.Offset position}) {
-    if (child == null) {
-      return false;
-    }
-    final BoxParentData childParentData = child!.parentData as BoxParentData;
-    return result.addWithPaintOffset(
-      offset: childParentData.offset,
-      position: position,
-      hitTest: (BoxHitTestResult result, Offset transformed) {
-        assert(transformed == position - childParentData.offset);
-        return child!.hitTest(result, position: transformed);
-      },
-    );
   }
 }
 

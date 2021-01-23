@@ -32,12 +32,10 @@ void main() {
           view: BasicListView(
             length: 1000,
             itemHeight: 20,
-            itemBuilder: ({
-              BuildContext? context,
-              required int index,
-            }) {
+            itemBuilder: (BuildContext context, int index) {
               return Padding(
-                  padding: EdgeInsets.only(left: index.toDouble()), child: Text('$index'));
+                padding: EdgeInsets.only(left: index.toDouble()), child: Text('$index'),
+              );
             },
           ),
         ),
@@ -57,10 +55,10 @@ typedef ListViewLayoutCallback = void Function({
   required ListItemHost visitChildrenToBuild,
 });
 
-typedef BasicListItemBuilder = Widget Function({
-  required BuildContext context,
-  required int index,
-});
+typedef BasicListItemBuilder = Widget Function(
+  BuildContext context,
+  int index,
+);
 
 class BasicListView extends RenderObjectWidget {
   const BasicListView({
@@ -437,10 +435,7 @@ class BasicListViewElement extends RenderObjectElement with ListViewElementMixin
   @override
   @protected
   Widget renderItem(int index) {
-    return widget.itemBuilder(
-      context: this,
-      index: index,
-    );
+    return widget.itemBuilder(this, index);
   }
 }
 
