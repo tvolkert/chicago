@@ -271,7 +271,7 @@ class _CalendarState extends State<Calendar> {
     _updateCalendarRows();
   }
 
-  static Widget buildMonth(BuildContext context, int index) {
+  static Widget buildMonth(BuildContext context, int index, bool isEnabled) {
     String value = '';
     if (index >= 0) {
       // Since we're only rendering the month, the year and day do not matter here.
@@ -281,7 +281,7 @@ class _CalendarState extends State<Calendar> {
     return Spinner.defaultItemBuilder(context, value);
   }
 
-  static Widget buildYear(BuildContext context, int index) {
+  static Widget buildYear(BuildContext context, int index, bool isEnabled) {
     String value = '';
     if (index >= 0) {
       final int year = index + CalendarDate._gregorianCutoverYear;
