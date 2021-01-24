@@ -25,7 +25,7 @@ import 'colors.dart';
 import 'hover_builder.dart';
 import 'widget_surveyor.dart';
 
-typedef SpinnerItemBuilder = Widget Function(BuildContext context, int index);
+typedef SpinnerItemBuilder = Widget Function(BuildContext context, int index, bool isEnabled);
 
 class SpinnerController extends ChangeNotifier {
   SpinnerController();
@@ -47,6 +47,7 @@ class Spinner extends StatefulWidget {
     required this.length,
     required this.itemBuilder,
     this.controller,
+    this.isEnabled = true,
     this.isCircular = false,
     this.sizeToContent = false,
   }) : super(key: key);
@@ -54,6 +55,7 @@ class Spinner extends StatefulWidget {
   final int length;
   final SpinnerItemBuilder itemBuilder;
   final SpinnerController? controller;
+  final bool isEnabled;
   final bool isCircular;
   final bool sizeToContent;
 
@@ -109,7 +111,7 @@ class _SpinnerState extends State<Spinner> {
           textDirection: textDirection,
           child: DefaultTextStyle(
             style: style,
-            child: widget.itemBuilder(context, i),
+            child: widget.itemBuilder(context, i, widget.isEnabled),
           ),
         );
         final Size itemSize = surveyor.measureWidget(item);
@@ -167,7 +169,7 @@ class _SpinnerState extends State<Spinner> {
 
   @override
   Widget build(BuildContext context) {
-    Widget content = widget.itemBuilder(context, _index);
+    Widget content = widget.itemBuilder(context, _index, widget.isEnabled);
     if (widget.sizeToContent) {
       content = SizedBox(
         width: _contentWidth,
