@@ -88,15 +88,19 @@ class WidgetSurveyor {
     BoxConstraints constraints, {
     TextBaseline? baselineToCalculate,
   }) {
+    bool debugIsPerformingCleanup = false;
     final PipelineOwner pipelineOwner = PipelineOwner(
       onNeedVisualUpdate: () {
         assert(() {
-          throw FlutterError.fromParts(<DiagnosticsNode>[
-            ErrorSummary('Visual update was requested during survey.'),
-            ErrorDescription('WidgetSurveyor does not support a render object '
-                'calling markNeedsLayout(), markNeedsPaint(), or '
-                'markNeedsSemanticUpdate() while the widget is being surveyed.'),
-          ]);
+          if (!debugIsPerformingCleanup) {
+            throw FlutterError.fromParts(<DiagnosticsNode>[
+              ErrorSummary('Visual update was requested during survey.'),
+              ErrorDescription('WidgetSurveyor does not support a render object '
+                  'calling markNeedsLayout(), markNeedsPaint(), or '
+                  'markNeedsSemanticUpdate() while the widget is being surveyed.'),
+            ]);
+          }
+          return true;
         }());
       },
     );
@@ -120,11 +124,15 @@ class WidgetSurveyor {
       assert(rootView.child != null);
       return rootView;
     } finally {
-      pipelineOwner.rootNode = null;
-      element.deactivate();
-      element.unmount();
-      buildOwner.finalizeTree();
-      assert(buildOwner.globalKeyCount == 0);
+      // Un-mount all child elements to properly clean up.
+      debugIsPerformingCleanup = true;
+      try {
+        element.update(RenderObjectToWidgetAdapter<RenderBox>(container: rootView));
+        buildOwner.finalizeTree();
+      } finally {
+        debugIsPerformingCleanup = false;
+      }
+      assert(buildOwner.globalKeyCount == 1); // RenderObjectToWidgetAdapter uses a global key
     }
   }
 }
