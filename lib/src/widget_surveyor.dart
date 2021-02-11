@@ -105,17 +105,13 @@ class WidgetSurveyor {
       },
     );
     final _MeasurementView rootView = pipelineOwner.rootNode = _MeasurementView();
-    final BuildOwner buildOwner = _SurveyorBuildOwner();
+    final BuildOwner buildOwner = BuildOwner(focusManager: _FailingFocusManager());
     assert(buildOwner.globalKeyCount == 0);
-    final RenderObjectToWidgetAdapter<RenderBox> adapter = RenderObjectToWidgetAdapter<RenderBox>(
+    final RenderObjectToWidgetElement element = RenderObjectToWidgetAdapter<RenderBox>(
       container: rootView,
       debugShortDescription: '[root]',
       child: widget,
-    );
-    final RenderObjectToWidgetElement element = adapter.createElement()..assignOwner(buildOwner);
-    buildOwner.buildScope(element, () {
-      element.mount(null /* parent */, null /* newSlot */);
-    });
+    ).attachToRenderTree(buildOwner);
     try {
       rootView.baselineToCalculate = baselineToCalculate;
       rootView.childConstraints = constraints;
@@ -135,10 +131,6 @@ class WidgetSurveyor {
       assert(buildOwner.globalKeyCount == 1); // RenderObjectToWidgetAdapter uses a global key
     }
   }
-}
-
-class _SurveyorBuildOwner extends BuildOwner {
-  _SurveyorBuildOwner() : super(focusManager: _FailingFocusManager());
 }
 
 class _FailingFocusManager implements FocusManager {
