@@ -105,7 +105,7 @@ class WidgetSurveyor {
       },
     );
     final _MeasurementView rootView = pipelineOwner.rootNode = _MeasurementView();
-    final BuildOwner buildOwner = BuildOwner(focusManager: _FailingFocusManager());
+    final BuildOwner buildOwner = BuildOwner(focusManager: FocusManager());
     assert(buildOwner.globalKeyCount == 0);
     final RenderObjectToWidgetElement element = RenderObjectToWidgetAdapter<RenderBox>(
       container: rootView,
@@ -130,18 +130,6 @@ class WidgetSurveyor {
       }
       assert(buildOwner.globalKeyCount == 1); // RenderObjectToWidgetAdapter uses a global key
     }
-  }
-}
-
-class _FailingFocusManager implements FocusManager {
-  @override
-  dynamic noSuchMethod(Invocation invocation) {
-    return super.noSuchMethod(invocation);
-  }
-
-  @override
-  String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-    return '_FakeFocusManager';
   }
 }
 
