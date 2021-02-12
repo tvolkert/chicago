@@ -60,7 +60,7 @@ class WidgetSurveyor {
     Widget widget, {
     BoxConstraints constraints = const BoxConstraints(),
   }) {
-    final _MeasurementView rendered = _render(widget, constraints);
+    final SurveyorView rendered = _render(widget, constraints);
     assert(rendered.hasSize);
     return rendered.size;
   }
@@ -70,7 +70,7 @@ class WidgetSurveyor {
     TextBaseline baseline = TextBaseline.alphabetic,
     BoxConstraints constraints = const BoxConstraints(),
   }) {
-    final _MeasurementView rendered = _render(widget, constraints, baselineToCalculate: baseline);
+    final SurveyorView rendered = _render(widget, constraints, baselineToCalculate: baseline);
     return rendered.childBaseline ?? rendered.size.height;
   }
 
@@ -79,11 +79,11 @@ class WidgetSurveyor {
     TextBaseline baseline = TextBaseline.alphabetic,
     BoxConstraints constraints = const BoxConstraints(),
   }) {
-    final _MeasurementView rendered = _render(widget, constraints, baselineToCalculate: baseline);
+    final SurveyorView rendered = _render(widget, constraints, baselineToCalculate: baseline);
     return rendered.childBaseline;
   }
 
-  _MeasurementView _render(
+  SurveyorView _render(
     Widget widget,
     BoxConstraints constraints, {
     TextBaseline? baselineToCalculate,
@@ -104,7 +104,7 @@ class WidgetSurveyor {
         }());
       },
     );
-    final _MeasurementView rootView = pipelineOwner.rootNode = _MeasurementView();
+    final SurveyorView rootView = pipelineOwner.rootNode = SurveyorView();
     final BuildOwner buildOwner = BuildOwner(focusManager: FocusManager());
     assert(buildOwner.globalKeyCount == 0);
     final RenderObjectToWidgetElement element = RenderObjectToWidgetAdapter<RenderBox>(
@@ -133,7 +133,7 @@ class WidgetSurveyor {
   }
 }
 
-class _MeasurementView extends RenderBox with RenderObjectWithChildMixin<RenderBox> {
+class SurveyorView extends RenderBox with RenderObjectWithChildMixin<RenderBox> {
   BoxConstraints? childConstraints;
   TextBaseline? baselineToCalculate;
   double? childBaseline;
