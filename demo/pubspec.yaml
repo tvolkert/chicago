@@ -1,0 +1,26 @@
+name: demo
+description: A "kitchen sink" demo of the Chicago widget set for Flutter
+version: 1.0.0
+publish_to: 'none'
+
+environment:
+  sdk: ">=2.12.0 <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  chicago: any
+  intl: any
+  meta: any
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  assets:
+    - assets/
+
+dependency_overrides:
+  chicago:
+    path: ../
