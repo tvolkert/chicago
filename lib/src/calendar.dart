@@ -16,9 +16,9 @@
 import 'package:flutter/widgets.dart' hide Border, TableCell, TableRow;
 import 'package:flutter/widgets.dart' as flutter show Border;
 import 'package:intl/intl.dart' as intl;
-import 'colors.dart';
 
 import 'border.dart';
+import 'colors.dart';
 import 'foundation.dart';
 import 'hover_builder.dart';
 import 'spinner.dart';
@@ -70,12 +70,18 @@ class CalendarDate implements Comparable<CalendarDate> {
   int get weekday => toDateTime().weekday;
 
   /// Whether the year represented by this calendar date is a leap year.
-  bool get isLeapYear => ((year & 3) == 0 && (year % 100 != 0 || year % 400 == 0));
+  bool get isLeapYear => _calculateIsLeapYear(year);
+
+  static bool _calculateIsLeapYear(int year) {
+    return (year & 3) == 0 && (year % 100 != 0 || year % 400 == 0);
+  }
 
   /// The number of days in the month represented by this calendar date.
-  int get daysInMonth {
+  int get daysInMonth => _calculateDaysInMonth(year, month);
+
+  static int _calculateDaysInMonth(int year, int month) {
     int daysInMonth = _monthLengths[month];
-    if (isLeapYear && month == 1) {
+    if (_calculateIsLeapYear(year) && month == 1) {
       daysInMonth++;
     }
     return daysInMonth;
@@ -95,12 +101,13 @@ class CalendarDate implements Comparable<CalendarDate> {
     } else if (days < 0) {
       return this - (-days);
     } else {
-      // TODO: handle adding more days than are in a month, such that month will increase more than 1
       int year = this.year;
       int month = this.month;
       int day = this.day + days;
-      if (day >= daysInMonth) {
-        day = day - daysInMonth;
+      int daysInCurrentMonth;
+      // TODO: this could probably be calculated in constant time.
+      while (day >= (daysInCurrentMonth = _calculateDaysInMonth(year, month))) {
+        day = day - daysInCurrentMonth;
         month++;
         if (month > 11) {
           month = 0;
@@ -163,7 +170,11 @@ class CalendarDate implements Comparable<CalendarDate> {
   bool operator >=(CalendarDate other) => compareTo(other) >= 0;
 
   @override
-  String toString() => '$year-${month + 1}-${day + 1}';
+  String toString() {
+    final String monthValue = '${month + 1}';
+    final String dayValue = '${day + 1}';
+    return '$year-${monthValue.padLeft(2, '0')}-${dayValue.padLeft(2, '0')}';
+  }
 }
 
 @immutable
