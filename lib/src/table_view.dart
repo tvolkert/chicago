@@ -522,7 +522,7 @@ class TableViewSortListener {
 }
 
 class TableViewSortController with ListenerNotifier<TableViewSortListener> {
-  TableViewSortController({this.sortMode = TableViewSortMode.none});
+  TableViewSortController({this.sortMode = TableViewSortMode.singleColumn});
 
   final TableViewSortMode sortMode;
   final LinkedHashMap<String, SortDirection> _sortMap = LinkedHashMap<String, SortDirection>();
@@ -1569,6 +1569,7 @@ class _TableViewHeaderEnvelopeState extends State<TableViewHeaderEnvelope> {
 
     Widget renderedHeader = Padding(
       padding: EdgeInsets.only(left: 3),
+      // TODO: better error than "Null check operator used on a null" when headerRenderer is null
       child: widget.column.headerRenderer!(
         context: context,
         columnIndex: widget.columnIndex,
