@@ -49,16 +49,16 @@ class LinkButton extends StatelessWidget {
       }
     }
 
-    Widget link = Text(text, style: TextStyle(color: color));
+    Widget link = Padding(
+      padding: const EdgeInsets.only(bottom: 1),
+      child: Text(text, style: TextStyle(color: color)),
+    );
     if (hover) {
       link = DecoratedBox(
         decoration: BoxDecoration(
           border: Border(bottom: BorderSide(color: color)),
         ),
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 1),
-          child: link,
-        ),
+        child: link,
       );
     }
 
