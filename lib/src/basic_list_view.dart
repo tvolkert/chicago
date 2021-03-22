@@ -396,7 +396,7 @@ mixin ListViewElementMixin on RenderObjectElement {
   @override
   void forgetChild(Element child) {
     assert(child.slot is ListViewSlot);
-    final ListViewSlot slot = child.slot;
+    final ListViewSlot slot = child.slot as ListViewSlot;
     assert(_children != null);
     assert(_children!.containsKey(slot.index));
     assert(_children![slot.index] == child);

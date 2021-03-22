@@ -557,7 +557,7 @@ mixin TableViewElementMixin on RenderObjectElement {
   @override
   void forgetChild(Element child) {
     assert(child.slot is TableViewSlot);
-    final TableViewSlot slot = child.slot;
+    final TableViewSlot slot = child.slot as TableViewSlot;
     assert(_children.containsKey(slot.rowIndex));
     final Map<int, Element> row = _children[slot.rowIndex]!;
     assert(row.containsKey(slot.columnIndex));

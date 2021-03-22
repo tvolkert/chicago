@@ -23,9 +23,9 @@
 .flutter-plugins-dependencies
 .metadata
 .packages
-.pubspec.lock
 .pub-cache/
 .pub/
+pubspec.lock
 /build/
 
 # Web related

@@ -35,6 +35,7 @@ export 'src/scroll_pane.dart';
 export 'src/set_baseline.dart';
 export 'src/sheet.dart';
 export 'src/sorting.dart';
+export 'src/span.dart';
 export 'src/spinner.dart';
 export 'src/split_pane.dart';
 export 'src/tab_pane.dart';
