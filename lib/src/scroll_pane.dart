@@ -1018,9 +1018,17 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
   }
 
   void _onPointerScroll(PointerScrollEvent event) {
-    deferMarkNeedsLayout(() {
-      scrollController.scrollOffset += event.scrollDelta;
-    });
+    if ((scrollController.scrollOffset.dx > 0 && event.scrollDelta.dx < 0) ||
+        (scrollController.scrollOffset.dy > 0 && event.scrollDelta.dy < 0) ||
+        (scrollController.scrollOffset.dx < scrollController._maxScrollLeft && event.scrollDelta.dx > 0) ||
+        (scrollController.scrollOffset.dy < scrollController._maxScrollTop && event.scrollDelta.dy > 0)) {
+      GestureBinding.instance!.pointerSignalResolver.register(event, (PointerSignalEvent event) {
+        PointerScrollEvent scrollEvent = event as PointerScrollEvent;
+        deferMarkNeedsLayout(() {
+          scrollController.scrollOffset += scrollEvent.scrollDelta;
+        });
+      });
+    }
   }
 
   @override
