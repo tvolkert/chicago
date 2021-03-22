@@ -20,6 +20,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import 'action_tracker.dart';
@@ -76,10 +77,92 @@ class PushButton<T extends Object> extends StatefulWidget {
   _PushButtonState<T> createState() => _PushButtonState<T>();
 }
 
+class _ActivatePushButtonAction<T extends Object> extends Action<Intent> {
+  _ActivatePushButtonAction(this._state);
+
+  final _PushButtonState<T> _state;
+
+  @override
+  void invoke(Intent intent) {
+    _state._handlePress();
+  }
+}
+
 class _PushButtonState<T extends Object> extends State<PushButton<T>> {
   bool hover = false;
   bool pressed = false;
   bool menuActive = false;
+  bool focused = false;
+  FocusNode? focusNode;
+
+  void _handleFocusChange(bool hasFocus) {
+    setState(() {
+      focused = hasFocus;
+      if (!hasFocus) {
+        pressed = false;
+      }
+    });
+  }
+
+  KeyEventResult _handleKey(FocusNode focusNode, RawKeyEvent event) {
+    // The actual "pressing" of the button happens via the `ActivateIntent`.
+    // This code merely visually shows the button in the pressed state.
+    final Iterable<LogicalKeyboardKey> activateKeys = WidgetsApp.defaultShortcuts.entries
+        .where((MapEntry<LogicalKeySet, Intent> entry) => entry.value is ActivateIntent)
+        .map<LogicalKeySet>((MapEntry<LogicalKeySet, Intent> entry) => entry.key)
+        .where((LogicalKeySet keySet) => keySet.keys.length == 1)
+        .map<LogicalKeyboardKey>((LogicalKeySet keySet) => keySet.keys.single);
+    if (activateKeys.contains(event.logicalKey)) {
+      setState(() {
+        pressed = event is RawKeyDownEvent;
+      });
+    }
+    return KeyEventResult.ignored;
+  }
+
+  void _handlePress() {
+    _handleSimplePress();
+    if (widget.menuItems != null) {
+      _handleMenuPress();
+    }
+  }
+
+  void _handleSimplePress() {
+    focusNode!.requestFocus();
+    if (widget.onPressed != null) {
+      widget.onPressed!();
+    }
+  }
+
+  void _handleMenuPress() {
+    setState(() {
+      menuActive = true;
+    });
+    final RenderBox button = context.findRenderObject() as RenderBox;
+    final RenderBox overlay = Overlay.of(context)!.context.findRenderObject() as RenderBox;
+    final RelativeRect position = RelativeRect.fromRect(
+      Rect.fromPoints(
+        button.localToGlobal(button.size.bottomLeft(Offset.zero), ancestor: overlay),
+        button.localToGlobal(button.size.bottomRight(Offset.zero), ancestor: overlay),
+      ),
+      Offset.zero & overlay.size,
+    );
+    showMenu<T>(
+      context: context,
+      position: position,
+      elevation: 4,
+      items: widget.menuItems!,
+    ).then((T? value) {
+      if (mounted) {
+        setState(() {
+          menuActive = false;
+        });
+        if (widget.onMenuItemSelected != null) {
+          widget.onMenuItemSelected!(value);
+        }
+      }
+    });
+  }
 
   LinearGradient get highlightGradient {
     return LinearGradient(
@@ -97,27 +180,43 @@ class _PushButtonState<T extends Object> extends State<PushButton<T>> {
     );
   }
 
+  bool get isEnabled => widget.onPressed != null;
+
+  @override
+  void initState() {
+    super.initState();
+    focusNode = FocusNode(canRequestFocus: isEnabled);
+  }
+
   @override
   void didUpdateWidget(PushButton<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.onPressed == null) {
-      hover = false;
-      pressed = false;
-      if (menuActive) {
-        Navigator.of(context).pop();
-        menuActive = false;
+    if (widget.onPressed != oldWidget.onPressed) {
+      focusNode!.canRequestFocus = isEnabled;
+      if (!isEnabled) {
+        hover = false;
+        pressed = false;
+        if (menuActive) {
+          Navigator.of(context).pop();
+          menuActive = false;
+        }
       }
     }
   }
 
   @override
-  Widget build(BuildContext context) {
-    final bool enabled = widget.onPressed != null;
+  void dispose() {
+    focusNode!.dispose();
+    focusNode = null;
+    super.dispose();
+  }
 
+  @override
+  Widget build(BuildContext context) {
     final List<Widget> buttonData = <Widget>[];
     if (widget.icon != null) {
       Widget iconImage = Image(image: AssetImage(widget.icon!));
-      if (!enabled) {
+      if (!isEnabled) {
         iconImage = Opacity(
           opacity: 0.5,
           child: iconImage,
@@ -128,7 +227,7 @@ class _PushButtonState<T extends Object> extends State<PushButton<T>> {
 
     if (widget.label != null) {
       TextStyle style = Theme.of(context).textTheme.bodyText2!;
-      if (enabled) {
+      if (isEnabled) {
         style = style.copyWith(color: widget.color);
       } else {
         style = style.copyWith(color: const Color(0xff999999));
@@ -136,12 +235,28 @@ class _PushButtonState<T extends Object> extends State<PushButton<T>> {
       buttonData.add(Text(widget.label!, style: style));
     }
 
-    Widget button = Center(
-      child: Padding(
-        padding: widget.padding,
-        child: widget.axis == Axis.horizontal
-            ? Row(children: buttonData)
-            : Column(children: buttonData),
+    Widget button =
+        widget.axis == Axis.horizontal ? Row(children: buttonData) : Column(children: buttonData);
+
+    button = Actions(
+      actions: <Type, Action<Intent>>{
+        ActivateIntent: _ActivatePushButtonAction<T>(this),
+      },
+      child: Focus(
+        focusNode: focusNode,
+        onKey: _handleKey,
+        onFocusChange: _handleFocusChange,
+        child: Center(
+          child: Padding(
+            padding: widget.padding,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                border: focused ? Border.fromBorderSide(BorderSide(style: BorderStyle.solid, color: Color(0xffcdcdcd))) : null,
+              ),
+              child: button,
+            ),
+          ),
+        ),
       ),
     );
 
@@ -170,12 +285,12 @@ class _PushButtonState<T extends Object> extends State<PushButton<T>> {
 
     if (menuActive || hover || !widget.isToolbar) {
       final Border border = Border.fromBorderSide(
-        BorderSide(color: enabled ? widget.borderColor : widget.disabledBorderColor),
+        BorderSide(color: isEnabled ? widget.borderColor : widget.disabledBorderColor),
       );
       Decoration decoration;
-      if (enabled && (pressed || menuActive)) {
+      if (isEnabled && (pressed || menuActive)) {
         decoration = BoxDecoration(border: border, gradient: pressedGradient);
-      } else if (enabled) {
+      } else if (isEnabled) {
         decoration = BoxDecoration(border: border, gradient: highlightGradient);
       } else {
         decoration = BoxDecoration(border: border, color: widget.disabledBackgroundColor);
@@ -183,43 +298,7 @@ class _PushButtonState<T extends Object> extends State<PushButton<T>> {
       button = DecoratedBox(decoration: decoration, child: button);
     }
 
-    GestureTapCallback? callback = widget.onPressed;
-    if (widget.menuItems != null) {
-      callback = () {
-        if (widget.onPressed != null) {
-          widget.onPressed!();
-        }
-        setState(() {
-          menuActive = true;
-        });
-        final RenderBox button = context.findRenderObject() as RenderBox;
-        final RenderBox overlay = Overlay.of(context)!.context.findRenderObject() as RenderBox;
-        final RelativeRect position = RelativeRect.fromRect(
-          Rect.fromPoints(
-            button.localToGlobal(button.size.bottomLeft(Offset.zero), ancestor: overlay),
-            button.localToGlobal(button.size.bottomRight(Offset.zero), ancestor: overlay),
-          ),
-          Offset.zero & overlay.size,
-        );
-        showMenu<T>(
-          context: context,
-          position: position,
-          elevation: 4,
-          items: widget.menuItems!,
-        ).then((T? value) {
-          if (mounted) {
-            setState(() {
-              menuActive = false;
-            });
-            if (widget.onMenuItemSelected != null) {
-              widget.onMenuItemSelected!(value);
-            }
-          }
-        });
-      };
-    }
-
-    if (enabled) {
+    if (isEnabled) {
       if (widget.showTooltip && widget.label != null) {
         button = Tooltip(
           message: widget.label!,
@@ -244,7 +323,7 @@ class _PushButtonState<T extends Object> extends State<PushButton<T>> {
             setState(() => pressed = false);
           },
           child: GestureDetector(
-            onTap: callback,
+            onTap: _handlePress,
             child: button,
           ),
         ),
