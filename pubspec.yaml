@@ -1,0 +1,20 @@
+name: chicago
+description: The Chicago widget set for Flutter
+version: 0.0.1-dev
+
+environment:
+  sdk: ">=2.12.0 <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  intl: any
+  meta: any
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  assets:
+    - assets/
