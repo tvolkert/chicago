@@ -19,6 +19,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import 'colors.dart';
@@ -26,6 +27,64 @@ import 'hover_builder.dart';
 import 'widget_surveyor.dart';
 
 typedef SpinnerItemBuilder = Widget Function(BuildContext context, int index, bool isEnabled);
+
+class _Worker {
+  _Worker(this.spinner, this.controller);
+
+  final Spinner spinner;
+  final SpinnerController controller;
+  Timer? _timer;
+
+  static const Duration _delay = Duration(milliseconds: 400);
+  static const Duration _period = Duration(milliseconds: 30);
+
+  void start(int direction) {
+    if (_timer != null) {
+      // Already running
+      return;
+    }
+
+    // Wait a timeout period, then begin rapidly spinning
+    _timer = Timer(_delay, () {
+      _timer = Timer.periodic(_period, (Timer timer) {
+        spin(direction);
+      });
+    });
+
+    // We initially spin once to register that we've started
+    spin(direction);
+  }
+
+  void stop() {
+    if (_timer != null) {
+      _timer!.cancel();
+      _timer = null;
+    }
+  }
+
+  void spin(int direction) {
+    final bool circular = spinner.isCircular;
+    final int length = spinner.length;
+
+    if (direction > 0) {
+      if (controller.selectedIndex < length - 1) {
+        controller.selectedIndex++;
+      } else if (circular) {
+        controller.selectedIndex = 0;
+      } else {
+        stop();
+      }
+    } else {
+      if (controller.selectedIndex > 0) {
+        controller.selectedIndex--;
+      } else if (circular) {
+        controller.selectedIndex = length - 1;
+      } else {
+        stop();
+      }
+    }
+  }
+}
 
 class SpinnerController extends ChangeNotifier {
   SpinnerController();
@@ -50,6 +109,7 @@ class Spinner extends StatefulWidget {
     this.isEnabled = true,
     this.isCircular = false,
     this.sizeToContent = false,
+    this.semanticLabel,
   }) : super(key: key);
 
   final int length;
@@ -58,6 +118,7 @@ class Spinner extends StatefulWidget {
   final bool isEnabled;
   final bool isCircular;
   final bool sizeToContent;
+  final String? semanticLabel;
 
   static Widget defaultItemBuilder(BuildContext context, String value) {
     final TextStyle style = DefaultTextStyle.of(context).style;
@@ -82,7 +143,10 @@ class Spinner extends StatefulWidget {
 }
 
 class _SpinnerState extends State<Spinner> {
+  FocusNode? _focusNode;
+  bool _isFocused = false;
   SpinnerController? _controller;
+  late _Worker _worker;
   int _index = -1;
   double? _contentWidth;
 
@@ -121,13 +185,41 @@ class _SpinnerState extends State<Spinner> {
     }
   }
 
+  void _handleFocusChange(bool hasFocus) {
+    setState(() {
+      _isFocused = hasFocus;
+    });
+  }
+
+  KeyEventResult _handleKey(FocusNode node, RawKeyEvent event) {
+    if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+      if (event is RawKeyDownEvent) {
+        _worker.start(-1);
+      } else {
+        _worker.stop();
+      }
+      return KeyEventResult.handled;
+    } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+      if (event is RawKeyDownEvent) {
+        _worker.start(1);
+      } else {
+        _worker.stop();
+      }
+      return KeyEventResult.handled;
+    } else {
+      return KeyEventResult.ignored;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    _focusNode = FocusNode();
     if (widget.controller == null) {
       _controller = SpinnerController();
     }
     controller.addListener(_handleSelectedIndexUpdated);
+    _worker = _Worker(widget, controller);
     _index = _boundsCheckIndex();
   }
 
@@ -152,6 +244,7 @@ class _SpinnerState extends State<Spinner> {
         _controller!.dispose();
         _controller = null;
       }
+      _worker = _Worker(widget, controller);
     }
     _index = _boundsCheckIndex();
     _updateContentWidth();
@@ -164,6 +257,8 @@ class _SpinnerState extends State<Spinner> {
       assert(widget.controller == null);
       _controller!.dispose();
     }
+    _focusNode?.dispose();
+    _focusNode = null;
     super.dispose();
   }
 
@@ -176,6 +271,28 @@ class _SpinnerState extends State<Spinner> {
         child: content,
       );
     }
+    content = Focus(
+      focusNode: _focusNode,
+      onKey: _handleKey,
+      onFocusChange: _handleFocusChange,
+      child: Semantics(
+        enabled: widget.isEnabled,
+        focusable: true,
+        focused: _focusNode!.hasFocus,
+        label: widget.semanticLabel ?? 'Spinner',
+        onIncrease: () => _worker.spin(1),
+        onDecrease: () => _worker.spin(-1),
+        child: Padding(
+          padding: EdgeInsets.all(1),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              border: _isFocused ? Border.fromBorderSide(BorderSide(style: BorderStyle.solid, color: Color(0xffcdcdcd))) : null,
+            ),
+            child: content,
+          ),
+        ),
+      ),
+    );
 
     content = ColoredBox(
       color: const Color(0xffffffff),
@@ -185,13 +302,11 @@ class _SpinnerState extends State<Spinner> {
     return _RawSpinner(
       content: content,
       upButton: _SpinnerButton(
-        spinner: widget,
-        controller: controller,
+        worker: _worker,
         direction: 1,
       ),
       downButton: _SpinnerButton(
-        spinner: widget,
-        controller: controller,
+        worker: _worker,
         direction: -1,
       ),
     );
@@ -201,13 +316,11 @@ class _SpinnerState extends State<Spinner> {
 class _SpinnerButton extends StatefulWidget {
   const _SpinnerButton({
     Key? key,
-    required this.spinner,
-    required this.controller,
+    required this.worker,
     required this.direction,
   }) : super(key: key);
 
-  final Spinner spinner;
-  final SpinnerController controller;
+  final _Worker worker;
   final int direction;
 
   @override
@@ -215,65 +328,21 @@ class _SpinnerButton extends StatefulWidget {
 }
 
 class _SpinnerButtonState extends State<_SpinnerButton> {
-  Timer? _timer;
   bool _pressed = false;
-
-  static const Duration _delay = Duration(milliseconds: 400);
-  static const Duration _period = Duration(milliseconds: 30);
 
   void _handleTapDown(TapDownDetails details) {
     setState(() => _pressed = true);
-
-    // Wait a timeout period, then begin rapidly spinning
-    _timer = Timer(_delay, () {
-      _timer = Timer.periodic(_period, (Timer timer) {
-        _spin();
-      });
-    });
-
-    // We initially spin once to register that we've started
-    _spin();
+    widget.worker.start(widget.direction);
   }
 
   void _handleTapUp(TapUpDetails details) {
     setState(() => _pressed = false);
-    _stop();
+    widget.worker.stop();
   }
 
   void _handleTapCancel() {
     setState(() => _pressed = false);
-    _stop();
-  }
-
-  void _spin() {
-    final bool circular = widget.spinner.isCircular;
-    final int selectedIndex = widget.controller.selectedIndex;
-    final int length = widget.spinner.length;
-
-    if (widget.direction > 0) {
-      if (selectedIndex < length - 1) {
-        widget.controller.selectedIndex = selectedIndex + 1;
-      } else if (circular) {
-        widget.controller.selectedIndex = 0;
-      } else {
-        _stop();
-      }
-    } else {
-      if (selectedIndex > 0) {
-        widget.controller.selectedIndex = selectedIndex - 1;
-      } else if (circular) {
-        widget.controller.selectedIndex = length - 1;
-      } else {
-        _stop();
-      }
-    }
-  }
-
-  void _stop() {
-    if (_timer != null) {
-      _timer!.cancel();
-      _timer = null;
-    }
+    widget.worker.stop();
   }
 
   @override
@@ -324,25 +393,17 @@ class _SpinnerButtonPainter extends CustomPainter {
     canvas.translate((size.width - 5) / 2, (size.height - 5) / 2);
     if (direction > 0) {
       ui.Path path = ui.Path()
-        ..moveTo(0.5, 3.5)
-        ..lineTo(2.5, 1.5)
-        ..lineTo(4.5, 3.5);
+        ..moveTo(0, 4)
+        ..lineTo(2.5, 1)
+        ..lineTo(5, 4);
       ui.Paint paint = ui.Paint()..color = const Color(0xff000000);
-      canvas.drawPath(path, paint);
-      paint
-        ..style = ui.PaintingStyle.stroke
-        ..strokeWidth = 1;
       canvas.drawPath(path, paint);
     } else {
       ui.Path path = ui.Path()
-        ..moveTo(0.5, 1.5)
-        ..lineTo(2.5, 3.5)
-        ..lineTo(4.5, 1.5);
+        ..moveTo(0, 1)
+        ..lineTo(2.5, 4)
+        ..lineTo(5, 1);
       ui.Paint paint = ui.Paint()..color = const Color(0xff000000);
-      canvas.drawPath(path, paint);
-      paint
-        ..style = ui.PaintingStyle.stroke
-        ..strokeWidth = 1;
       canvas.drawPath(path, paint);
     }
   }
