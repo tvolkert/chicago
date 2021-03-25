@@ -171,11 +171,11 @@ class MessageType {
   static const MessageType info = MessageType._('info');
 
   Widget toImage() {
-    return Image.asset('assets/message_type-$_assetKey-32x32.png');
+    return Image.asset('assets/message_type-$_assetKey-32x32.png', package: 'chicago');
   }
 
   Widget toSmallImage() {
-    return Image.asset('assets/message_type-$_assetKey-16x16.png');
+    return Image.asset('assets/message_type-$_assetKey-16x16.png', package: 'chicago');
   }
 }
 
