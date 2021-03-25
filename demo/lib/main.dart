@@ -39,6 +39,33 @@ const List<String> colorNames = [
   'Violet',
 ];
 
+VoidCallback acknowledgeAction(BuildContext context, [String action = 'an action']) {
+  return () {
+    chicago.Prompt.open(
+      context: context,
+      messageType: chicago.MessageType.info,
+      message: 'Registered $action.',
+      body: Container(),
+      options: ['OK'],
+      selectedOption: 0,
+    );
+  };
+}
+
+VoidCallback acknowledgeButtonPress(BuildContext context) {
+  return acknowledgeAction(
+    context,
+    'a button press',
+  );
+}
+
+VoidCallback acknowledgeLinkPress(BuildContext context) {
+  return acknowledgeAction(
+    context,
+    'a link',
+  );
+}
+
 void main() {
   tableSortController['i'] = chicago.SortDirection.ascending;
   tableSortController.addListener(chicago.TableViewSortListener(
@@ -250,10 +277,14 @@ class KitchenSink extends StatelessWidget {
                                               Row(
                                                 children: [
                                                   chicago.PushButton(
-                                                      label: 'One', onPressed: () {}),
+                                                    label: 'One',
+                                                    onPressed: acknowledgeButtonPress(context),
+                                                  ),
                                                   SizedBox(width: 4),
                                                   chicago.PushButton(
-                                                      label: 'Two', onPressed: () {}),
+                                                    label: 'Two',
+                                                    onPressed: acknowledgeButtonPress(context),
+                                                  ),
                                                   SizedBox(width: 4),
                                                   chicago.PushButton(label: 'Three'),
                                                 ],
@@ -265,18 +296,22 @@ class KitchenSink extends StatelessWidget {
                                                 crossAxisAlignment: CrossAxisAlignment.start,
                                                 children: [
                                                   chicago.PushButton(
-                                                      label: 'Bell',
-                                                      icon: 'assets/bell.png',
-                                                      onPressed: () {}),
+                                                    label: 'Bell',
+                                                    icon: 'assets/bell.png',
+                                                    onPressed: acknowledgeButtonPress(context),
+                                                  ),
                                                   SizedBox(width: 4),
                                                   chicago.PushButton(
-                                                      label: 'Clock',
-                                                      icon: 'assets/clock.png',
-                                                      axis: Axis.vertical,
-                                                      onPressed: () {}),
+                                                    label: 'Clock',
+                                                    icon: 'assets/clock.png',
+                                                    axis: Axis.vertical,
+                                                    onPressed: acknowledgeButtonPress(context),
+                                                  ),
                                                   SizedBox(width: 4),
                                                   chicago.PushButton(
-                                                      label: 'House', icon: 'assets/house.png'),
+                                                    label: 'House',
+                                                    icon: 'assets/house.png',
+                                                  ),
                                                 ],
                                               ),
                                               SizedBox(height: 10),
@@ -285,17 +320,21 @@ class KitchenSink extends StatelessWidget {
                                               Row(
                                                 children: [
                                                   chicago.PushButton(
-                                                      icon: 'assets/bell.png',
-                                                      isToolbar: true,
-                                                      onPressed: () {}),
+                                                    icon: 'assets/bell.png',
+                                                    isToolbar: true,
+                                                    onPressed: acknowledgeButtonPress(context),
+                                                  ),
                                                   SizedBox(width: 4),
                                                   chicago.PushButton(
-                                                      icon: 'assets/clock.png',
-                                                      isToolbar: true,
-                                                      onPressed: () {}),
+                                                    icon: 'assets/clock.png',
+                                                    isToolbar: true,
+                                                    onPressed: acknowledgeButtonPress(context),
+                                                  ),
                                                   SizedBox(width: 4),
                                                   chicago.PushButton(
-                                                      icon: 'assets/house.png', isToolbar: true),
+                                                    icon: 'assets/house.png',
+                                                    isToolbar: true,
+                                                  ),
                                                 ],
                                               ),
                                               SizedBox(height: 10),
@@ -377,9 +416,15 @@ class KitchenSink extends StatelessWidget {
                                               SizedBox(height: 4),
                                               Row(
                                                 children: [
-                                                  chicago.LinkButton(text: 'One', onPressed: () {}),
+                                                  chicago.LinkButton(
+                                                    text: 'One',
+                                                    onPressed: acknowledgeLinkPress(context),
+                                                  ),
                                                   SizedBox(width: 4),
-                                                  chicago.LinkButton(text: 'Two', onPressed: () {}),
+                                                  chicago.LinkButton(
+                                                    text: 'Two',
+                                                    onPressed: acknowledgeLinkPress(context),
+                                                  ),
                                                   SizedBox(width: 4),
                                                   chicago.LinkButton(text: 'Three'),
                                                 ],
@@ -393,13 +438,13 @@ class KitchenSink extends StatelessWidget {
                                                   chicago.LinkButton(
                                                     text: 'Bell',
                                                     image: AssetImage('assets/bell.png'),
-                                                    onPressed: () {},
+                                                    onPressed: acknowledgeLinkPress(context),
                                                   ),
                                                   SizedBox(height: 4),
                                                   chicago.LinkButton(
                                                     text: 'Clock',
                                                     image: AssetImage('assets/clock.png'),
-                                                    onPressed: () {},
+                                                    onPressed: acknowledgeLinkPress(context),
                                                   ),
                                                   SizedBox(height: 4),
                                                   chicago.LinkButton(
