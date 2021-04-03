@@ -22,58 +22,6 @@ import 'text.dart';
 
 typedef TableRowComparator = int Function(Map<String, int> row1, Map<String, int> row2);
 
-chicago.TableColumnController _createTableColumn(String key, String name) {
-  return chicago.TableColumnController(
-    key: key,
-    width: chicago.ConstrainedTableColumnWidth(width: 48),
-    headerRenderer: ({
-      required BuildContext context,
-      required int columnIndex,
-    }) {
-      return Text(name);
-    },
-    cellRenderer: ({
-      required BuildContext context,
-      required int rowIndex,
-      required int columnIndex,
-      required bool rowSelected,
-      required bool rowHighlighted,
-      required bool isEditing,
-      required bool isRowDisabled,
-    }) {
-      final int? value = tableData[rowIndex][key];
-      TextStyle style = DefaultTextStyle.of(context).style;
-      if (rowSelected) {
-        style = style.copyWith(color: Color(0xffffffff));
-      }
-      return Text('$value', style: style);
-    },
-  );
-}
-
-chicago.TableColumnController _createFlexTableColumn() {
-  return chicago.TableColumnController(
-    key: 'flex',
-    headerRenderer: ({
-      required BuildContext context,
-      required int columnIndex,
-    }) {
-      return Text('');
-    },
-    cellRenderer: ({
-      required BuildContext context,
-      required int rowIndex,
-      required int columnIndex,
-      required bool rowSelected,
-      required bool rowHighlighted,
-      required bool isEditing,
-      required bool isRowDisabled,
-    }) {
-      return Container();
-    },
-  );
-}
-
 final math.Random rand = math.Random();
 const int tableLength = 10000;
 
@@ -130,6 +78,58 @@ class _SortableTableDemoState extends State<SortableTableDemo> {
   late chicago.TableViewSortController _sortController;
   late chicago.TableViewMetricsController _metricsController;
   late chicago.ScrollController _scrollController;
+
+  static chicago.TableColumnController _createTableColumn(String key, String name) {
+    return chicago.TableColumnController(
+      key: key,
+      width: chicago.ConstrainedTableColumnWidth(width: 48),
+      headerRenderer: ({
+        required BuildContext context,
+        required int columnIndex,
+      }) {
+        return Text(name);
+      },
+      cellRenderer: ({
+        required BuildContext context,
+        required int rowIndex,
+        required int columnIndex,
+        required bool rowSelected,
+        required bool rowHighlighted,
+        required bool isEditing,
+        required bool isRowDisabled,
+      }) {
+        final int? value = tableData[rowIndex][key];
+        TextStyle style = DefaultTextStyle.of(context).style;
+        if (rowSelected) {
+          style = style.copyWith(color: Color(0xffffffff));
+        }
+        return Text('$value', style: style);
+      },
+    );
+  }
+
+  static chicago.TableColumnController _createFlexTableColumn() {
+    return chicago.TableColumnController(
+      key: 'flex',
+      headerRenderer: ({
+        required BuildContext context,
+        required int columnIndex,
+      }) {
+        return Text('');
+      },
+      cellRenderer: ({
+        required BuildContext context,
+        required int rowIndex,
+        required int columnIndex,
+        required bool rowSelected,
+        required bool rowHighlighted,
+        required bool isEditing,
+        required bool isRowDisabled,
+      }) {
+        return Container();
+      },
+    );
+  }
 
   static TableRowComparator _getTableRowComparator(
     String sortKey,
