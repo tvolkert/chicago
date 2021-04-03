@@ -22,31 +22,6 @@ import 'text.dart';
 
 typedef TableRowComparator = int Function(Map<String, int> row1, Map<String, int> row2);
 
-final List<String> customTableData = <String>[
-  'anchor',
-  'bell',
-  'clock',
-  'cup',
-  'house',
-  'star',
-];
-
-final List<bool> customTableCheckmarks = <bool>[
-  true,
-  false,
-  false,
-  false,
-  false,
-  false,
-];
-
-final List<List<String>> editableTableData = <List<String>>[
-  ['Dog', 'Boomer'],
-  ['Dog', 'Faith'],
-  ['Cat', 'Sasha'],
-  ['Snake', 'Goliath'],
-];
-
 chicago.TableColumnController _createTableColumn(String key, String name) {
   return chicago.TableColumnController(
     key: key,
@@ -113,20 +88,22 @@ final List<Map<String, int>> tableData = List<Map<String, int>>.generate(tableLe
 });
 
 class TablesDemo extends StatelessWidget {
+  const TablesDemo({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        HeaderText('Tables'),
+        const HeaderText('Tables'),
         chicago.Border(
-          borderColor: Color(0xff999999),
-          backgroundColor: Color(0xffffffff),
+          borderColor: const Color(0xff999999),
+          backgroundColor: const Color(0xffffffff),
           child: Padding(
-            padding: EdgeInsets.all(4),
+            padding: const EdgeInsets.all(4),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+              children: const <Widget>[
                 SortableTableDemo(),
                 SizedBox(width: 8),
                 CustomTableDemo(),
@@ -142,6 +119,8 @@ class TablesDemo extends StatelessWidget {
 }
 
 class SortableTableDemo extends StatefulWidget {
+  const SortableTableDemo({Key? key}) : super(key: key);
+
   @override
   _SortableTableDemoState createState() => _SortableTableDemoState();
 }
@@ -153,7 +132,9 @@ class _SortableTableDemoState extends State<SortableTableDemo> {
   late chicago.ScrollController _scrollController;
 
   static TableRowComparator _getTableRowComparator(
-      String sortKey, chicago.SortDirection direction) {
+    String sortKey,
+    chicago.SortDirection direction,
+  ) {
     return (Map<String, int> row1, Map<String, int> row2) {
       int value1 = row1[sortKey]!;
       int value2 = row2[sortKey]!;
@@ -213,6 +194,7 @@ class _SortableTableDemoState extends State<SortableTableDemo> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         BoldText('Sortable'),
+        SizedBox(height: 4),
         SizedBox(
           width: 276,
           height: 160,
@@ -243,12 +225,96 @@ class _SortableTableDemoState extends State<SortableTableDemo> {
 }
 
 class CustomTableDemo extends StatefulWidget {
+  const CustomTableDemo({Key? key}) : super(key: key);
+
   @override
   _CustomTableDemoState createState() => _CustomTableDemoState();
 }
 
+class _CustomItem {
+  const _CustomItem(this.asset, this.name, this.isChecked);
+
+  final String asset;
+  final String name;
+  final bool isChecked;
+
+  _CustomItem toggleChecked() => _CustomItem(asset, name, !isChecked);
+}
+
 class _CustomTableDemoState extends State<CustomTableDemo> {
   late chicago.TableViewSelectionController _selectionController;
+  late List<_CustomItem> _items;
+
+  static Widget _buildIsCheckedHeader({
+    required BuildContext context,
+    required int columnIndex,
+  }) {
+    return Image.asset('assets/flag_red.png');
+  }
+
+  Widget _buildIsCheckedCell({
+    required BuildContext context,
+    required int rowIndex,
+    required int columnIndex,
+    required bool rowSelected,
+    required bool rowHighlighted,
+    required bool isEditing,
+    required bool isRowDisabled,
+  }) {
+    final _CustomItem item = _items[rowIndex];
+    return Padding(
+      padding: EdgeInsets.all(2),
+      child: chicago.BasicCheckbox(
+        checked: item.isChecked,
+        onTap: () {
+          setState(() {
+            _items[rowIndex] = _items[rowIndex].toggleChecked();
+          });
+        },
+      ),
+    );
+  }
+
+  static Widget _buildIconHeader({
+    required BuildContext context,
+    required int columnIndex,
+  }) {
+    return Text('Icon');
+  }
+
+  Widget _buildIconCell({
+    required BuildContext context,
+    required int rowIndex,
+    required int columnIndex,
+    required bool rowSelected,
+    required bool rowHighlighted,
+    required bool isEditing,
+    required bool isRowDisabled,
+  }) {
+    final _CustomItem item = _items[rowIndex];
+    final String asset = 'assets/${item.asset}.png';
+    return Image.asset(asset);
+  }
+
+  static Widget _buildNameHeader({
+    required BuildContext context,
+    required int columnIndex,
+  }) {
+    return Text('Name');
+  }
+
+  Widget _buildNameCell({
+    required BuildContext context,
+    required int rowIndex,
+    required int columnIndex,
+    required bool rowSelected,
+    required bool rowHighlighted,
+    required bool isEditing,
+    required bool isRowDisabled,
+  }) {
+    final _CustomItem item = _items[rowIndex];
+    return rowSelected ? WhiteText(item.name) : Text(item.name);
+  }
 
   @override
   void initState() {
@@ -256,6 +322,14 @@ class _CustomTableDemoState extends State<CustomTableDemo> {
     _selectionController = chicago.TableViewSelectionController(
       selectMode: chicago.SelectMode.multi,
     );
+    _items = <_CustomItem>[
+      _CustomItem('anchor', 'Anchor', true),
+      _CustomItem('bell', 'Bell', false),
+      _CustomItem('clock', 'Clock', false),
+      _CustomItem('cup', 'Cup', true),
+      _CustomItem('house', 'House', false),
+      _CustomItem('star', 'Star', false),
+    ];
   }
 
   @override
@@ -269,7 +343,8 @@ class _CustomTableDemoState extends State<CustomTableDemo> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        BoldText('Custom Content'),
+        const BoldText('Custom Content'),
+        SizedBox(height: 4),
         SizedBox(
           width: 276,
           height: 160,
@@ -284,80 +359,20 @@ class _CustomTableDemoState extends State<CustomTableDemo> {
                 chicago.TableColumnController(
                   key: 'flag',
                   width: chicago.FixedTableColumnWidth(20),
-                  headerRenderer: ({
-                    required BuildContext context,
-                    required int columnIndex,
-                  }) {
-                    return Image.asset('assets/flag_red.png');
-                  },
-                  cellRenderer: ({
-                    required BuildContext context,
-                    required int rowIndex,
-                    required int columnIndex,
-                    required bool rowSelected,
-                    required bool rowHighlighted,
-                    required bool isEditing,
-                    required bool isRowDisabled,
-                  }) {
-                    final bool checked = customTableCheckmarks[rowIndex];
-                    return Padding(
-                      padding: EdgeInsets.all(2),
-                      child: chicago.BasicCheckbox(
-                        checked: checked,
-                        onTap: () {
-                          setState(() {
-                            customTableCheckmarks[rowIndex] = !customTableCheckmarks[rowIndex];
-                          });
-                        },
-                      ),
-                    );
-                  },
+                  headerRenderer: _buildIsCheckedHeader,
+                  cellRenderer: _buildIsCheckedCell,
                 ),
                 chicago.TableColumnController(
                   key: 'icon',
                   width: chicago.ConstrainedTableColumnWidth(width: 50),
-                  headerRenderer: ({
-                    required BuildContext context,
-                    required int columnIndex,
-                  }) {
-                    return Text('Icon');
-                  },
-                  cellRenderer: ({
-                    required BuildContext context,
-                    required int rowIndex,
-                    required int columnIndex,
-                    required bool rowSelected,
-                    required bool rowHighlighted,
-                    required bool isEditing,
-                    required bool isRowDisabled,
-                  }) {
-                    final String value = customTableData[rowIndex];
-                    final String asset = 'assets/$value.png';
-                    return Image.asset(asset);
-                  },
+                  headerRenderer: _buildIconHeader,
+                  cellRenderer: _buildIconCell,
                 ),
                 chicago.TableColumnController(
                   key: 'name',
                   width: chicago.FlexTableColumnWidth(),
-                  headerRenderer: ({
-                    required BuildContext context,
-                    required int columnIndex,
-                  }) {
-                    return Text('Name');
-                  },
-                  cellRenderer: ({
-                    required BuildContext context,
-                    required int rowIndex,
-                    required int columnIndex,
-                    required bool rowSelected,
-                    required bool rowHighlighted,
-                    required bool isEditing,
-                    required bool isRowDisabled,
-                  }) {
-                    final String value = customTableData[rowIndex];
-                    final String name = value[0].toUpperCase() + value.substring(1);
-                    return rowSelected ? WhiteText(name) : Text(name);
-                  },
+                  headerRenderer: _buildNameHeader,
+                  cellRenderer: _buildNameCell,
                 ),
               ],
             ),
@@ -369,8 +384,17 @@ class _CustomTableDemoState extends State<CustomTableDemo> {
 }
 
 class EditableTableDemo extends StatefulWidget {
+  const EditableTableDemo({Key? key}) : super(key: key);
+
   @override
   _EditableTableDemoState createState() => _EditableTableDemoState();
+}
+
+class _EditableItem {
+  const _EditableItem(this.animal, this.name);
+
+  final String animal;
+  final String name;
 }
 
 class _EditableTableDemoState extends State<EditableTableDemo> {
@@ -378,6 +402,7 @@ class _EditableTableDemoState extends State<EditableTableDemo> {
   late chicago.TableViewEditorController _editorController;
   late TextEditingController _textController;
   late chicago.ListViewSelectionController _listButtonController;
+  late List<_EditableItem> _items;
 
   static const List<String> editableTableListButtonOptions = [
     'Dog',
@@ -387,6 +412,84 @@ class _EditableTableDemoState extends State<EditableTableDemo> {
     'Bird',
   ];
 
+  static Widget _buildTypeHeader({
+    required BuildContext context,
+    required int columnIndex,
+  }) {
+    return Text('Type');
+  }
+
+  Widget _buildTypeCell({
+    required BuildContext context,
+    required int rowIndex,
+    required int columnIndex,
+    required bool rowSelected,
+    required bool rowHighlighted,
+    required bool isEditing,
+    required bool isRowDisabled,
+  }) {
+    if (isEditing) {
+      return chicago.ListButton<String>(
+        items: editableTableListButtonOptions,
+        selectionController: _listButtonController,
+      );
+    } else {
+      final String text = _items[rowIndex].animal;
+      return Padding(
+        padding: EdgeInsets.all(2),
+        child: rowSelected ? WhiteText(text) : Text(text),
+      );
+    }
+  }
+
+  static Widget _buildNameHeader({
+    required BuildContext context,
+    required int columnIndex,
+  }) {
+    return Text('Name');
+  }
+
+  Widget _buildNameCell({
+    required BuildContext context,
+    required int rowIndex,
+    required int columnIndex,
+    required bool rowSelected,
+    required bool rowHighlighted,
+    required bool isEditing,
+    required bool isRowDisabled,
+  }) {
+    if (isEditing) {
+      return chicago.TextInput(
+        controller: _textController,
+      );
+    } else {
+      final String text = _items[rowIndex].name;
+      return Padding(
+        padding: EdgeInsets.all(2),
+        child: rowSelected ? WhiteText(text) : Text(text),
+      );
+    }
+  }
+
+  static Widget _buildFlexHeader({
+    required BuildContext context,
+    required int columnIndex,
+  }) {
+    return Container();
+  }
+
+  static Widget _buildFlexCell({
+    required BuildContext context,
+    required int rowIndex,
+    required int columnIndex,
+    required bool rowSelected,
+    required bool rowHighlighted,
+    required bool isEditing,
+    required bool isRowDisabled,
+  }) {
+    return Container();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -394,6 +497,12 @@ class _EditableTableDemoState extends State<EditableTableDemo> {
     _editorController = chicago.TableViewEditorController();
     _textController = TextEditingController();
     _listButtonController = chicago.ListViewSelectionController();
+    _items = <_EditableItem>[
+      _EditableItem('Dog', 'Boomer'),
+      _EditableItem('Dog', 'Faith'),
+      _EditableItem('Cat', 'Sasha'),
+      _EditableItem('Snake', 'Goliath'),
+    ];
 
     int editingRowIndex = -1;
     _editorController.addListener(chicago.TableViewEditorListener(
@@ -403,8 +512,8 @@ class _EditableTableDemoState extends State<EditableTableDemo> {
         int columnIndex,
       ) {
         _listButtonController.selectedIndex =
-            editableTableListButtonOptions.indexOf(editableTableData[rowIndex][0]);
-        _textController.text = editableTableData[rowIndex][1];
+            editableTableListButtonOptions.indexOf(_items[rowIndex].animal);
+        _textController.text = _items[rowIndex].name;
         editingRowIndex = rowIndex;
         return chicago.Vote.approve;
       },
@@ -413,9 +522,11 @@ class _EditableTableDemoState extends State<EditableTableDemo> {
         chicago.TableViewEditOutcome outcome,
       ) {
         if (outcome == chicago.TableViewEditOutcome.saved) {
-          editableTableData[editingRowIndex][0] =
-              editableTableListButtonOptions[_listButtonController.selectedIndex];
-          editableTableData[editingRowIndex][1] = _textController.text;
+          final String animal = editableTableListButtonOptions[_listButtonController.selectedIndex];
+          final String name = _textController.text;
+          setState(() {
+            _items[editingRowIndex] = _EditableItem(animal, name);
+          });
         }
       },
     ));
@@ -436,6 +547,7 @@ class _EditableTableDemoState extends State<EditableTableDemo> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         BoldText('Editable'),
+        SizedBox(height: 4),
         SizedBox(
           width: 276,
           height: 160,
@@ -446,91 +558,25 @@ class _EditableTableDemoState extends State<EditableTableDemo> {
               editorController: _editorController,
               includeHeader: true,
               rowHeight: 23,
-              length: editableTableData.length,
+              length: _items.length,
               columns: [
                 chicago.TableColumnController(
                   key: 'type',
                   width: chicago.ConstrainedTableColumnWidth(width: 100),
-                  headerRenderer: ({
-                    required BuildContext context,
-                    required int columnIndex,
-                  }) {
-                    return Text('Type');
-                  },
-                  cellRenderer: ({
-                    required BuildContext context,
-                    required int rowIndex,
-                    required int columnIndex,
-                    required bool rowSelected,
-                    required bool rowHighlighted,
-                    required bool isEditing,
-                    required bool isRowDisabled,
-                  }) {
-                    if (isEditing) {
-                      return chicago.ListButton<String>(
-                        items: editableTableListButtonOptions,
-                        selectionController: _listButtonController,
-                      );
-                    } else {
-                      final String text = editableTableData[rowIndex][columnIndex];
-                      return Padding(
-                        padding: EdgeInsets.all(2),
-                        child: rowSelected ? WhiteText(text) : Text(text),
-                      );
-                    }
-                  },
+                  headerRenderer: _buildTypeHeader,
+                  cellRenderer: _buildTypeCell,
                 ),
                 chicago.TableColumnController(
                   key: 'name',
                   width: chicago.ConstrainedTableColumnWidth(width: 100),
-                  headerRenderer: ({
-                    required BuildContext context,
-                    required int columnIndex,
-                  }) {
-                    return Text('Name');
-                  },
-                  cellRenderer: ({
-                    required BuildContext context,
-                    required int rowIndex,
-                    required int columnIndex,
-                    required bool rowSelected,
-                    required bool rowHighlighted,
-                    required bool isEditing,
-                    required bool isRowDisabled,
-                  }) {
-                    if (isEditing) {
-                      return chicago.TextInput(
-                        controller: _textController,
-                      );
-                    } else {
-                      final String text = editableTableData[rowIndex][columnIndex];
-                      return Padding(
-                        padding: EdgeInsets.all(2),
-                        child: rowSelected ? WhiteText(text) : Text(text),
-                      );
-                    }
-                  },
+                  headerRenderer: _buildNameHeader,
+                  cellRenderer: _buildNameCell,
                 ),
                 chicago.TableColumnController(
                   key: 'flex',
                   width: chicago.FlexTableColumnWidth(),
-                  headerRenderer: ({
-                    required BuildContext context,
-                    required int columnIndex,
-                  }) {
-                    return Container();
-                  },
-                  cellRenderer: ({
-                    required BuildContext context,
-                    required int rowIndex,
-                    required int columnIndex,
-                    required bool rowSelected,
-                    required bool rowHighlighted,
-                    required bool isEditing,
-                    required bool isRowDisabled,
-                  }) {
-                    return Container();
-                  },
+                  headerRenderer: _buildFlexHeader,
+                  cellRenderer: _buildFlexCell,
                 ),
               ],
             ),

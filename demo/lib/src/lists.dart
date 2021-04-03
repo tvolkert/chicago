@@ -19,20 +19,22 @@ import 'package:flutter/widgets.dart';
 import 'text.dart';
 
 class ListsDemo extends StatelessWidget {
+  const ListsDemo({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        HeaderText('Lists'),
+        const HeaderText('Lists'),
         chicago.Border(
-          borderColor: Color(0xff999999),
+          borderColor: const Color(0xff999999),
           backgroundColor: const Color(0xffffffff),
           child: Padding(
-            padding: EdgeInsets.fromLTRB(4, 2, 4, 4),
+            padding: const EdgeInsets.fromLTRB(4, 2, 4, 4),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+              children: const [
                 BasicListDemo(),
                 SizedBox(width: 12),
                 LazyListDemo(),
@@ -52,12 +54,34 @@ class ListsDemo extends StatelessWidget {
 }
 
 class BasicListDemo extends StatefulWidget {
+  const BasicListDemo({Key? key}) : super(key: key);
+
   @override
   _BasicListDemoState createState() => _BasicListDemoState();
 }
 
 class _BasicListDemoState extends State<BasicListDemo> {
   late chicago.ListViewSelectionController _selectionController;
+
+  static const List<String> _colors = [
+    'Blue',
+    'Green',
+    'Orange',
+    'Purple',
+    'Red',
+    'Yellow',
+  ];
+
+  static Widget _buildItem({
+    required BuildContext context,
+    required int index,
+    required bool isSelected,
+    required bool isHighlighted,
+    required bool isDisabled,
+  }) {
+    String text = _colors[index];
+    return isSelected ? WhiteText(text) : Text(text);
+  }
 
   @override
   void initState() {
@@ -75,36 +99,19 @@ class _BasicListDemoState extends State<BasicListDemo> {
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        BoldText('Basic'),
-        SizedBox(height: 4),
+      children: <Widget>[
+        const BoldText('Basic'),
+        const SizedBox(height: 4),
         SizedBox(
           width: 72,
           height: 90,
           child: chicago.Border(
-            borderColor: Color(0xff999999),
+            borderColor: const Color(0xff999999),
             child: chicago.ScrollableListView(
               itemHeight: 19,
-              length: 6,
+              length: _colors.length,
               selectionController: _selectionController,
-              itemBuilder: ({
-                required BuildContext context,
-                required int index,
-                required bool isSelected,
-                required bool isHighlighted,
-                required bool isDisabled,
-              }) {
-                const List<String> colors = [
-                  'Blue',
-                  'Green',
-                  'Orange',
-                  'Purple',
-                  'Red',
-                  'Yellow',
-                ];
-                String text = colors[index];
-                return isSelected ? WhiteText(text) : Text(text);
-              },
+              itemBuilder: _buildItem,
             ),
           ),
         ),
@@ -114,12 +121,25 @@ class _BasicListDemoState extends State<BasicListDemo> {
 }
 
 class LazyListDemo extends StatefulWidget {
+  const LazyListDemo({Key? key}) : super(key: key);
+
   @override
   _LazyListDemoState createState() => _LazyListDemoState();
 }
 
 class _LazyListDemoState extends State<LazyListDemo> {
   late chicago.ListViewSelectionController _selectionController;
+
+  static Widget _buildItem({
+    required BuildContext context,
+    required int index,
+    required bool isSelected,
+    required bool isHighlighted,
+    required bool isDisabled,
+  }) {
+    String text = '${index + 1}';
+    return isSelected ? WhiteText(text) : Text(text);
+  }
 
   @override
   void initState() {
@@ -138,27 +158,18 @@ class _LazyListDemoState extends State<LazyListDemo> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        BoldText('Lazy'),
-        SizedBox(height: 4),
+        const BoldText('Lazy'),
+        const SizedBox(height: 4),
         SizedBox(
           width: 90,
           height: 90,
           child: chicago.Border(
-            borderColor: Color(0xff999999),
+            borderColor: const Color(0xff999999),
             child: chicago.ScrollableListView(
               itemHeight: 19,
               length: 1000000,
               selectionController: _selectionController,
-              itemBuilder: ({
-                required BuildContext context,
-                required int index,
-                required bool isSelected,
-                required bool isHighlighted,
-                required bool isDisabled,
-              }) {
-                String text = '${index + 1}';
-                return isSelected ? WhiteText(text) : Text(text);
-              },
+              itemBuilder: _buildItem,
             ),
           ),
         ),
@@ -168,12 +179,34 @@ class _LazyListDemoState extends State<LazyListDemo> {
 }
 
 class MultiSelectListDemo extends StatefulWidget {
+  const MultiSelectListDemo({Key? key}) : super(key: key);
+
   @override
   _MultiSelectListDemoState createState() => _MultiSelectListDemoState();
 }
 
 class _MultiSelectListDemoState extends State<MultiSelectListDemo> {
   late chicago.ListViewSelectionController _selectionController;
+
+  static const List<String> _shapes = [
+    'Circle',
+    'Ellipse',
+    'Square',
+    'Rectangle',
+    'Hexagon',
+    'Octagon',
+  ];
+
+  static Widget _buildItem({
+    required BuildContext context,
+    required int index,
+    required bool isSelected,
+    required bool isHighlighted,
+    required bool isDisabled,
+  }) {
+    String text = _shapes[index];
+    return isSelected ? WhiteText(text) : Text(text);
+  }
 
   @override
   void initState() {
@@ -193,35 +226,18 @@ class _MultiSelectListDemoState extends State<MultiSelectListDemo> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        BoldText('Multi-Select'),
-        SizedBox(height: 4),
+        const BoldText('Multi-Select'),
+        const SizedBox(height: 4),
         SizedBox(
           width: 90,
           height: 90,
           child: chicago.Border(
-            borderColor: Color(0xff999999),
+            borderColor: const Color(0xff999999),
             child: chicago.ScrollableListView(
               itemHeight: 19,
-              length: 6,
+              length: _shapes.length,
               selectionController: _selectionController,
-              itemBuilder: ({
-                required BuildContext context,
-                required int index,
-                required bool isSelected,
-                required bool isHighlighted,
-                required bool isDisabled,
-              }) {
-                const List<String> shapes = [
-                  'Circle',
-                  'Ellipse',
-                  'Square',
-                  'Rectangle',
-                  'Hexagon',
-                  'Octagon',
-                ];
-                String text = shapes[index];
-                return isSelected ? WhiteText(text) : Text(text);
-              },
+              itemBuilder: _buildItem,
             ),
           ),
         ),
@@ -231,13 +247,52 @@ class _MultiSelectListDemoState extends State<MultiSelectListDemo> {
 }
 
 class ImageListDemo extends StatefulWidget {
+  const ImageListDemo({Key? key}) : super(key: key);
+
   @override
   _ImageListDemoState createState() => _ImageListDemoState();
+}
+
+class _ImageItem {
+  const _ImageItem(this.name, this.asset);
+
+  final String name;
+  final String asset;
 }
 
 class _ImageListDemoState extends State<ImageListDemo> {
   late chicago.ListViewSelectionController _selectionController;
   late chicago.ListViewItemDisablerController _disablerController;
+
+  static const List<_ImageItem> _items = [
+    _ImageItem('Anchor', 'assets/anchor.png'),
+    _ImageItem('Bell', 'assets/bell.png'),
+    _ImageItem('Clock', 'assets/clock.png'),
+    _ImageItem('Cup', 'assets/cup.png'),
+    _ImageItem('House', 'assets/house.png'),
+    _ImageItem('Star', 'assets/star.png'),
+  ];
+
+  static Widget _buildItem({
+    required BuildContext context,
+    required int index,
+    required bool isSelected,
+    required bool isHighlighted,
+    required bool isDisabled,
+  }) {
+    final String text = _items[index].name;
+    return Row(
+      children: [
+        Image.asset(_items[index].asset),
+        SizedBox(width: 4),
+        isDisabled
+            ? GreyText(text)
+            : isSelected
+                ? WhiteText(text)
+                : Text(text),
+      ],
+    );
+  }
 
   @override
   void initState() {
@@ -259,53 +314,19 @@ class _ImageListDemoState extends State<ImageListDemo> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        BoldText('Image'),
-        SizedBox(height: 4),
+        const BoldText('Image'),
+        const SizedBox(height: 4),
         SizedBox(
           width: 90,
           height: 90,
           child: chicago.Border(
-            borderColor: Color(0xff999999),
+            borderColor: const Color(0xff999999),
             child: chicago.ScrollableListView(
               itemHeight: 19,
-              length: 6,
+              length: _items.length,
               selectionController: _selectionController,
               itemDisabledController: _disablerController,
-              itemBuilder: ({
-                required BuildContext context,
-                required int index,
-                required bool isSelected,
-                required bool isHighlighted,
-                required bool isDisabled,
-              }) {
-                const List<String> assets = [
-                  'assets/anchor.png',
-                  'assets/bell.png',
-                  'assets/clock.png',
-                  'assets/cup.png',
-                  'assets/house.png',
-                  'assets/star.png',
-                ];
-                const List<String> items = [
-                  'Anchor',
-                  'Bell',
-                  'Clock',
-                  'Cup',
-                  'House',
-                  'Star',
-                ];
-                return Row(
-                  children: [
-                    Image.asset(assets[index]),
-                    SizedBox(width: 4),
-                    isDisabled
-                        ? GreyText(items[index])
-                        : isSelected
-                            ? WhiteText(items[index])
-                            : Text(items[index]),
-                  ],
-                );
-              },
+              itemBuilder: _buildItem,
             ),
           ),
         ),
@@ -315,19 +336,60 @@ class _ImageListDemoState extends State<ImageListDemo> {
 }
 
 class ListButtonsDemo extends StatefulWidget {
+  const ListButtonsDemo({Key? key}) : super(key: key);
+
   @override
   _ListButtonsDemoState createState() => _ListButtonsDemoState();
+}
+
+class _ColorItem {
+  const _ColorItem(this.color, this.name);
+
+  final Color color;
+  final String name;
 }
 
 class _ListButtonsDemoState extends State<ListButtonsDemo> {
   late chicago.ListViewSelectionController _basicSelectionController;
   late chicago.ListViewSelectionController _imageSelectionController;
+  late chicago.ListViewSelectionController _colorSelectionController;
+
+  Widget _buildColorItem(
+    _ColorItem item, {
+    bool isSelected = false,
+    bool includeName = true,
+  }) {
+    Widget result = SizedBox(
+      width: 19,
+      height: 19,
+      child: chicago.SetBaseline(
+        baseline: 15.5,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            border: Border.all(),
+            color: item.color,
+          ),
+        ),
+      ),
+    );
+    if (includeName) {
+      result = Row(
+        children: [
+          result,
+          SizedBox(width: 8),
+          isSelected ? WhiteText(item.name) : Text(item.name),
+        ],
+      );
+    }
+    return result;
+  }
 
   @override
   void initState() {
     super.initState();
     _basicSelectionController = chicago.ListViewSelectionController()..selectedIndex = 0;
     _imageSelectionController = chicago.ListViewSelectionController()..selectedIndex = 2;
+    _colorSelectionController = chicago.ListViewSelectionController()..selectedIndex = 0;
   }
 
   @override
@@ -348,14 +410,14 @@ class _ListButtonsDemoState extends State<ListButtonsDemo> {
           children: [
             chicago.FormField(
               label: 'Basic',
-              child: chicago.ListButton(
+              child: chicago.ListButton<String>(
                 items: ['Red', 'Orange', 'Yellow', 'Green', 'Blue', 'Purple'],
                 selectionController: _basicSelectionController,
               ),
             ),
             chicago.FormField(
               label: 'Image',
-              child: chicago.ListButton(
+              child: chicago.ListButton<String>(
                 items: ['anchor', 'bell', 'clock', 'cup', 'house', 'star'],
                 selectionController: _imageSelectionController,
                 builder: (BuildContext context, String? item, bool isForMeasurementOnly) {
@@ -379,20 +441,19 @@ class _ListButtonsDemoState extends State<ListButtonsDemo> {
                 },
                 itemBuilder: (
                   BuildContext context,
-                  Object? item,
+                  String item,
                   bool isSelected,
                   bool isHighlighted,
                   bool isDisabled,
                 ) {
-                  final String asset = item as String;
-                  final String path = 'assets/$asset.png';
-                  final String label = asset[0].toUpperCase() + asset.substring(1);
+                  final String path = 'assets/$item.png';
+                  final String label = item[0].toUpperCase() + item.substring(1);
                   return Padding(
-                    padding: EdgeInsets.all(5),
+                    padding: const EdgeInsets.all(5),
                     child: Row(
                       children: [
                         Image.asset(path),
-                        SizedBox(width: 4),
+                        const SizedBox(width: 4),
                         isDisabled
                             ? GreyText(label)
                             : isSelected
@@ -400,6 +461,36 @@ class _ListButtonsDemoState extends State<ListButtonsDemo> {
                                 : Text(label),
                       ],
                     ),
+                  );
+                },
+              ),
+            ),
+            chicago.FormField(
+              label: 'Color',
+              child: chicago.ListButton<_ColorItem>(
+                selectionController: _colorSelectionController,
+                items: const <_ColorItem>[
+                  _ColorItem(Color(0xffff0000), 'Red'),
+                  _ColorItem(Color(0xffffa500), 'Orange'),
+                  _ColorItem(Color(0xffffff00), 'Yellow'),
+                  _ColorItem(Color(0xff00ff00), 'Green'),
+                  _ColorItem(Color(0xff0000ff), 'Blue'),
+                  _ColorItem(Color(0xff4b0082), 'Indigo'),
+                  _ColorItem(Color(0xff8f008f), 'Violet'),
+                ],
+                builder: (BuildContext context, _ColorItem? item, bool isForMeasurementOnly) {
+                  return _buildColorItem(item!, isSelected: false, includeName: false);
+                },
+                itemBuilder: (
+                  BuildContext context,
+                  _ColorItem item,
+                  bool isSelected,
+                  bool isHighlighted,
+                  bool isDisabled,
+                ) {
+                  return Padding(
+                    padding: EdgeInsets.all(5),
+                    child: _buildColorItem(item, isSelected: isSelected),
                   );
                 },
               ),

@@ -27,26 +27,6 @@ import 'src/spinners.dart';
 import 'src/splitters.dart';
 import 'src/tables.dart';
 
-const List<Color> colors = [
-  Color(0xffff0000),
-  Color(0xffffa500),
-  Color(0xffffff00),
-  Color(0xff00ff00),
-  Color(0xff0000ff),
-  Color(0xff4b0082),
-  Color(0xff8f008f),
-];
-
-const List<String> colorNames = [
-  'Red',
-  'Orange',
-  'Yellow',
-  'Green',
-  'Blue',
-  'Indigo',
-  'Violet',
-];
-
 void main() {
   runApp(
     chicago.NavigatorListener(
@@ -59,7 +39,7 @@ class KitchenSink extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return WidgetsApp(
-      title: 'asd',
+      title: 'Chicago "Kitchen Sink" Demo',
       color: Color(0xffffffff),
       localizationsDelegates: [DefaultMaterialLocalizations.delegate],
       home: Container(),
@@ -83,16 +63,16 @@ class KitchenSink extends StatelessWidget {
                       return ColoredBox(
                         color: const Color(0xffdddcd5),
                         child: Padding(
-                          padding: EdgeInsets.all(8),
+                          padding: const EdgeInsets.all(8),
                           child: chicago.Border(
-                            borderColor: Color(0xff999999),
+                            borderColor: const Color(0xff999999),
                             backgroundColor: const Color(0xfff7f5ee),
                             child: chicago.ScrollPane(
                               view: Padding(
                                 padding: EdgeInsets.all(6),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
+                                  children: const <Widget>[
                                     ButtonsDemo(),
                                     ListsDemo(),
                                     CalendarsDemo(),

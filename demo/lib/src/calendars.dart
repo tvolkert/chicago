@@ -19,6 +19,8 @@ import 'package:flutter/widgets.dart';
 import 'text.dart';
 
 class CalendarsDemo extends StatelessWidget {
+  const CalendarsDemo({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return Column(

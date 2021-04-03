@@ -40,6 +40,8 @@ VoidCallback _acknowledgeLinkPress(BuildContext context) {
 }
 
 class ButtonsDemo extends StatelessWidget {
+  const ButtonsDemo({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return Column(

@@ -19,10 +19,12 @@ import 'package:flutter/widgets.dart';
 import 'text.dart';
 
 class SplittersDemo extends StatelessWidget {
+  const SplittersDemo({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return Column(
-      children: [
+      children: const <Widget>[
         HeaderText('Splitters'),
         chicago.Border(
           borderColor: Color(0xff999999),
@@ -39,15 +41,18 @@ class SplittersDemo extends StatelessWidget {
                   orientation: Axis.horizontal,
                   initialSplitRatio: 0.5,
                   before: chicago.Border(
-                      borderColor: Color(0xff999999),
-                      child: Image.asset('assets/bell.png')),
+                    borderColor: Color(0xff999999),
+                    child: Image(image: AssetImage('assets/bell.png')),
+                  ),
                   after: chicago.Border(
-                      borderColor: Color(0xff999999),
-                      child: Image.asset('assets/clock.png')),
+                    borderColor: Color(0xff999999),
+                    child: Image(image: AssetImage('assets/clock.png')),
+                  ),
                 ),
                 after: chicago.Border(
-                    borderColor: Color(0xff999999),
-                    child: Image.asset('assets/star.png')),
+                  borderColor: Color(0xff999999),
+                  child: Image(image: AssetImage('assets/star.png')),
+                ),
               ),
             ),
           ),

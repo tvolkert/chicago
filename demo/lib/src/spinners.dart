@@ -16,36 +16,68 @@
 import 'package:chicago/chicago.dart' as chicago;
 import 'package:flutter/widgets.dart';
 
-final chicago.SpinnerController basicSpinnerController = chicago.SpinnerController()
-  ..selectedIndex = 0;
-final chicago.SpinnerController numericSpinnerController = chicago.SpinnerController()
-  ..selectedIndex = 0;
-final chicago.SpinnerController dateSpinnerController = chicago.SpinnerController()
-  ..selectedIndex = 0;
+import 'text.dart';
 
-class SpinnersDemo extends StatelessWidget {
+class SpinnersDemo extends StatefulWidget {
+  const SpinnersDemo({Key? key}) : super(key: key);
+
+  @override
+  _SpinnersDemoState createState() => _SpinnersDemoState();
+}
+
+class _SpinnersDemoState extends State<SpinnersDemo> {
+  late chicago.SpinnerController _basicController;
+  late chicago.SpinnerController _numericController;
+  late chicago.SpinnerController _dateController;
+
+  static Widget _buildBasicItem(context, index, isEnabled) {
+    const List<String> numbers = ['One', 'Two', 'Three', 'Four', 'Five'];
+    return Text(numbers[index]);
+  }
+
+  static Widget _buildNumericItem(context, index, isEnabled) {
+    return Text('${index * 4}');
+  }
+
+  static Widget _buildDateItem(context, index, isEnabled) {
+    const chicago.CalendarDate baseDate = chicago.CalendarDate(2019, 11, 30);
+    final chicago.CalendarDate date = baseDate + index;
+    return Text(date.toString());
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _basicController = chicago.SpinnerController()..selectedIndex = 0;
+    _numericController = chicago.SpinnerController()..selectedIndex = 0;
+    _dateController = chicago.SpinnerController()..selectedIndex = 0;
+  }
+
+  @override
+  void dispose() {
+    _basicController.dispose();
+    _numericController.dispose();
+    _dateController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final TextStyle baseStyle = DefaultTextStyle.of(context).style;
-    final TextStyle boldStyle = baseStyle.copyWith(fontWeight: FontWeight.bold);
-    final TextStyle headerStyle = boldStyle.copyWith(color: Color(0xff2b5580));
-
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Spinners', style: headerStyle),
+        const HeaderText('Spinners'),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             chicago.Border(
-              borderColor: Color(0xff999999),
-              backgroundColor: Color(0xffffffff),
+              borderColor: const Color(0xff999999),
+              backgroundColor: const Color(0xffffffff),
               child: Padding(
-                padding: EdgeInsets.all(2),
+                padding: const EdgeInsets.all(2),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Text('Spinners', style: boldStyle),
-                    // SizedBox(height: 4),
                     chicago.Form(
                       children: [
                         chicago.FormField(
@@ -54,11 +86,8 @@ class SpinnersDemo extends StatelessWidget {
                             length: 5,
                             isCircular: true,
                             sizeToContent: true,
-                            controller: basicSpinnerController,
-                            itemBuilder: (context, index, isEnabled) {
-                              const List<String> numbers = ['One', 'Two', 'Three', 'Four', 'Five'];
-                              return Text(numbers[index]);
-                            },
+                            controller: _basicController,
+                            itemBuilder: _buildBasicItem,
                           ),
                         ),
                         chicago.FormField(
@@ -67,10 +96,8 @@ class SpinnersDemo extends StatelessWidget {
                             width: 60,
                             child: chicago.Spinner(
                               length: 260 ~/ 4,
-                              controller: numericSpinnerController,
-                              itemBuilder: (context, index, isEnabled) {
-                                return Text('${index * 4}');
-                              },
+                              controller: _numericController,
+                              itemBuilder: _buildNumericItem,
                             ),
                           ),
                         ),
@@ -78,13 +105,8 @@ class SpinnersDemo extends StatelessWidget {
                           label: 'Date',
                           child: chicago.Spinner(
                             length: 365,
-                            controller: dateSpinnerController,
-                            itemBuilder: (context, index, isEnabled) {
-                              const chicago.CalendarDate baseDate =
-                                  chicago.CalendarDate(2019, 11, 30);
-                              final chicago.CalendarDate date = baseDate + index;
-                              return Text(date.toString());
-                            },
+                            controller: _dateController,
+                            itemBuilder: _buildDateItem,
                           ),
                         ),
                       ],

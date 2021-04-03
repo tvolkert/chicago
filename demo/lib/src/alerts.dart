@@ -4,6 +4,8 @@ import 'package:flutter/widgets.dart';
 import 'text.dart';
 
 class AlertsDemo extends StatelessWidget {
+  const AlertsDemo({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return Column(
