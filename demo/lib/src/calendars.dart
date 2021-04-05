@@ -23,43 +23,40 @@ class CalendarsDemo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        HeaderText('Calendars'),
-        chicago.Border(
-          backgroundColor: Color(0xffffffff),
-          borderColor: Color(0xff999999),
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(6, 4, 6, 10),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    BoldText('Basic'),
-                    chicago.Calendar(
-                      initialYear: 2021,
-                      initialMonth: 2,
-                    ),
-                  ],
-                ),
-                SizedBox(width: 10),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    BoldText('Calendar Buttons'),
-                    chicago.CalendarButton(
-                      initialSelectedDate: chicago.CalendarDate.today(),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+    return chicago.Rollup(
+      heading: HeaderText('Calendars'),
+      child: chicago.Border(
+        backgroundColor: Color(0xffffffff),
+        borderColor: Color(0xff999999),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(6, 4, 6, 10),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  BoldText('Basic'),
+                  chicago.Calendar(
+                    initialYear: 2021,
+                    initialMonth: 2,
+                  ),
+                ],
+              ),
+              SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  BoldText('Calendar Buttons'),
+                  chicago.CalendarButton(
+                    initialSelectedDate: chicago.CalendarDate.today(),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
-      ],
+      ),
     );
   }
 }

@@ -23,32 +23,29 @@ class ListsDemo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const HeaderText('Lists'),
-        chicago.Border(
-          borderColor: const Color(0xff999999),
-          backgroundColor: const Color(0xffffffff),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(4, 2, 4, 4),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                BasicListDemo(),
-                SizedBox(width: 12),
-                LazyListDemo(),
-                SizedBox(width: 12),
-                MultiSelectListDemo(),
-                SizedBox(width: 12),
-                ImageListDemo(),
-                SizedBox(width: 12),
-                ListButtonsDemo(),
-              ],
-            ),
+    return chicago.Rollup(
+      heading: const HeaderText('Lists'),
+      child: chicago.Border(
+        borderColor: const Color(0xff999999),
+        backgroundColor: const Color(0xffffffff),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(4, 2, 4, 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
+              BasicListDemo(),
+              SizedBox(width: 12),
+              LazyListDemo(),
+              SizedBox(width: 12),
+              MultiSelectListDemo(),
+              SizedBox(width: 12),
+              ImageListDemo(),
+              SizedBox(width: 12),
+              ListButtonsDemo(),
+            ],
           ),
         ),
-      ],
+      ),
     );
   }
 }

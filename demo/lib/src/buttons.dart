@@ -44,21 +44,18 @@ class ButtonsDemo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        HeaderText('Buttons'),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            BasicButtonsDemo(),
-            SizedBox(width: 4),
-            CheckboxesDemo(),
-            SizedBox(width: 4),
-            LinkButtonsDemo(),
-          ],
-        ),
-      ],
+    return chicago.Rollup(
+      heading: HeaderText('Buttons'),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          BasicButtonsDemo(),
+          SizedBox(width: 4),
+          CheckboxesDemo(),
+          SizedBox(width: 4),
+          LinkButtonsDemo(),
+        ],
+      ),
     );
   }
 }

@@ -63,73 +63,70 @@ class _SpinnersDemoState extends State<SpinnersDemo> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const HeaderText('Spinners'),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            chicago.Border(
-              borderColor: const Color(0xff999999),
-              backgroundColor: const Color(0xffffffff),
-              child: Padding(
-                padding: const EdgeInsets.all(2),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    chicago.Form(
-                      children: [
-                        chicago.FormField(
-                          label: 'Basic',
+    return chicago.Rollup(
+      heading: const HeaderText('Spinners'),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          chicago.Border(
+            borderColor: const Color(0xff999999),
+            backgroundColor: const Color(0xffffffff),
+            child: Padding(
+              padding: const EdgeInsets.all(2),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  chicago.Form(
+                    children: [
+                      chicago.FormField(
+                        label: 'Basic',
+                        child: chicago.Spinner(
+                          length: 5,
+                          isCircular: true,
+                          sizeToContent: true,
+                          controller: _basicController,
+                          itemBuilder: _buildBasicItem,
+                        ),
+                      ),
+                      chicago.FormField(
+                        label: 'Numeric',
+                        child: SizedBox(
+                          width: 60,
                           child: chicago.Spinner(
-                            length: 5,
-                            isCircular: true,
-                            sizeToContent: true,
-                            controller: _basicController,
-                            itemBuilder: _buildBasicItem,
+                            length: 260 ~/ 4,
+                            controller: _numericController,
+                            itemBuilder: _buildNumericItem,
                           ),
                         ),
-                        chicago.FormField(
-                          label: 'Numeric',
-                          child: SizedBox(
-                            width: 60,
-                            child: chicago.Spinner(
-                              length: 260 ~/ 4,
-                              controller: _numericController,
-                              itemBuilder: _buildNumericItem,
-                            ),
-                          ),
+                      ),
+                      chicago.FormField(
+                        label: 'Date',
+                        child: chicago.Spinner(
+                          length: 365,
+                          controller: _dateController,
+                          itemBuilder: _buildDateItem,
                         ),
-                        chicago.FormField(
-                          label: 'Date',
-                          child: chicago.Spinner(
-                            length: 365,
-                            controller: _dateController,
-                            itemBuilder: _buildDateItem,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-            SizedBox(width: 4),
-            // chicago.Border(
-            //   borderColor: Color(0xff999999),
-            //   backgroundColor: Color(0xffffffff),
-            //   child: Padding(
-            //     padding: EdgeInsets.all(2),
-            //     child: Column(
-            //       children: [
-            //       ],
-            //     ),
-            //   ),
-            // ),
-          ],
-        ),
-      ],
+          ),
+          SizedBox(width: 4),
+          // chicago.Border(
+          //   borderColor: Color(0xff999999),
+          //   backgroundColor: Color(0xffffffff),
+          //   child: Padding(
+          //     padding: EdgeInsets.all(2),
+          //     child: Column(
+          //       children: [
+          //       ],
+          //     ),
+          //   ),
+          // ),
+        ],
+      ),
     );
   }
 }

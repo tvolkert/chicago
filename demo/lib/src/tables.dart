@@ -40,28 +40,25 @@ class TablesDemo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const HeaderText('Tables'),
-        chicago.Border(
-          borderColor: const Color(0xff999999),
-          backgroundColor: const Color(0xffffffff),
-          child: Padding(
-            padding: const EdgeInsets.all(4),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const <Widget>[
-                SortableTableDemo(),
-                SizedBox(width: 8),
-                CustomTableDemo(),
-                SizedBox(width: 8),
-                EditableTableDemo(),
-              ],
-            ),
+    return chicago.Rollup(
+      heading: const HeaderText('Tables'),
+      child: chicago.Border(
+        borderColor: const Color(0xff999999),
+        backgroundColor: const Color(0xffffffff),
+        child: Padding(
+          padding: const EdgeInsets.all(4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: const <Widget>[
+              SortableTableDemo(),
+              SizedBox(width: 8),
+              CustomTableDemo(),
+              SizedBox(width: 8),
+              EditableTableDemo(),
+            ],
           ),
         ),
-      ],
+      ),
     );
   }
 }
