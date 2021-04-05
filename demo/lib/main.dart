@@ -15,11 +15,13 @@
 
 import 'dart:ui' show window;
 
+// Needed because chicago.TextInput still depends on Material
 import 'package:flutter/material.dart' show Material, DefaultMaterialLocalizations;
 import 'package:flutter/widgets.dart';
 import 'package:chicago/chicago.dart' as chicago;
 
 import 'src/alerts.dart';
+import 'src/asset_image_precache.dart';
 import 'src/buttons.dart';
 import 'src/calendars.dart';
 import 'src/lists.dart';
@@ -49,47 +51,58 @@ class KitchenSink extends StatelessWidget {
           fontSize: 14,
           color: Color(0xff000000),
         ),
-        child: Material(
-          child: MediaQuery(
-            data: MediaQueryData.fromWindow(window),
-            child: Directionality(
-              textDirection: TextDirection.ltr,
-              child: Navigator(
-                observers: [chicago.NavigatorListener.of(context).observer],
-                onGenerateRoute: (RouteSettings settings) {
-                  return PageRouteBuilder<void>(
-                    settings: settings,
-                    pageBuilder: (BuildContext context, Animation<double> _, Animation<double> __) {
-                      return ColoredBox(
-                        color: const Color(0xffdddcd5),
-                        child: Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: chicago.Border(
-                            borderColor: const Color(0xff999999),
-                            backgroundColor: const Color(0xfff7f5ee),
-                            child: chicago.ScrollPane(
-                              view: Padding(
-                                padding: EdgeInsets.all(6),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: const <Widget>[
-                                    ButtonsDemo(),
-                                    ListsDemo(),
-                                    CalendarsDemo(),
-                                    SplittersDemo(),
-                                    SpinnersDemo(),
-                                    TablesDemo(),
-                                    AlertsDemo(),
-                                  ],
+        child: AssetImagePrecache(
+          paths: [
+            'assets/anchor.png',
+            'assets/bell.png',
+            'assets/clock.png',
+            'assets/cup.png',
+            'assets/flag_red.png',
+            'assets/house.png',
+            'assets/star.png',
+          ],
+          child: Material(
+            child: MediaQuery(
+              data: MediaQueryData.fromWindow(window),
+              child: Directionality(
+                textDirection: TextDirection.ltr,
+                child: Navigator(
+                  observers: [chicago.NavigatorListener.of(context).observer],
+                  onGenerateRoute: (RouteSettings settings) {
+                    return PageRouteBuilder<void>(
+                      settings: settings,
+                      pageBuilder: (BuildContext context, Animation<double> _, Animation<double> __) {
+                        return ColoredBox(
+                          color: const Color(0xffdddcd5),
+                          child: Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: chicago.Border(
+                              borderColor: const Color(0xff999999),
+                              backgroundColor: const Color(0xfff7f5ee),
+                              child: chicago.ScrollPane(
+                                view: Padding(
+                                  padding: EdgeInsets.all(6),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: const <Widget>[
+                                      ButtonsDemo(),
+                                      ListsDemo(),
+                                      CalendarsDemo(),
+                                      SplittersDemo(),
+                                      SpinnersDemo(),
+                                      TablesDemo(),
+                                      AlertsDemo(),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                      );
-                    },
-                  );
-                },
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
             ),
           ),
