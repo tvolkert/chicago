@@ -83,7 +83,8 @@ class _CheckboxState extends State<Checkbox> {
   void didUpdateWidget(covariant Checkbox oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.controller != oldWidget.controller) {
-      controller.removeListener(_handleChanged);
+      final CheckboxController oldController = _controller ?? oldWidget.controller!;
+      oldController.removeListener(_handleChanged);
       _controller?.dispose();
       _controller = null;
       if (widget.controller == null) {
