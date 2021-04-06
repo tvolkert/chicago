@@ -31,13 +31,15 @@ import 'src/tables.dart';
 
 void main() {
   runApp(
-    chicago.NavigatorListener(
+    const chicago.NavigatorListener(
       child: KitchenSink(),
     ),
   );
 }
 
 class KitchenSink extends StatelessWidget {
+  const KitchenSink({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return WidgetsApp(
@@ -51,34 +53,35 @@ class KitchenSink extends StatelessWidget {
           fontSize: 14,
           color: Color(0xff000000),
         ),
-        child: AssetImagePrecache(
-          paths: [
-            'assets/anchor.png',
-            'assets/bell.png',
-            'assets/clock.png',
-            'assets/cup.png',
-            'assets/flag_red.png',
-            'assets/house.png',
-            'assets/star.png',
-          ],
-          child: Material(
-            child: MediaQuery(
-              data: MediaQueryData.fromWindow(window),
-              child: Directionality(
-                textDirection: TextDirection.ltr,
-                child: Navigator(
-                  observers: [chicago.NavigatorListener.of(context).observer],
-                  onGenerateRoute: (RouteSettings settings) {
-                    return PageRouteBuilder<void>(
-                      settings: settings,
-                      pageBuilder: (BuildContext context, Animation<double> _, Animation<double> __) {
-                        return ColoredBox(
-                          color: const Color(0xffdddcd5),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8),
-                            child: chicago.Border(
-                              borderColor: const Color(0xff999999),
-                              backgroundColor: const Color(0xfff7f5ee),
+        child: Material(
+          child: MediaQuery(
+            data: MediaQueryData.fromWindow(window),
+            child: Directionality(
+              textDirection: TextDirection.ltr,
+              child: Navigator(
+                observers: [chicago.NavigatorListener.of(context).observer],
+                onGenerateRoute: (RouteSettings settings) {
+                  return PageRouteBuilder<void>(
+                    settings: settings,
+                    pageBuilder: (BuildContext context, Animation<double> _, Animation<double> __) {
+                      return ColoredBox(
+                        color: const Color(0xffdddcd5),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: chicago.Border(
+                            borderColor: const Color(0xff999999),
+                            backgroundColor: const Color(0xfff7f5ee),
+                            child: AssetImagePrecache(
+                              paths: const <String>[
+                                'assets/anchor.png',
+                                'assets/bell.png',
+                                'assets/clock.png',
+                                'assets/cup.png',
+                                'assets/flag_red.png',
+                                'assets/house.png',
+                                'assets/star.png',
+                              ],
+                              loadingIndicator: Container(),
                               child: chicago.ScrollPane(
                                 view: Padding(
                                   padding: EdgeInsets.all(6),
@@ -98,11 +101,11 @@ class KitchenSink extends StatelessWidget {
                               ),
                             ),
                           ),
-                        );
-                      },
-                    );
-                  },
-                ),
+                        ),
+                      );
+                    },
+                  );
+                },
               ),
             ),
           ),
