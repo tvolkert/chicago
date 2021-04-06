@@ -30,6 +30,7 @@ export 'src/list_view.dart' hide main;
 export 'src/listener_list.dart';
 export 'src/navigator_listener.dart';
 export 'src/push_button.dart';
+export 'src/radio_button.dart';
 export 'src/rollup.dart';
 export 'src/scroll_bar.dart';
 export 'src/scroll_pane.dart';
