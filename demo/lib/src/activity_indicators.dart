@@ -56,11 +56,21 @@ class ActivityIndicatorDemo extends StatelessWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: const <Widget>[
-            SizedBox(width: 24, height: 24, child: chicago.ActivityIndicator()),
             SizedBox(
-                width: 48, height: 48, child: chicago.ActivityIndicator(color: Color(0xffaa0000))),
+              width: 24,
+              height: 24,
+              child: chicago.ActivityIndicator(),
+            ),
             SizedBox(
-                width: 96, height: 96, child: chicago.ActivityIndicator(color: Color(0xff4c82b8))),
+              width: 48,
+              height: 48,
+              child: chicago.ActivityIndicator(color: Color(0xffaa0000)),
+            ),
+            SizedBox(
+              width: 96,
+              height: 96,
+              child: chicago.ActivityIndicator(color: Color(0xff4c82b8)),
+            ),
           ],
         ),
       ],
