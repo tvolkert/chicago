@@ -39,12 +39,32 @@ VoidCallback _acknowledgeLinkPress(BuildContext context) {
   return _acknowledgeAction(context, 'a link');
 }
 
-class ButtonsDemo extends StatelessWidget {
+class ButtonsDemo extends StatefulWidget {
   const ButtonsDemo({Key? key}) : super(key: key);
+
+  @override
+  _ButtonsDemoState createState() => _ButtonsDemoState();
+}
+
+class _ButtonsDemoState extends State<ButtonsDemo> {
+  late chicago.RollupController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = chicago.RollupController(isExpanded: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return chicago.Rollup(
+      controller: _controller,
       heading: HeaderText('Buttons'),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
