@@ -177,8 +177,8 @@ class _RadioButtonsDemoState extends State<RadioButtonsDemo> {
   @override
   void initState() {
     super.initState();
-    _basicController = chicago.RadioButtonController(value: 'three');
-    _imageController = chicago.RadioButtonController(value: 'house');
+    _basicController = chicago.RadioButtonController('three');
+    _imageController = chicago.RadioButtonController('house');
   }
 
   @override

@@ -19,7 +19,7 @@ import 'package:chicago/chicago.dart';
 import 'package:flutter/widgets.dart';
 
 class RadioButtonController<T> extends ValueNotifier<T?> {
-  RadioButtonController({T? value}) : super(value);
+  RadioButtonController([T? value]) : super(value);
 }
 
 class RadioButton<T> extends StatefulWidget {
