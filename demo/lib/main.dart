@@ -20,11 +20,13 @@ import 'package:flutter/material.dart' show Material, DefaultMaterialLocalizatio
 import 'package:flutter/widgets.dart';
 import 'package:chicago/chicago.dart' as chicago;
 
+import 'src/activity_indicators.dart';
 import 'src/alerts.dart';
 import 'src/asset_image_precache.dart';
 import 'src/buttons.dart';
 import 'src/calendars.dart';
 import 'src/lists.dart';
+import 'src/navigation.dart';
 import 'src/spinners.dart';
 import 'src/splitters.dart';
 import 'src/tables.dart';
@@ -91,7 +93,9 @@ class KitchenSink extends StatelessWidget {
                                       ButtonsDemo(),
                                       ListsDemo(),
                                       CalendarsDemo(),
+                                      NavigationDemo(),
                                       SplittersDemo(),
+                                      ActivityIndicatorsDemo(),
                                       SpinnersDemo(),
                                       TablesDemo(),
                                       AlertsDemo(),

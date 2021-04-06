@@ -29,28 +29,24 @@ class HeaderText extends StatelessWidget {
   }
 }
 
-class WhiteText extends StatelessWidget {
-  const WhiteText(this.text, {Key? key}) : super(key: key);
+class ColoredText extends StatelessWidget {
+  const ColoredText(this.text, this.color, {Key? key}) : super(key: key);
 
   final String text;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
     final TextStyle baseStyle = DefaultTextStyle.of(context).style;
-    final TextStyle whiteStyle = baseStyle.copyWith(color: Color(0xffffffff));
-    return Text(text, style: whiteStyle);
+    final TextStyle coloredStyle = baseStyle.copyWith(color: color);
+    return Text(text, style: coloredStyle);
   }
 }
 
-class GreyText extends StatelessWidget {
-  const GreyText(this.text, {Key? key}) : super(key: key);
+class WhiteText extends ColoredText {
+  const WhiteText(String text, {Key? key}) : super(text, const Color(0xffffffff), key: key);
+}
 
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    final TextStyle baseStyle = DefaultTextStyle.of(context).style;
-    final TextStyle greyStyle = baseStyle.copyWith(color: Color(0xff999999));
-    return Text(text, style: greyStyle);
-  }
+class GreyText extends ColoredText {
+  const GreyText(String text, {Key? key}) : super(text, const Color(0xff999999), key: key);
 }
