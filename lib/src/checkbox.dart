@@ -159,7 +159,7 @@ class BasicCheckbox extends StatelessWidget {
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: onTap,
-        child: selectableRegion,
+        child: AbsorbPointer(child: selectableRegion),
       ),
     );
   }
