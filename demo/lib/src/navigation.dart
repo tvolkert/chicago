@@ -57,9 +57,9 @@ class _RollupDemoState extends State<RollupDemo> {
   @override
   void initState() {
     super.initState();
-    _ellipseController = chicago.CheckboxController()..checked = true;
-    _squareController = chicago.CheckboxController()..checked = true;
-    _octagonController = chicago.CheckboxController()..checked = true;
+    _ellipseController = chicago.CheckboxController.simple(true);
+    _squareController = chicago.CheckboxController.simple(true);
+    _octagonController = chicago.CheckboxController.simple(true);
     _radioController = chicago.RadioButtonController<String>('star');
   }
 

@@ -272,7 +272,47 @@ class _RadioButtonsDemoState extends State<RadioButtonsDemo> {
   }
 }
 
-class CheckboxesDemo extends StatelessWidget {
+class CheckboxesDemo extends StatefulWidget {
+  @override
+  _CheckboxesDemoState createState() => _CheckboxesDemoState();
+}
+
+class _CheckboxesDemoState extends State<CheckboxesDemo> {
+  late chicago.CheckboxController _threeController;
+  late chicago.CheckboxController _houseController;
+  late chicago.CheckboxController _readController;
+  late chicago.CheckboxController _writeController;
+  late chicago.CheckboxController _executeController;
+
+  @override
+  void initState() {
+    super.initState();
+    _threeController = chicago.CheckboxController.simple(true);
+    _houseController = chicago.CheckboxController.simple(true);
+    _readController = chicago.CheckboxController.triState(
+      state: chicago.CheckboxState.checked,
+      canUserToggleMixed: true,
+    );
+    _writeController = chicago.CheckboxController.triState(
+      state: chicago.CheckboxState.unchecked,
+      canUserToggleMixed: true,
+    );
+    _executeController = chicago.CheckboxController.triState(
+      state: chicago.CheckboxState.mixed,
+      canUserToggleMixed: true,
+    );
+  }
+
+  @override
+  void dispose() {
+    _threeController.dispose();
+    _houseController.dispose();
+    _readController.dispose();
+    _writeController.dispose();
+    _executeController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return chicago.Border(
@@ -291,7 +331,11 @@ class CheckboxesDemo extends StatelessWidget {
                 SizedBox(width: 4),
                 chicago.Checkbox(trailing: Text('Two')),
                 SizedBox(width: 4),
-                chicago.Checkbox(trailing: Text('Three')),
+                chicago.Checkbox(
+                  trailing: Text('Three'),
+                  controller: _threeController,
+                  isEnabled: false,
+                ),
               ],
             ),
             SizedBox(height: 10),
@@ -321,6 +365,8 @@ class CheckboxesDemo extends StatelessWidget {
                 ),
                 SizedBox(height: 4),
                 chicago.Checkbox(
+                  controller: _houseController,
+                  isEnabled: false,
                   trailing: Row(
                     children: [
                       Image.asset('assets/house.png'),
@@ -328,6 +374,29 @@ class CheckboxesDemo extends StatelessWidget {
                       Text('House'),
                     ],
                   ),
+                ),
+              ],
+            ),
+            SizedBox(height: 10),
+            BoldText('Tri-state Checkboxes'),
+            SizedBox(height: 4),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                chicago.Checkbox(
+                  controller: _readController,
+                  trailing: Text('Read'),
+                ),
+                SizedBox(height: 4),
+                chicago.Checkbox(
+                  controller: _writeController,
+                  trailing: Text('Write'),
+                ),
+                SizedBox(height: 4),
+                chicago.Checkbox(
+                  controller: _executeController,
+                  trailing: Text('Execute'),
+                  isEnabled: false,
                 ),
               ],
             ),

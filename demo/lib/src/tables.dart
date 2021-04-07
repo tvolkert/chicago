@@ -262,7 +262,7 @@ class _CustomTableDemoState extends State<CustomTableDemo> {
     return Padding(
       padding: EdgeInsets.all(2),
       child: chicago.BasicCheckbox(
-        checked: item.isChecked,
+        state: item.isChecked ? chicago.CheckboxState.checked : chicago.CheckboxState.unchecked,
         onTap: () {
           setState(() {
             _items[rowIndex] = _items[rowIndex].toggleChecked();
