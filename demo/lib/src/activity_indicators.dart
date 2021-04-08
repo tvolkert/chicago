@@ -24,7 +24,7 @@ class ActivityIndicatorsDemo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return chicago.Rollup(
-      heading: const HeaderText('Activity Indicators'),
+      heading: const HeaderText('Meters & Activity Indicators'),
       child: chicago.Border(
         borderColor: const Color(0xff999999),
         backgroundColor: const Color(0xffffffff),
@@ -33,13 +33,67 @@ class ActivityIndicatorsDemo extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: const [
-              // MetersDemo(),
-              // SizedBox(width: 12),
+              MetersDemo(),
+              SizedBox(width: 12),
               ActivityIndicatorDemo(),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class MetersDemo extends StatelessWidget {
+  const MetersDemo({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        BoldText('Meters'),
+        SizedBox(height: 12),
+        Row(
+          children: [
+            chicago.Meter.simple(percentage: 0.5, gridFrequency: 1, text: '50%'),
+            SizedBox(width: 6),
+            Text('50%'),
+          ],
+        ),
+        SizedBox(height: 8),
+        Row(
+          children: [
+            chicago.Meter(percentage: 0.4, gridFrequency: 0.1),
+            SizedBox(width: 6),
+            Text('40%'),
+          ],
+        ),
+        SizedBox(height: 8),
+        Row(
+          children: [
+            chicago.Meter(percentage: 0.75),
+            SizedBox(width: 6),
+            Text('75%'),
+          ],
+        ),
+        SizedBox(height: 8),
+        Row(
+          children: [
+            chicago.Meter.simple(percentage: 0.75, gridFrequency: 1, text: '75%'),
+            SizedBox(width: 6),
+            Text('75%'),
+          ],
+        ),
+        SizedBox(height: 8),
+        Row(
+          children: [
+            chicago.Meter(percentage: 0.95, fillColor: const Color(0xffaa0000)),
+            SizedBox(width: 6),
+            Text('Danger: 95%!'),
+          ],
+        ),
+      ],
     );
   }
 }
