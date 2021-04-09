@@ -219,40 +219,39 @@ class RenderMeter extends RenderBox with RenderObjectWithChildMixin<RenderBox> {
       ..color = const Color(0xffdddcd5);
     context.canvas.drawRect((offset & size).deflate(_borderWidth / 2), paint);
 
+    // Draw the grid lines after the progress bar
+    final double meterStopX = innerSize.width * percentage;
+    _paintGridLines(context, offset, paint, startAt: meterStopX);
+
     // Save the layer so as to draw the progress bar on a transparent canvas,
     // thus allowing the BlendMode.xor to work as intended when we composite
     // the progress bar with the child.
     context.canvas.saveLayer(offset & size, Paint()..blendMode = BlendMode.srcOver);
     try {
-      // Draw the grid lines after the progress bar
-      final double meterStopX = innerSize.width * percentage;
-      _paintGridLines(context, offset, paint, startAt: meterStopX);
-      context.canvas.saveLayer(offset & size, Paint()..blendMode = BlendMode.srcOver);
-      try {
-        // Draw the progress bar.
-        final Paint fillPaint = Paint()
-          ..style = PaintingStyle.fill
-          ..shader = ui.Gradient.linear(
-            offset + Offset(0, 0),
-            offset + Offset(0, size.height),
-            <Color>[
-              brighten(fillColor),
-              darken(fillColor),
-            ],
-          );
-        context.canvas.drawRect(innerOffset & Size(meterStopX, innerSize.height), fillPaint);
+      // Draw the progress bar.
+      final Paint fillPaint = Paint()
+        ..style = PaintingStyle.fill
+        ..shader = ui.Gradient.linear(
+          offset + Offset(0, 0),
+          offset + Offset(0, size.height),
+          <Color>[
+            brighten(fillColor),
+            darken(fillColor),
+          ],
+        );
+      context.canvas.drawRect(innerOffset & Size(meterStopX, innerSize.height), fillPaint);
 
-        // Paint the grid lines in the progress bar.
-        _paintGridLines(context, offset, paint, stopAt: meterStopX);
+      // Paint the grid lines in the progress bar.
+      _paintGridLines(context, offset, paint, stopAt: meterStopX);
 
-        if (child != null) {
-          context.canvas.saveLayer(offset & size, Paint()..blendMode = BlendMode.xor);
+      if (child != null) {
+        context.canvas.saveLayer(offset & size, Paint()..blendMode = BlendMode.xor);
+        try {
           final BoxParentData childParentData = child!.parentData as BoxParentData;
           context.paintChild(child!, offset + childParentData.offset);
+        } finally {
           context.canvas.restore();
         }
-      } finally {
-        context.canvas.restore();
       }
     } finally {
       context.canvas.restore();
