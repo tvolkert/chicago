@@ -26,7 +26,7 @@ class ActivityIndicatorsDemo extends StatelessWidget {
     return chicago.Rollup(
       heading: const HeaderText('Meters & Activity Indicators'),
       childBuilder: (BuildContext context) {
-        return chicago.Border(
+        return chicago.BorderPane(
           borderColor: const Color(0xff999999),
           backgroundColor: const Color(0xffffffff),
           child: Padding(

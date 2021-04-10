@@ -26,7 +26,7 @@ class ListsDemo extends StatelessWidget {
     return chicago.Rollup(
       heading: const HeaderText('Lists'),
       childBuilder: (BuildContext context) {
-        return chicago.Border(
+        return chicago.BorderPane(
           borderColor: const Color(0xff999999),
           backgroundColor: const Color(0xffffffff),
           child: Padding(
@@ -104,7 +104,7 @@ class _BasicListDemoState extends State<BasicListDemo> {
         SizedBox(
           width: 72,
           height: 90,
-          child: chicago.Border(
+          child: chicago.BorderPane(
             borderColor: const Color(0xff999999),
             child: chicago.ScrollableListView(
               itemHeight: 19,
@@ -162,7 +162,7 @@ class _LazyListDemoState extends State<LazyListDemo> {
         SizedBox(
           width: 90,
           height: 90,
-          child: chicago.Border(
+          child: chicago.BorderPane(
             borderColor: const Color(0xff999999),
             child: chicago.ScrollableListView(
               itemHeight: 19,
@@ -230,7 +230,7 @@ class _MultiSelectListDemoState extends State<MultiSelectListDemo> {
         SizedBox(
           width: 90,
           height: 90,
-          child: chicago.Border(
+          child: chicago.BorderPane(
             borderColor: const Color(0xff999999),
             child: chicago.ScrollableListView(
               itemHeight: 19,
@@ -318,7 +318,7 @@ class _ImageListDemoState extends State<ImageListDemo> {
         SizedBox(
           width: 90,
           height: 90,
-          child: chicago.Border(
+          child: chicago.BorderPane(
             borderColor: const Color(0xff999999),
             child: chicago.ScrollableListView(
               itemHeight: 19,

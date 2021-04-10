@@ -20,8 +20,8 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter/widgets.dart' as flutter show Border;
 
-class Border extends StatelessWidget {
-  const Border({
+class BorderPane extends StatelessWidget {
+  const BorderPane({
     Key? key,
     this.title,
     this.titleStyle,

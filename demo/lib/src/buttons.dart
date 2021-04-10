@@ -87,7 +87,7 @@ class _ButtonsDemoState extends State<ButtonsDemo> {
 class BasicButtonsDemo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return chicago.Border(
+    return chicago.BorderPane(
       borderColor: Color(0xff999999),
       backgroundColor: const Color(0xffffffff),
       child: Padding(
@@ -191,7 +191,7 @@ class _RadioButtonsDemoState extends State<RadioButtonsDemo> {
 
   @override
   Widget build(BuildContext context) {
-    return chicago.Border(
+    return chicago.BorderPane(
       borderColor: Color(0xff999999),
       backgroundColor: const Color(0xffffffff),
       child: Padding(
@@ -317,7 +317,7 @@ class _CheckboxesDemoState extends State<CheckboxesDemo> {
 
   @override
   Widget build(BuildContext context) {
-    return chicago.Border(
+    return chicago.BorderPane(
       borderColor: Color(0xff999999),
       backgroundColor: const Color(0xffffffff),
       child: Padding(
@@ -412,7 +412,7 @@ class _CheckboxesDemoState extends State<CheckboxesDemo> {
 class LinkButtonsDemo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return chicago.Border(
+    return chicago.BorderPane(
       borderColor: Color(0xff999999),
       backgroundColor: const Color(0xffffffff),
       child: Padding(

@@ -69,7 +69,7 @@ class _SpinnersDemoState extends State<SpinnersDemo> {
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            chicago.Border(
+            chicago.BorderPane(
               borderColor: const Color(0xff999999),
               backgroundColor: const Color(0xffffffff),
               child: Padding(

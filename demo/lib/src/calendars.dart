@@ -26,7 +26,7 @@ class CalendarsDemo extends StatelessWidget {
     return chicago.Rollup(
       heading: HeaderText('Calendars'),
       childBuilder: (BuildContext context) {
-        return chicago.Border(
+        return chicago.BorderPane(
           backgroundColor: Color(0xffffffff),
           borderColor: Color(0xff999999),
           child: Padding(

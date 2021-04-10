@@ -70,7 +70,7 @@ class KitchenSink extends StatelessWidget {
                         color: const Color(0xffdddcd5),
                         child: Padding(
                           padding: const EdgeInsets.all(8),
-                          child: chicago.Border(
+                          child: chicago.BorderPane(
                             borderColor: const Color(0xff999999),
                             backgroundColor: const Color(0xfff7f5ee),
                             child: AssetImagePrecache(

@@ -17,7 +17,7 @@ import 'package:flutter/widgets.dart' hide Border, TableCell, TableRow;
 import 'package:flutter/widgets.dart' as flutter show Border;
 import 'package:intl/intl.dart' as intl;
 
-import 'border.dart';
+import 'border_pane.dart';
 import 'colors.dart';
 import 'foundation.dart';
 import 'hover_builder.dart';
@@ -386,7 +386,7 @@ class _CalendarState extends State<Calendar> {
 
   @override
   Widget build(BuildContext context) {
-    return Border(
+    return BorderPane(
       borderColor: const Color(0xff999999),
       backgroundColor: const Color(0xffffffff),
       child: CustomPaint(

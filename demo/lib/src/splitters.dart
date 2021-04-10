@@ -26,7 +26,7 @@ class SplittersDemo extends StatelessWidget {
     return chicago.Rollup(
       heading: HeaderText('Splitters'),
       childBuilder: (BuildContext context) {
-        return chicago.Border(
+        return chicago.BorderPane(
           borderColor: Color(0xff999999),
           backgroundColor: Color(0xffffffff),
           child: Padding(
@@ -40,16 +40,16 @@ class SplittersDemo extends StatelessWidget {
                 before: chicago.SplitPane(
                   orientation: Axis.horizontal,
                   initialSplitRatio: 0.5,
-                  before: chicago.Border(
+                  before: chicago.BorderPane(
                     borderColor: Color(0xff999999),
                     child: Image(image: AssetImage('assets/bell.png')),
                   ),
-                  after: chicago.Border(
+                  after: chicago.BorderPane(
                     borderColor: Color(0xff999999),
                     child: Image(image: AssetImage('assets/clock.png')),
                   ),
                 ),
-                after: chicago.Border(
+                after: chicago.BorderPane(
                   borderColor: Color(0xff999999),
                   child: Image(image: AssetImage('assets/star.png')),
                 ),

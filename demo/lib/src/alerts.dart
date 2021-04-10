@@ -101,7 +101,7 @@ class _AlertsDemoState extends State<AlertsDemo> {
     return chicago.Rollup(
       heading: HeaderText('Alerts'),
       childBuilder: (BuildContext context) {
-        return chicago.Border(
+        return chicago.BorderPane(
           borderColor: Color(0xff999999),
           backgroundColor: const Color(0xffffffff),
           child: Padding(

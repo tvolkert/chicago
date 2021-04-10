@@ -76,7 +76,7 @@ class _RollupDemoState extends State<RollupDemo> {
 
   @override
   Widget build(BuildContext context) {
-    return chicago.Border(
+    return chicago.BorderPane(
       borderColor: Color(0xff999999),
       backgroundColor: const Color(0xffffffff),
       child: Padding(

@@ -43,7 +43,7 @@ class TablesDemo extends StatelessWidget {
     return chicago.Rollup(
       heading: const HeaderText('Tables'),
       childBuilder: (BuildContext context) {
-        return chicago.Border(
+        return chicago.BorderPane(
           borderColor: const Color(0xff999999),
           backgroundColor: const Color(0xffffffff),
           child: Padding(
@@ -197,7 +197,7 @@ class _SortableTableDemoState extends State<SortableTableDemo> {
         SizedBox(
           width: 276,
           height: 160,
-          child: chicago.Border(
+          child: chicago.BorderPane(
             borderColor: Color(0xff999999),
             child: chicago.ScrollableTableView(
               selectionController: _selectionController,
@@ -347,7 +347,7 @@ class _CustomTableDemoState extends State<CustomTableDemo> {
         SizedBox(
           width: 276,
           height: 160,
-          child: chicago.Border(
+          child: chicago.BorderPane(
             borderColor: Color(0xff999999),
             child: chicago.ScrollableTableView(
               selectionController: _selectionController,
@@ -550,7 +550,7 @@ class _EditableTableDemoState extends State<EditableTableDemo> {
         SizedBox(
           width: 276,
           height: 160,
-          child: chicago.Border(
+          child: chicago.BorderPane(
             borderColor: Color(0xff999999),
             child: chicago.ScrollableTableView(
               selectionController: _selectionController,
