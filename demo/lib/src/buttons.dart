@@ -66,18 +66,20 @@ class _ButtonsDemoState extends State<ButtonsDemo> {
     return chicago.Rollup(
       controller: _controller,
       heading: HeaderText('Buttons'),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          BasicButtonsDemo(),
-          SizedBox(width: 4),
-          RadioButtonsDemo(),
-          SizedBox(width: 4),
-          CheckboxesDemo(),
-          SizedBox(width: 4),
-          LinkButtonsDemo(),
-        ],
-      ),
+      childBuilder: (BuildContext context) {
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            BasicButtonsDemo(),
+            SizedBox(width: 4),
+            RadioButtonsDemo(),
+            SizedBox(width: 4),
+            CheckboxesDemo(),
+            SizedBox(width: 4),
+            LinkButtonsDemo(),
+          ],
+        );
+      },
     );
   }
 }

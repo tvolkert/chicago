@@ -100,52 +100,54 @@ class _AlertsDemoState extends State<AlertsDemo> {
   Widget build(BuildContext context) {
     return chicago.Rollup(
       heading: HeaderText('Alerts'),
-      child: chicago.Border(
-        borderColor: Color(0xff999999),
-        backgroundColor: const Color(0xffffffff),
-        child: Padding(
-          padding: EdgeInsets.all(8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              chicago.RadioButton<chicago.MessageType?>(
-                value: chicago.MessageType.error,
-                controller: _controller,
-                trailing: Text('Error'),
-              ),
-              SizedBox(height: 4),
-              chicago.RadioButton<chicago.MessageType?>(
-                value: chicago.MessageType.warning,
-                controller: _controller,
-                trailing: Text('Warning'),
-              ),
-              SizedBox(height: 4),
-              chicago.RadioButton<chicago.MessageType?>(
-                value: chicago.MessageType.question,
-                controller: _controller,
-                trailing: Text('Question'),
-              ),
-              SizedBox(height: 4),
-              chicago.RadioButton<chicago.MessageType?>(
-                value: chicago.MessageType.info,
-                controller: _controller,
-                trailing: Text('Info'),
-              ),
-              SizedBox(height: 4),
-              chicago.RadioButton<chicago.MessageType?>(
-                value: null,
-                controller: _controller,
-                trailing: Text('Custom'),
-              ),
-              SizedBox(height: 6),
-              chicago.PushButton(
-                label: 'Show Prompt',
-                onPressed: _handleShowPrompt,
-              ),
-            ],
+      childBuilder: (BuildContext context) {
+        return chicago.Border(
+          borderColor: Color(0xff999999),
+          backgroundColor: const Color(0xffffffff),
+          child: Padding(
+            padding: EdgeInsets.all(8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                chicago.RadioButton<chicago.MessageType?>(
+                  value: chicago.MessageType.error,
+                  controller: _controller,
+                  trailing: Text('Error'),
+                ),
+                SizedBox(height: 4),
+                chicago.RadioButton<chicago.MessageType?>(
+                  value: chicago.MessageType.warning,
+                  controller: _controller,
+                  trailing: Text('Warning'),
+                ),
+                SizedBox(height: 4),
+                chicago.RadioButton<chicago.MessageType?>(
+                  value: chicago.MessageType.question,
+                  controller: _controller,
+                  trailing: Text('Question'),
+                ),
+                SizedBox(height: 4),
+                chicago.RadioButton<chicago.MessageType?>(
+                  value: chicago.MessageType.info,
+                  controller: _controller,
+                  trailing: Text('Info'),
+                ),
+                SizedBox(height: 4),
+                chicago.RadioButton<chicago.MessageType?>(
+                  value: null,
+                  controller: _controller,
+                  trailing: Text('Custom'),
+                ),
+                SizedBox(height: 6),
+                chicago.PushButton(
+                  label: 'Show Prompt',
+                  onPressed: _handleShowPrompt,
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

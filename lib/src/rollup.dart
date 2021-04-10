@@ -26,13 +26,13 @@ class Rollup extends StatefulWidget {
   const Rollup({
     Key? key,
     required this.heading,
-    this.child,
+    required this.childBuilder,
     this.controller,
     this.isCollapsible = true,
   }) : super(key: key);
 
   final Widget heading;
-  final Widget? child;
+  final WidgetBuilder childBuilder;
   final RollupController? controller;
   final bool isCollapsible;
 
@@ -91,7 +91,7 @@ class _RollupState extends State<Rollup> {
   Widget build(BuildContext context) {
     return RawRollup(
       heading: widget.heading,
-      child: widget.child,
+      childBuilder: widget.childBuilder,
       isExpanded: controller.isExpanded,
       isCollapsible: widget.isCollapsible,
       onToggleExpanded: _handleToggleExpanded,
@@ -103,14 +103,14 @@ class RawRollup extends ImplicitlyAnimatedWidget {
   const RawRollup({
     Key? key,
     required this.heading,
-    required this.child,
+    required this.childBuilder,
     required this.isExpanded,
     required this.isCollapsible,
     required this.onToggleExpanded,
   }) : super(key: key, duration: const Duration(milliseconds: 250), curve: Curves.easeOut);
 
   final Widget heading;
-  final Widget? child;
+  final WidgetBuilder childBuilder;
   final bool isExpanded;
   final bool isCollapsible;
   final VoidCallback onToggleExpanded;
@@ -158,7 +158,7 @@ class _RawRollupState extends AnimatedWidgetBaseState<RawRollup> {
             ],
           ),
         ),
-        if (widget.child != null && reveal > 0)
+        if (reveal > 0)
           _RevealBox(
             reveal: reveal,
             child: Padding(
@@ -167,7 +167,7 @@ class _RawRollupState extends AnimatedWidgetBaseState<RawRollup> {
                 children: [
                   SizedBox(width: _arrowWidth),
                   SizedBox(width: 4),
-                  widget.child!,
+                  widget.childBuilder(context),
                 ],
               ),
             ),

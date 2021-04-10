@@ -25,18 +25,20 @@ class NavigationDemo extends StatelessWidget {
   Widget build(BuildContext context) {
     return chicago.Rollup(
       heading: const HeaderText('Navigation'),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
-          // TabsDemo(),
-          // SizedBox(width: 12),
-          // ExpandersDemo(),
-          // SizedBox(width: 12),
-          // AccordionDemo(),
-          // SizedBox(width: 12),
-          RollupDemo(),
-        ],
-      ),
+      childBuilder: (BuildContext context) {
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const [
+            // TabsDemo(),
+            // SizedBox(width: 12),
+            // ExpandersDemo(),
+            // SizedBox(width: 12),
+            // AccordionDemo(),
+            // SizedBox(width: 12),
+            RollupDemo(),
+          ],
+        );
+      },
     );
   }
 }
@@ -86,105 +88,111 @@ class _RollupDemoState extends State<RollupDemo> {
             SizedBox(height: 4),
             chicago.Rollup(
               heading: Text('Colors'),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  ColoredText('Red', Color(0xffff0000)),
-                  ColoredText('Orange', Color(0xffffa500)),
-                  ColoredText('Yellow', Color(0xffffff00)),
-                  ColoredText('Green', Color(0xff00ff00)),
-                  ColoredText('Blue', Color(0xff0000ff)),
-                  ColoredText('Purple', Color(0xff800080)),
-                ],
-              ),
+              childBuilder: (BuildContext context) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    ColoredText('Red', Color(0xffff0000)),
+                    ColoredText('Orange', Color(0xffffa500)),
+                    ColoredText('Yellow', Color(0xffffff00)),
+                    ColoredText('Green', Color(0xff00ff00)),
+                    ColoredText('Blue', Color(0xff0000ff)),
+                    ColoredText('Purple', Color(0xff800080)),
+                  ],
+                );
+              },
             ),
             chicago.Rollup(
               heading: Text('Shapes'),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const chicago.Checkbox(trailing: Text('Circle')),
-                  chicago.Checkbox(trailing: Text('Ellipse'), controller: _ellipseController),
-                  chicago.Checkbox(trailing: Text('Square'), controller: _squareController),
-                  const chicago.Checkbox(trailing: Text('Rectangle')),
-                  const chicago.Checkbox(trailing: Text('Hexagon')),
-                  chicago.Checkbox(trailing: Text('Octagon'), controller: _octagonController),
-                ],
-              ),
+              childBuilder: (BuildContext context) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const chicago.Checkbox(trailing: Text('Circle')),
+                    chicago.Checkbox(trailing: Text('Ellipse'), controller: _ellipseController),
+                    chicago.Checkbox(trailing: Text('Square'), controller: _squareController),
+                    const chicago.Checkbox(trailing: Text('Rectangle')),
+                    const chicago.Checkbox(trailing: Text('Hexagon')),
+                    chicago.Checkbox(trailing: Text('Octagon'), controller: _octagonController),
+                  ],
+                );
+              },
             ),
             chicago.Rollup(
               heading: Text('Images'),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  chicago.RadioButton<String>(
-                    value: 'anchor',
-                    controller: _radioController,
-                    trailing: Row(
-                      children: [
-                        Image(image: AssetImage('assets/anchor.png')),
-                        SizedBox(width: 4),
-                        Text('Anchor'),
-                      ],
+              childBuilder: (BuildContext context) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    chicago.RadioButton<String>(
+                      value: 'anchor',
+                      controller: _radioController,
+                      trailing: Row(
+                        children: [
+                          Image(image: AssetImage('assets/anchor.png')),
+                          SizedBox(width: 4),
+                          Text('Anchor'),
+                        ],
+                      ),
                     ),
-                  ),
-                  chicago.RadioButton<String>(
-                    value: 'bell',
-                    controller: _radioController,
-                    trailing: Row(
-                      children: [
-                        Image(image: AssetImage('assets/bell.png')),
-                        SizedBox(width: 4),
-                        Text('Bell'),
-                      ],
+                    chicago.RadioButton<String>(
+                      value: 'bell',
+                      controller: _radioController,
+                      trailing: Row(
+                        children: [
+                          Image(image: AssetImage('assets/bell.png')),
+                          SizedBox(width: 4),
+                          Text('Bell'),
+                        ],
+                      ),
                     ),
-                  ),
-                  chicago.RadioButton<String>(
-                    value: 'clock',
-                    controller: _radioController,
-                    trailing: Row(
-                      children: [
-                        Image(image: AssetImage('assets/clock.png')),
-                        SizedBox(width: 4),
-                        Text('Clock'),
-                      ],
+                    chicago.RadioButton<String>(
+                      value: 'clock',
+                      controller: _radioController,
+                      trailing: Row(
+                        children: [
+                          Image(image: AssetImage('assets/clock.png')),
+                          SizedBox(width: 4),
+                          Text('Clock'),
+                        ],
+                      ),
                     ),
-                  ),
-                  chicago.RadioButton<String>(
-                    value: 'cup',
-                    controller: _radioController,
-                    trailing: Row(
-                      children: [
-                        Image(image: AssetImage('assets/cup.png')),
-                        SizedBox(width: 4),
-                        Text('Cup'),
-                      ],
+                    chicago.RadioButton<String>(
+                      value: 'cup',
+                      controller: _radioController,
+                      trailing: Row(
+                        children: [
+                          Image(image: AssetImage('assets/cup.png')),
+                          SizedBox(width: 4),
+                          Text('Cup'),
+                        ],
+                      ),
                     ),
-                  ),
-                  chicago.RadioButton<String>(
-                    value: 'house',
-                    controller: _radioController,
-                    trailing: Row(
-                      children: [
-                        Image(image: AssetImage('assets/house.png')),
-                        SizedBox(width: 4),
-                        Text('House'),
-                      ],
+                    chicago.RadioButton<String>(
+                      value: 'house',
+                      controller: _radioController,
+                      trailing: Row(
+                        children: [
+                          Image(image: AssetImage('assets/house.png')),
+                          SizedBox(width: 4),
+                          Text('House'),
+                        ],
+                      ),
                     ),
-                  ),
-                  chicago.RadioButton<String>(
-                    value: 'star',
-                    controller: _radioController,
-                    trailing: Row(
-                      children: [
-                        Image(image: AssetImage('assets/star.png')),
-                        SizedBox(width: 4),
-                        Text('Star'),
-                      ],
+                    chicago.RadioButton<String>(
+                      value: 'star',
+                      controller: _radioController,
+                      trailing: Row(
+                        children: [
+                          Image(image: AssetImage('assets/star.png')),
+                          SizedBox(width: 4),
+                          Text('Star'),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                );
+              },
             ),
           ],
         ),

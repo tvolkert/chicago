@@ -25,21 +25,23 @@ class ActivityIndicatorsDemo extends StatelessWidget {
   Widget build(BuildContext context) {
     return chicago.Rollup(
       heading: const HeaderText('Meters & Activity Indicators'),
-      child: chicago.Border(
-        borderColor: const Color(0xff999999),
-        backgroundColor: const Color(0xffffffff),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(4, 2, 4, 4),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              MetersDemo(),
-              SizedBox(width: 12),
-              ActivityIndicatorDemo(),
-            ],
+      childBuilder: (BuildContext context) {
+        return chicago.Border(
+          borderColor: const Color(0xff999999),
+          backgroundColor: const Color(0xffffffff),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(4, 2, 4, 4),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                MetersDemo(),
+                SizedBox(width: 12),
+                ActivityIndicatorDemo(),
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

@@ -25,37 +25,39 @@ class SplittersDemo extends StatelessWidget {
   Widget build(BuildContext context) {
     return chicago.Rollup(
       heading: HeaderText('Splitters'),
-      child: chicago.Border(
-        borderColor: Color(0xff999999),
-        backgroundColor: Color(0xffffffff),
-        child: Padding(
-          padding: EdgeInsets.all(4),
-          child: SizedBox(
-            width: 400,
-            height: 360,
-            child: chicago.SplitPane(
-              orientation: Axis.vertical,
-              initialSplitRatio: 0.5,
-              before: chicago.SplitPane(
-                orientation: Axis.horizontal,
+      childBuilder: (BuildContext context) {
+        return chicago.Border(
+          borderColor: Color(0xff999999),
+          backgroundColor: Color(0xffffffff),
+          child: Padding(
+            padding: EdgeInsets.all(4),
+            child: SizedBox(
+              width: 400,
+              height: 360,
+              child: chicago.SplitPane(
+                orientation: Axis.vertical,
                 initialSplitRatio: 0.5,
-                before: chicago.Border(
-                  borderColor: Color(0xff999999),
-                  child: Image(image: AssetImage('assets/bell.png')),
+                before: chicago.SplitPane(
+                  orientation: Axis.horizontal,
+                  initialSplitRatio: 0.5,
+                  before: chicago.Border(
+                    borderColor: Color(0xff999999),
+                    child: Image(image: AssetImage('assets/bell.png')),
+                  ),
+                  after: chicago.Border(
+                    borderColor: Color(0xff999999),
+                    child: Image(image: AssetImage('assets/clock.png')),
+                  ),
                 ),
                 after: chicago.Border(
                   borderColor: Color(0xff999999),
-                  child: Image(image: AssetImage('assets/clock.png')),
+                  child: Image(image: AssetImage('assets/star.png')),
                 ),
-              ),
-              after: chicago.Border(
-                borderColor: Color(0xff999999),
-                child: Image(image: AssetImage('assets/star.png')),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
