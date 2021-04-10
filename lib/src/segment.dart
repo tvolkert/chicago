@@ -79,6 +79,18 @@ class SegmentConstraints extends BoxConstraints {
   }
 
   @override
+  BoxConstraints deflate(EdgeInsets edges) {
+    final BoxConstraints baseConstraints = super.deflate(edges);
+    return SegmentConstraints(
+      minWidth: baseConstraints.minWidth,
+      maxWidth: baseConstraints.maxWidth,
+      minHeight: baseConstraints.minHeight,
+      maxHeight: baseConstraints.maxHeight,
+      viewportResolver: viewportResolver, // TODO adjust resolver?
+    );
+  }
+
+  @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is SegmentConstraints &&
@@ -99,19 +111,29 @@ class SegmentConstraints extends BoxConstraints {
 }
 
 abstract class RenderSegment extends RenderBox {
-  @override
-  SegmentConstraints get constraints {
-    final BoxConstraints constraints = super.constraints;
+  void _debugCheckConstraints(Constraints constraints) {
     assert(() {
       if (constraints is! SegmentConstraints) {
         FlutterError.reportError(FlutterErrorDetails(
-          exception: 'RenderSegment was given constraints other than FooConstraints',
+          exception: 'RenderSegment was given constraints other than SegmentConstraints',
           stack: StackTrace.current,
           library: 'chicago',
         ));
       }
       return true;
     }());
+  }
+
+  @override
+  SegmentConstraints get constraints {
+    final BoxConstraints constraints = super.constraints;
+    _debugCheckConstraints(constraints);
     return constraints as SegmentConstraints;
+  }
+
+  @override
+  void layout(Constraints constraints, {bool parentUsesSize = false}) {
+    _debugCheckConstraints(constraints);
+    super.layout(constraints, parentUsesSize: parentUsesSize);
   }
 }
