@@ -77,7 +77,7 @@ class PushButton<T extends Object> extends StatefulWidget {
   _PushButtonState<T> createState() => _PushButtonState<T>();
 }
 
-class _ActivatePushButtonAction<T extends Object> extends Action<Intent> {
+class _ActivatePushButtonAction<T extends Object> extends ActivateAction {
   _ActivatePushButtonAction(this._state);
 
   final _PushButtonState<T> _state;
