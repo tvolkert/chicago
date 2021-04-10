@@ -76,11 +76,13 @@ class _ActivityIndicatorState extends State<ActivityIndicator>
   Widget build(BuildContext context) {
     return Semantics(
       label: widget.semanticLabel,
-      child: CustomPaint(
-        size: Size.square(_defaultSize),
-        painter: ActivityIndicatorPainter(
-          baseColor: widget.color,
-          animation: _controller,
+      child: RepaintBoundary(
+        child: CustomPaint(
+          size: Size.square(_defaultSize),
+          painter: ActivityIndicatorPainter(
+            baseColor: widget.color,
+            animation: _controller,
+          ),
         ),
       ),
     );
