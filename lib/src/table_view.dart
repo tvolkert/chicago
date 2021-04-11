@@ -693,7 +693,7 @@ class ScrollableTableView extends StatelessWidget {
   final TableViewEditorController? editorController;
   final TableViewRowDisablerController? rowDisabledController;
   final TargetPlatform? platform;
-  final ScrollController? scrollController;
+  final ScrollPaneController? scrollController;
   final bool roundColumnWidthsToWholePixel;
   final bool includeHeader;
   final RowDoubleTapHandler? onDoubleTapRow;

@@ -16,7 +16,6 @@
 import 'dart:math' as math;
 
 import 'package:chicago/chicago.dart';
-import 'package:chicago/chicago.dart' as chicago show ScrollController;
 import 'package:flutter/widgets.dart';
 
 import 'text.dart';
@@ -77,7 +76,7 @@ class _SortableTableDemoState extends State<SortableTableDemo> {
   late TableViewSelectionController _selectionController;
   late TableViewSortController _sortController;
   late TableViewMetricsController _metricsController;
-  late chicago.ScrollController _scrollController;
+  late ScrollPaneController _scrollController;
 
   static TableColumnController _createTableColumn(String key, String name) {
     return TableColumnController(
@@ -152,7 +151,7 @@ class _SortableTableDemoState extends State<SortableTableDemo> {
     _selectionController = TableViewSelectionController();
     _sortController = TableViewSortController();
     _metricsController = TableViewMetricsController();
-    _scrollController = chicago.ScrollController();
+    _scrollController = ScrollPaneController();
 
     _sortController['i'] = SortDirection.ascending;
     _sortController.addListener(TableViewSortListener(

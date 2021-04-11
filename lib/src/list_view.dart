@@ -237,7 +237,7 @@ class ScrollableListView extends StatelessWidget {
   final ListViewSelectionController? selectionController;
   final ListViewItemDisablerController? itemDisabledController;
   final TargetPlatform? platform;
-  final ScrollController? scrollController;
+  final ScrollPaneController? scrollController;
 
   @override
   Widget build(BuildContext context) {

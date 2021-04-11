@@ -254,7 +254,7 @@ enum ScrollBarPolicy {
 }
 
 typedef ScrollOffsetChangedHandler = void Function(
-  ScrollController controller,
+  ScrollPaneController controller,
   Offset previousOffset,
 );
 
@@ -266,8 +266,8 @@ class ScrollPaneListener {
   final ScrollOffsetChangedHandler onScrollOffsetChanged;
 }
 
-class ScrollController with ListenerNotifier<ScrollPaneListener> {
-  ScrollController({
+class ScrollPaneController with ListenerNotifier<ScrollPaneListener> {
+  ScrollPaneController({
     Offset scrollOffset = Offset.zero,
   })  : _scrollOffset = scrollOffset;
 
@@ -424,7 +424,7 @@ class ScrollPane extends StatefulWidget {
   ///
   /// If this is not provided, one will be created and maintained automatically
   /// by this widget's [State] object.
-  final ScrollController? scrollController;
+  final ScrollPaneController? scrollController;
 
   /// Optional widget that will be laid out to the left of the view, vertically
   /// aligned with the top of the view.
@@ -497,13 +497,13 @@ class ScrollPane extends StatefulWidget {
 }
 
 class _ScrollPaneState extends State<ScrollPane> {
-  ScrollController? _scrollController;
+  ScrollPaneController? _scrollController;
 
   @override
   void initState() {
     super.initState();
     if (widget.scrollController == null) {
-      _scrollController = ScrollController();
+      _scrollController = ScrollPaneController();
     }
   }
 
@@ -517,7 +517,7 @@ class _ScrollPaneState extends State<ScrollPane> {
         _scrollController = null;
       } else {
         assert(_scrollController == null);
-        _scrollController = ScrollController();
+        _scrollController = ScrollPaneController();
       }
     }
   }
@@ -611,7 +611,7 @@ class _ScrollPane extends RenderObjectWidget {
   final ScrollBarPolicy horizontalScrollBarPolicy;
   final ScrollBarPolicy verticalScrollBarPolicy;
   final Clip clipBehavior;
-  final ScrollController scrollController;
+  final ScrollPaneController scrollController;
 
   @override
   RenderObjectElement createElement() => _ScrollPaneElement(this);
@@ -840,7 +840,7 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
     ScrollBarPolicy horizontalScrollBarPolicy = ScrollBarPolicy.auto,
     ScrollBarPolicy verticalScrollBarPolicy = ScrollBarPolicy.auto,
     Clip clipBehavior = Clip.hardEdge,
-    required ScrollController scrollController,
+    required ScrollPaneController scrollController,
   })  : _horizontalScrollBarPolicy = horizontalScrollBarPolicy,
         _verticalScrollBarPolicy = verticalScrollBarPolicy,
         _clipBehavior = clipBehavior {
@@ -880,9 +880,9 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
     markNeedsPaint();
   }
 
-  ScrollController? _scrollController;
-  ScrollController get scrollController => _scrollController!;
-  set scrollController(ScrollController value) {
+  ScrollPaneController? _scrollController;
+  ScrollPaneController get scrollController => _scrollController!;
+  set scrollController(ScrollPaneController value) {
     if (value == _scrollController) return;
     if (_scrollController != null) {
       _scrollController!.removeListener(_scrollPaneListener);
@@ -1005,7 +1005,7 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
     }
   }
 
-  void _onScrollOffsetChanged(ScrollController controller, Offset previousScrollOffset) {
+  void _onScrollOffsetChanged(ScrollPaneController controller, Offset previousScrollOffset) {
     if (_ignoreScrollControllerEvents) return;
     assert(controller == scrollController);
     assert(controller.scrollOffset != previousScrollOffset);
