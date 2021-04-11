@@ -33,8 +33,8 @@ class Flag {
 }
 
 @immutable
-class FormField {
-  const FormField({
+class FormPaneField {
+  const FormPaneField({
     required this.label,
     required this.child,
     this.flag,
@@ -45,8 +45,8 @@ class FormField {
   final Flag? flag;
 }
 
-class Form extends StatelessWidget {
-  const Form({
+class FormPane extends StatelessWidget {
+  const FormPane({
     Key? key,
     this.horizontalSpacing = 6,
     this.verticalSpacing = 6,
@@ -63,13 +63,13 @@ class Form extends StatelessWidget {
   final String delimiter;
   final bool stretch;
   final bool rightAlignLabels;
-  final List<FormField> children;
+  final List<FormPaneField> children;
 
-  Widget _newLabel(FormField field) {
+  Widget _newLabel(FormPaneField field) {
     return Text('${field.label}$delimiter');
   }
 
-  Widget _newFlag(FormField field) {
+  Widget _newFlag(FormPaneField field) {
     if (field.flag == null) {
       return const _NoFlag();
     } else {
@@ -90,7 +90,7 @@ class Form extends StatelessWidget {
       flagImageOffset: flagImageOffset,
       stretch: stretch,
       rightAlignLabels: rightAlignLabels,
-      children: children.map<_RawFormField>((FormField field) {
+      children: children.map<_RawFormField>((FormPaneField field) {
         return _RawFormField(
           label: _newLabel(field),
           child: field.child,

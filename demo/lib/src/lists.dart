@@ -14,7 +14,6 @@
 // limitations under the License.
 
 import 'package:chicago/chicago.dart';
-import 'package:chicago/chicago.dart' as chicago show Form, FormField;
 import 'package:flutter/widgets.dart';
 
 import 'text.dart';
@@ -406,16 +405,16 @@ class _ListButtonsDemoState extends State<ListButtonsDemo> {
       children: [
         BoldText('List Buttons'),
         SizedBox(height: 4),
-        chicago.Form(
+        FormPane(
           children: [
-            chicago.FormField(
+            FormPaneField(
               label: 'Basic',
               child: ListButton<String>(
                 items: ['Red', 'Orange', 'Yellow', 'Green', 'Blue', 'Purple'],
                 selectionController: _basicSelectionController,
               ),
             ),
-            chicago.FormField(
+            FormPaneField(
               label: 'Image',
               child: ListButton<String>(
                 items: ['anchor', 'bell', 'clock', 'cup', 'house', 'star'],
@@ -465,7 +464,7 @@ class _ListButtonsDemoState extends State<ListButtonsDemo> {
                 },
               ),
             ),
-            chicago.FormField(
+            FormPaneField(
               label: 'Color',
               child: ListButton<_ColorItem>(
                 selectionController: _colorSelectionController,

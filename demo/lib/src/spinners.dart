@@ -14,7 +14,6 @@
 // limitations under the License.
 
 import 'package:chicago/chicago.dart';
-import 'package:chicago/chicago.dart' as chicago show Form, FormField;
 import 'package:flutter/widgets.dart';
 
 import 'text.dart';
@@ -78,9 +77,9 @@ class _SpinnersDemoState extends State<SpinnersDemo> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    chicago.Form(
+                    FormPane(
                       children: [
-                        chicago.FormField(
+                        FormPaneField(
                           label: 'Basic',
                           child: Spinner(
                             length: 5,
@@ -90,7 +89,7 @@ class _SpinnersDemoState extends State<SpinnersDemo> {
                             itemBuilder: _buildBasicItem,
                           ),
                         ),
-                        chicago.FormField(
+                        FormPaneField(
                           label: 'Numeric',
                           child: SizedBox(
                             width: 60,
@@ -101,7 +100,7 @@ class _SpinnersDemoState extends State<SpinnersDemo> {
                             ),
                           ),
                         ),
-                        chicago.FormField(
+                        FormPaneField(
                           label: 'Date',
                           child: Spinner(
                             length: 365,

@@ -21,7 +21,7 @@ export 'src/calendar.dart';
 export 'src/calendar_button.dart';
 export 'src/checkbox.dart';
 export 'src/colors.dart';
-export 'src/form.dart';
+export 'src/form_pane.dart';
 export 'src/foundation.dart';
 export 'src/hover_builder.dart';
 export 'src/link_button.dart';
