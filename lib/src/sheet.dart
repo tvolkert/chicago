@@ -157,6 +157,7 @@ class Prompt extends StatelessWidget {
                   child: CommandPushButton(
                     onPressed: () => _setSelectedOption(context, index),
                     label: options[index],
+                    autofocus: index == selectedOption,
                   ),
                 );
               }),

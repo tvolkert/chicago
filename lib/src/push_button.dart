@@ -25,6 +25,7 @@ import 'package:flutter/widgets.dart';
 
 import 'action_tracker.dart';
 import 'colors.dart';
+import 'focus_indicator.dart';
 import 'sorting.dart';
 
 const Axis _defaultAxis = Axis.horizontal;
@@ -54,6 +55,8 @@ class PushButton<T extends Object> extends StatefulWidget {
     this.disabledBackgroundColor = _defaultDisabledBackgroundColor,
     this.disabledBorderColor = _defaultDisabledBorderColor,
     this.padding = _defaultPadding,
+    this.focusIndicatorPadding = const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+    this.autofocus = false,
     this.showTooltip = _defaultShowTooltip,
   }) : super(key: key);
 
@@ -71,6 +74,8 @@ class PushButton<T extends Object> extends StatefulWidget {
   final Color disabledBackgroundColor;
   final Color disabledBorderColor;
   final EdgeInsets padding;
+  final EdgeInsets focusIndicatorPadding;
+  final bool autofocus;
   final bool showTooltip;
 
   @override
@@ -186,6 +191,9 @@ class _PushButtonState<T extends Object> extends State<PushButton<T>> {
   void initState() {
     super.initState();
     focusNode = FocusNode(canRequestFocus: isEnabled);
+    if (widget.autofocus) {
+      focusNode!.requestFocus();
+    }
   }
 
   @override
@@ -246,13 +254,13 @@ class _PushButtonState<T extends Object> extends State<PushButton<T>> {
         focusNode: focusNode,
         onKey: _handleKey,
         onFocusChange: _handleFocusChange,
-        child: Center(
-          child: Padding(
-            padding: widget.padding,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                border: focused ? Border.fromBorderSide(BorderSide(style: BorderStyle.solid, color: Color(0xffcdcdcd))) : null,
-              ),
+        child: FocusIndicator(
+          isFocused: focused,
+          insets: widget.focusIndicatorPadding,
+          color: widget.borderColor,
+          child: Center(
+            child: Padding(
+              padding: widget.padding,
               child: button,
             ),
           ),
@@ -430,10 +438,12 @@ class CommandPushButton extends StatelessWidget {
   const CommandPushButton({
     Key? key,
     required this.label,
+    this.autofocus = false,
     required this.onPressed,
   }) : super(key: key);
 
   final String label;
+  final bool autofocus;
   final VoidCallback? onPressed;
 
   @override
@@ -443,6 +453,7 @@ class CommandPushButton extends StatelessWidget {
       backgroundColor: const Color(0xff3c77b2),
       borderColor: const Color(0xff2b5580),
       padding: EdgeInsets.fromLTRB(3, 4, 4, 5),
+      autofocus: autofocus,
       showTooltip: false,
       minimumAspectRatio: 3,
       onPressed: onPressed,
