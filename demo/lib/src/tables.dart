@@ -15,7 +15,8 @@
 
 import 'dart:math' as math;
 
-import 'package:chicago/chicago.dart' as chicago;
+import 'package:chicago/chicago.dart';
+import 'package:chicago/chicago.dart' as chicago show ScrollController;
 import 'package:flutter/widgets.dart';
 
 import 'text.dart';
@@ -40,10 +41,10 @@ class TablesDemo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return chicago.Rollup(
+    return Rollup(
       heading: const HeaderText('Tables'),
       childBuilder: (BuildContext context) {
-        return chicago.BorderPane(
+        return BorderPane(
           borderColor: const Color(0xff999999),
           backgroundColor: const Color(0xffffffff),
           child: Padding(
@@ -73,15 +74,15 @@ class SortableTableDemo extends StatefulWidget {
 }
 
 class _SortableTableDemoState extends State<SortableTableDemo> {
-  late chicago.TableViewSelectionController _selectionController;
-  late chicago.TableViewSortController _sortController;
-  late chicago.TableViewMetricsController _metricsController;
+  late TableViewSelectionController _selectionController;
+  late TableViewSortController _sortController;
+  late TableViewMetricsController _metricsController;
   late chicago.ScrollController _scrollController;
 
-  static chicago.TableColumnController _createTableColumn(String key, String name) {
-    return chicago.TableColumnController(
+  static TableColumnController _createTableColumn(String key, String name) {
+    return TableColumnController(
       key: key,
-      width: chicago.ConstrainedTableColumnWidth(width: 48),
+      width: ConstrainedTableColumnWidth(width: 48),
       headerRenderer: ({
         required BuildContext context,
         required int columnIndex,
@@ -107,8 +108,8 @@ class _SortableTableDemoState extends State<SortableTableDemo> {
     );
   }
 
-  static chicago.TableColumnController _createFlexTableColumn() {
-    return chicago.TableColumnController(
+  static TableColumnController _createFlexTableColumn() {
+    return TableColumnController(
       key: 'flex',
       headerRenderer: ({
         required BuildContext context,
@@ -132,13 +133,13 @@ class _SortableTableDemoState extends State<SortableTableDemo> {
 
   static TableRowComparator _getTableRowComparator(
     String sortKey,
-    chicago.SortDirection direction,
+    SortDirection direction,
   ) {
     return (Map<String, int> row1, Map<String, int> row2) {
       int value1 = row1[sortKey]!;
       int value2 = row2[sortKey]!;
       int result = value1.compareTo(value2);
-      if (direction == chicago.SortDirection.descending) {
+      if (direction == SortDirection.descending) {
         result *= -1;
       }
       return result;
@@ -148,16 +149,16 @@ class _SortableTableDemoState extends State<SortableTableDemo> {
   @override
   void initState() {
     super.initState();
-    _selectionController = chicago.TableViewSelectionController();
-    _sortController = chicago.TableViewSortController();
-    _metricsController = chicago.TableViewMetricsController();
+    _selectionController = TableViewSelectionController();
+    _sortController = TableViewSortController();
+    _metricsController = TableViewMetricsController();
     _scrollController = chicago.ScrollController();
 
-    _sortController['i'] = chicago.SortDirection.ascending;
-    _sortController.addListener(chicago.TableViewSortListener(
-      onChanged: (chicago.TableViewSortController controller) {
+    _sortController['i'] = SortDirection.ascending;
+    _sortController.addListener(TableViewSortListener(
+      onChanged: (TableViewSortController controller) {
         final String sortKey = controller.keys.first;
-        final chicago.SortDirection direction = controller[sortKey]!;
+        final SortDirection direction = controller[sortKey]!;
 
         Map<String, int>? selectedItem;
         if (_selectionController.selectedIndex != -1) {
@@ -168,7 +169,7 @@ class _SortableTableDemoState extends State<SortableTableDemo> {
         tableData.sort(comparator);
 
         if (selectedItem != null) {
-          int selectedIndex = chicago.binarySearch(tableData, selectedItem, compare: comparator);
+          int selectedIndex = binarySearch(tableData, selectedItem, compare: comparator);
           assert(selectedIndex >= 0);
           _selectionController.selectedIndex = selectedIndex;
           final Rect rowBounds = _metricsController.metrics.getRowBounds(selectedIndex);
@@ -197,9 +198,9 @@ class _SortableTableDemoState extends State<SortableTableDemo> {
         SizedBox(
           width: 276,
           height: 160,
-          child: chicago.BorderPane(
+          child: BorderPane(
             borderColor: Color(0xff999999),
-            child: chicago.ScrollableTableView(
+            child: ScrollableTableView(
               selectionController: _selectionController,
               sortController: _sortController,
               metricsController: _metricsController,
@@ -241,7 +242,7 @@ class _CustomItem {
 }
 
 class _CustomTableDemoState extends State<CustomTableDemo> {
-  late chicago.TableViewSelectionController _selectionController;
+  late TableViewSelectionController _selectionController;
   late List<_CustomItem> _items;
 
   static Widget _buildIsCheckedHeader({
@@ -263,8 +264,8 @@ class _CustomTableDemoState extends State<CustomTableDemo> {
     final _CustomItem item = _items[rowIndex];
     return Padding(
       padding: EdgeInsets.all(2),
-      child: chicago.BasicCheckbox(
-        state: item.isChecked ? chicago.CheckboxState.checked : chicago.CheckboxState.unchecked,
+      child: BasicCheckbox(
+        state: item.isChecked ? CheckboxState.checked : CheckboxState.unchecked,
         onTap: () {
           setState(() {
             _items[rowIndex] = _items[rowIndex].toggleChecked();
@@ -318,8 +319,8 @@ class _CustomTableDemoState extends State<CustomTableDemo> {
   @override
   void initState() {
     super.initState();
-    _selectionController = chicago.TableViewSelectionController(
-      selectMode: chicago.SelectMode.multi,
+    _selectionController = TableViewSelectionController(
+      selectMode: SelectMode.multi,
     );
     _items = <_CustomItem>[
       _CustomItem('anchor', 'Anchor', true),
@@ -347,29 +348,29 @@ class _CustomTableDemoState extends State<CustomTableDemo> {
         SizedBox(
           width: 276,
           height: 160,
-          child: chicago.BorderPane(
+          child: BorderPane(
             borderColor: Color(0xff999999),
-            child: chicago.ScrollableTableView(
+            child: ScrollableTableView(
               selectionController: _selectionController,
               includeHeader: true,
               rowHeight: 19,
               length: 6,
               columns: [
-                chicago.TableColumnController(
+                TableColumnController(
                   key: 'flag',
-                  width: chicago.FixedTableColumnWidth(20),
+                  width: FixedTableColumnWidth(20),
                   headerRenderer: _buildIsCheckedHeader,
                   cellRenderer: _buildIsCheckedCell,
                 ),
-                chicago.TableColumnController(
+                TableColumnController(
                   key: 'icon',
-                  width: chicago.ConstrainedTableColumnWidth(width: 50),
+                  width: ConstrainedTableColumnWidth(width: 50),
                   headerRenderer: _buildIconHeader,
                   cellRenderer: _buildIconCell,
                 ),
-                chicago.TableColumnController(
+                TableColumnController(
                   key: 'name',
-                  width: chicago.FlexTableColumnWidth(),
+                  width: FlexTableColumnWidth(),
                   headerRenderer: _buildNameHeader,
                   cellRenderer: _buildNameCell,
                 ),
@@ -397,10 +398,10 @@ class _EditableItem {
 }
 
 class _EditableTableDemoState extends State<EditableTableDemo> {
-  late chicago.TableViewSelectionController _selectionController;
-  late chicago.TableViewEditorController _editorController;
+  late TableViewSelectionController _selectionController;
+  late TableViewEditorController _editorController;
   late TextEditingController _textController;
-  late chicago.ListViewSelectionController _listButtonController;
+  late ListViewSelectionController _listButtonController;
   late List<_EditableItem> _items;
 
   static const List<String> editableTableListButtonOptions = [
@@ -428,7 +429,7 @@ class _EditableTableDemoState extends State<EditableTableDemo> {
     required bool isRowDisabled,
   }) {
     if (isEditing) {
-      return chicago.ListButton<String>(
+      return ListButton<String>(
         items: editableTableListButtonOptions,
         selectionController: _listButtonController,
       );
@@ -458,7 +459,7 @@ class _EditableTableDemoState extends State<EditableTableDemo> {
     required bool isRowDisabled,
   }) {
     if (isEditing) {
-      return chicago.TextInput(
+      return TextInput(
         controller: _textController,
       );
     } else {
@@ -492,10 +493,10 @@ class _EditableTableDemoState extends State<EditableTableDemo> {
   @override
   void initState() {
     super.initState();
-    _selectionController = chicago.TableViewSelectionController();
-    _editorController = chicago.TableViewEditorController();
+    _selectionController = TableViewSelectionController();
+    _editorController = TableViewEditorController();
     _textController = TextEditingController();
-    _listButtonController = chicago.ListViewSelectionController();
+    _listButtonController = ListViewSelectionController();
     _items = <_EditableItem>[
       _EditableItem('Dog', 'Boomer'),
       _EditableItem('Dog', 'Faith'),
@@ -504,9 +505,9 @@ class _EditableTableDemoState extends State<EditableTableDemo> {
     ];
 
     int editingRowIndex = -1;
-    _editorController.addListener(chicago.TableViewEditorListener(
+    _editorController.addListener(TableViewEditorListener(
       onPreviewEditStarted: (
-        chicago.TableViewEditorController controller,
+        TableViewEditorController controller,
         int rowIndex,
         int columnIndex,
       ) {
@@ -514,13 +515,13 @@ class _EditableTableDemoState extends State<EditableTableDemo> {
             editableTableListButtonOptions.indexOf(_items[rowIndex].animal);
         _textController.text = _items[rowIndex].name;
         editingRowIndex = rowIndex;
-        return chicago.Vote.approve;
+        return Vote.approve;
       },
       onEditFinished: (
-        chicago.TableViewEditorController controller,
-        chicago.TableViewEditOutcome outcome,
+        TableViewEditorController controller,
+        TableViewEditOutcome outcome,
       ) {
-        if (outcome == chicago.TableViewEditOutcome.saved) {
+        if (outcome == TableViewEditOutcome.saved) {
           final String animal = editableTableListButtonOptions[_listButtonController.selectedIndex];
           final String name = _textController.text;
           setState(() {
@@ -550,30 +551,30 @@ class _EditableTableDemoState extends State<EditableTableDemo> {
         SizedBox(
           width: 276,
           height: 160,
-          child: chicago.BorderPane(
+          child: BorderPane(
             borderColor: Color(0xff999999),
-            child: chicago.ScrollableTableView(
+            child: ScrollableTableView(
               selectionController: _selectionController,
               editorController: _editorController,
               includeHeader: true,
               rowHeight: 23,
               length: _items.length,
               columns: [
-                chicago.TableColumnController(
+                TableColumnController(
                   key: 'type',
-                  width: chicago.ConstrainedTableColumnWidth(width: 100),
+                  width: ConstrainedTableColumnWidth(width: 100),
                   headerRenderer: _buildTypeHeader,
                   cellRenderer: _buildTypeCell,
                 ),
-                chicago.TableColumnController(
+                TableColumnController(
                   key: 'name',
-                  width: chicago.ConstrainedTableColumnWidth(width: 100),
+                  width: ConstrainedTableColumnWidth(width: 100),
                   headerRenderer: _buildNameHeader,
                   cellRenderer: _buildNameCell,
                 ),
-                chicago.TableColumnController(
+                TableColumnController(
                   key: 'flex',
-                  width: chicago.FlexTableColumnWidth(),
+                  width: FlexTableColumnWidth(),
                   headerRenderer: _buildFlexHeader,
                   cellRenderer: _buildFlexCell,
                 ),

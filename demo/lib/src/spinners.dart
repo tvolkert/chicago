@@ -13,7 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import 'package:chicago/chicago.dart' as chicago;
+import 'package:chicago/chicago.dart';
+import 'package:chicago/chicago.dart' as chicago show Form, FormField;
 import 'package:flutter/widgets.dart';
 
 import 'text.dart';
@@ -26,9 +27,9 @@ class SpinnersDemo extends StatefulWidget {
 }
 
 class _SpinnersDemoState extends State<SpinnersDemo> {
-  late chicago.SpinnerController _basicController;
-  late chicago.SpinnerController _numericController;
-  late chicago.SpinnerController _dateController;
+  late SpinnerController _basicController;
+  late SpinnerController _numericController;
+  late SpinnerController _dateController;
 
   static Widget _buildBasicItem(context, index, isEnabled) {
     const List<String> numbers = ['One', 'Two', 'Three', 'Four', 'Five'];
@@ -40,17 +41,17 @@ class _SpinnersDemoState extends State<SpinnersDemo> {
   }
 
   static Widget _buildDateItem(context, index, isEnabled) {
-    const chicago.CalendarDate baseDate = chicago.CalendarDate(2019, 11, 30);
-    final chicago.CalendarDate date = baseDate + index;
+    const CalendarDate baseDate = CalendarDate(2019, 11, 30);
+    final CalendarDate date = baseDate + index;
     return Text(date.toString());
   }
 
   @override
   void initState() {
     super.initState();
-    _basicController = chicago.SpinnerController()..selectedIndex = 0;
-    _numericController = chicago.SpinnerController()..selectedIndex = 0;
-    _dateController = chicago.SpinnerController()..selectedIndex = 0;
+    _basicController = SpinnerController()..selectedIndex = 0;
+    _numericController = SpinnerController()..selectedIndex = 0;
+    _dateController = SpinnerController()..selectedIndex = 0;
   }
 
   @override
@@ -63,13 +64,13 @@ class _SpinnersDemoState extends State<SpinnersDemo> {
 
   @override
   Widget build(BuildContext context) {
-    return chicago.Rollup(
+    return Rollup(
       heading: const HeaderText('Spinners'),
       childBuilder: (BuildContext context) {
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            chicago.BorderPane(
+            BorderPane(
               borderColor: const Color(0xff999999),
               backgroundColor: const Color(0xffffffff),
               child: Padding(
@@ -81,7 +82,7 @@ class _SpinnersDemoState extends State<SpinnersDemo> {
                       children: [
                         chicago.FormField(
                           label: 'Basic',
-                          child: chicago.Spinner(
+                          child: Spinner(
                             length: 5,
                             isCircular: true,
                             sizeToContent: true,
@@ -93,7 +94,7 @@ class _SpinnersDemoState extends State<SpinnersDemo> {
                           label: 'Numeric',
                           child: SizedBox(
                             width: 60,
-                            child: chicago.Spinner(
+                            child: Spinner(
                               length: 260 ~/ 4,
                               controller: _numericController,
                               itemBuilder: _buildNumericItem,
@@ -102,7 +103,7 @@ class _SpinnersDemoState extends State<SpinnersDemo> {
                         ),
                         chicago.FormField(
                           label: 'Date',
-                          child: chicago.Spinner(
+                          child: Spinner(
                             length: 365,
                             controller: _dateController,
                             itemBuilder: _buildDateItem,
@@ -115,7 +116,7 @@ class _SpinnersDemoState extends State<SpinnersDemo> {
               ),
             ),
             SizedBox(width: 4),
-            // chicago.Border(
+            // BorderPane(
             //   borderColor: Color(0xff999999),
             //   backgroundColor: Color(0xffffffff),
             //   child: Padding(

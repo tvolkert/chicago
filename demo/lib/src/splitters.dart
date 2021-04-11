@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import 'package:chicago/chicago.dart' as chicago;
+import 'package:chicago/chicago.dart';
 import 'package:flutter/widgets.dart';
 
 import 'text.dart';
@@ -23,10 +23,10 @@ class SplittersDemo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return chicago.Rollup(
+    return Rollup(
       heading: HeaderText('Splitters'),
       childBuilder: (BuildContext context) {
-        return chicago.BorderPane(
+        return BorderPane(
           borderColor: Color(0xff999999),
           backgroundColor: Color(0xffffffff),
           child: Padding(
@@ -34,22 +34,22 @@ class SplittersDemo extends StatelessWidget {
             child: SizedBox(
               width: 400,
               height: 360,
-              child: chicago.SplitPane(
+              child: SplitPane(
                 orientation: Axis.vertical,
                 initialSplitRatio: 0.5,
-                before: chicago.SplitPane(
+                before: SplitPane(
                   orientation: Axis.horizontal,
                   initialSplitRatio: 0.5,
-                  before: chicago.BorderPane(
+                  before: BorderPane(
                     borderColor: Color(0xff999999),
                     child: Image(image: AssetImage('assets/bell.png')),
                   ),
-                  after: chicago.BorderPane(
+                  after: BorderPane(
                     borderColor: Color(0xff999999),
                     child: Image(image: AssetImage('assets/clock.png')),
                   ),
                 ),
-                after: chicago.BorderPane(
+                after: BorderPane(
                   borderColor: Color(0xff999999),
                   child: Image(image: AssetImage('assets/star.png')),
                 ),

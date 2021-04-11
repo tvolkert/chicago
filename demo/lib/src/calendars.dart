@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import 'package:chicago/chicago.dart' as chicago;
+import 'package:chicago/chicago.dart';
 import 'package:flutter/widgets.dart';
 
 import 'text.dart';
@@ -23,10 +23,10 @@ class CalendarsDemo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return chicago.Rollup(
+    return Rollup(
       heading: HeaderText('Calendars'),
       childBuilder: (BuildContext context) {
-        return chicago.BorderPane(
+        return BorderPane(
           backgroundColor: Color(0xffffffff),
           borderColor: Color(0xff999999),
           child: Padding(
@@ -38,7 +38,7 @@ class CalendarsDemo extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     BoldText('Basic'),
-                    chicago.Calendar(
+                    Calendar(
                       initialYear: 2021,
                       initialMonth: 2,
                     ),
@@ -49,8 +49,8 @@ class CalendarsDemo extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     BoldText('Calendar Buttons'),
-                    chicago.CalendarButton(
-                      initialSelectedDate: chicago.CalendarDate.today(),
+                    CalendarButton(
+                      initialSelectedDate: CalendarDate.today(),
                     ),
                   ],
                 ),

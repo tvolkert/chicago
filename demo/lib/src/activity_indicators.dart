@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import 'package:chicago/chicago.dart' as chicago;
+import 'package:chicago/chicago.dart';
 import 'package:flutter/widgets.dart';
 
 import 'text.dart';
@@ -23,10 +23,10 @@ class ActivityIndicatorsDemo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return chicago.Rollup(
+    return Rollup(
       heading: const HeaderText('Meters & Activity Indicators'),
       childBuilder: (BuildContext context) {
-        return chicago.BorderPane(
+        return BorderPane(
           borderColor: const Color(0xff999999),
           backgroundColor: const Color(0xffffffff),
           child: Padding(
@@ -58,7 +58,7 @@ class MetersDemo extends StatelessWidget {
         SizedBox(height: 12),
         Row(
           children: [
-            chicago.Meter.simple(percentage: 0.5, gridFrequency: 1, text: '50%'),
+            Meter.simple(percentage: 0.5, gridFrequency: 1, text: '50%'),
             SizedBox(width: 6),
             Text('50%'),
           ],
@@ -66,7 +66,7 @@ class MetersDemo extends StatelessWidget {
         SizedBox(height: 8),
         Row(
           children: [
-            chicago.Meter(percentage: 0.4, gridFrequency: 0.1),
+            Meter(percentage: 0.4, gridFrequency: 0.1),
             SizedBox(width: 6),
             Text('40%'),
           ],
@@ -74,7 +74,7 @@ class MetersDemo extends StatelessWidget {
         SizedBox(height: 8),
         Row(
           children: [
-            chicago.Meter(percentage: 0.75),
+            Meter(percentage: 0.75),
             SizedBox(width: 6),
             Text('75%'),
           ],
@@ -82,7 +82,7 @@ class MetersDemo extends StatelessWidget {
         SizedBox(height: 8),
         Row(
           children: [
-            chicago.Meter.simple(percentage: 0.75, gridFrequency: 1, text: '75%'),
+            Meter.simple(percentage: 0.75, gridFrequency: 1, text: '75%'),
             SizedBox(width: 6),
             Text('75%'),
           ],
@@ -90,7 +90,7 @@ class MetersDemo extends StatelessWidget {
         SizedBox(height: 8),
         Row(
           children: [
-            chicago.Meter(percentage: 0.95, fillColor: const Color(0xffaa0000)),
+            Meter(percentage: 0.95, fillColor: const Color(0xffaa0000)),
             SizedBox(width: 6),
             Text('Danger: 95%!'),
           ],
@@ -115,17 +115,17 @@ class ActivityIndicatorDemo extends StatelessWidget {
             SizedBox(
               width: 24,
               height: 24,
-              child: chicago.ActivityIndicator(),
+              child: ActivityIndicator(),
             ),
             SizedBox(
               width: 48,
               height: 48,
-              child: chicago.ActivityIndicator(color: Color(0xffaa0000)),
+              child: ActivityIndicator(color: Color(0xffaa0000)),
             ),
             SizedBox(
               width: 96,
               height: 96,
-              child: chicago.ActivityIndicator(color: Color(0xff4c82b8)),
+              child: ActivityIndicator(color: Color(0xff4c82b8)),
             ),
           ],
         ),

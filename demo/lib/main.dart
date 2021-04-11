@@ -18,7 +18,7 @@ import 'dart:ui' show window;
 // Needed because chicago.TextInput still depends on Material
 import 'package:flutter/material.dart' show Material, DefaultMaterialLocalizations;
 import 'package:flutter/widgets.dart';
-import 'package:chicago/chicago.dart' as chicago;
+import 'package:chicago/chicago.dart';
 
 import 'src/activity_indicators.dart';
 import 'src/alerts.dart';
@@ -33,7 +33,7 @@ import 'src/tables.dart';
 
 void main() {
   runApp(
-    const chicago.NavigatorListener(
+    const NavigatorListener(
       child: KitchenSink(),
     ),
   );
@@ -61,7 +61,7 @@ class KitchenSink extends StatelessWidget {
             child: Directionality(
               textDirection: TextDirection.ltr,
               child: Navigator(
-                observers: [chicago.NavigatorListener.of(context).observer],
+                observers: [NavigatorListener.of(context).observer],
                 onGenerateRoute: (RouteSettings settings) {
                   return PageRouteBuilder<void>(
                     settings: settings,
@@ -70,7 +70,7 @@ class KitchenSink extends StatelessWidget {
                         color: const Color(0xffdddcd5),
                         child: Padding(
                           padding: const EdgeInsets.all(8),
-                          child: chicago.BorderPane(
+                          child: BorderPane(
                             borderColor: const Color(0xff999999),
                             backgroundColor: const Color(0xfff7f5ee),
                             child: AssetImagePrecache(
@@ -84,7 +84,7 @@ class KitchenSink extends StatelessWidget {
                                 'assets/star.png',
                               ],
                               loadingIndicator: Container(),
-                              child: chicago.ScrollPane(
+                              child: ScrollPane(
                                 view: Padding(
                                   padding: EdgeInsets.all(6),
                                   child: Column(

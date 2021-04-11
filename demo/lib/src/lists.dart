@@ -13,7 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import 'package:chicago/chicago.dart' as chicago;
+import 'package:chicago/chicago.dart';
+import 'package:chicago/chicago.dart' as chicago show Form, FormField;
 import 'package:flutter/widgets.dart';
 
 import 'text.dart';
@@ -23,10 +24,10 @@ class ListsDemo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return chicago.Rollup(
+    return Rollup(
       heading: const HeaderText('Lists'),
       childBuilder: (BuildContext context) {
-        return chicago.BorderPane(
+        return BorderPane(
           borderColor: const Color(0xff999999),
           backgroundColor: const Color(0xffffffff),
           child: Padding(
@@ -60,7 +61,7 @@ class BasicListDemo extends StatefulWidget {
 }
 
 class _BasicListDemoState extends State<BasicListDemo> {
-  late chicago.ListViewSelectionController _selectionController;
+  late ListViewSelectionController _selectionController;
 
   static const List<String> _colors = [
     'Blue',
@@ -85,7 +86,7 @@ class _BasicListDemoState extends State<BasicListDemo> {
   @override
   void initState() {
     super.initState();
-    _selectionController = chicago.ListViewSelectionController();
+    _selectionController = ListViewSelectionController();
   }
 
   @override
@@ -104,9 +105,9 @@ class _BasicListDemoState extends State<BasicListDemo> {
         SizedBox(
           width: 72,
           height: 90,
-          child: chicago.BorderPane(
+          child: BorderPane(
             borderColor: const Color(0xff999999),
-            child: chicago.ScrollableListView(
+            child: ScrollableListView(
               itemHeight: 19,
               length: _colors.length,
               selectionController: _selectionController,
@@ -127,7 +128,7 @@ class LazyListDemo extends StatefulWidget {
 }
 
 class _LazyListDemoState extends State<LazyListDemo> {
-  late chicago.ListViewSelectionController _selectionController;
+  late ListViewSelectionController _selectionController;
 
   static Widget _buildItem({
     required BuildContext context,
@@ -143,7 +144,7 @@ class _LazyListDemoState extends State<LazyListDemo> {
   @override
   void initState() {
     super.initState();
-    _selectionController = chicago.ListViewSelectionController();
+    _selectionController = ListViewSelectionController();
   }
 
   @override
@@ -162,9 +163,9 @@ class _LazyListDemoState extends State<LazyListDemo> {
         SizedBox(
           width: 90,
           height: 90,
-          child: chicago.BorderPane(
+          child: BorderPane(
             borderColor: const Color(0xff999999),
-            child: chicago.ScrollableListView(
+            child: ScrollableListView(
               itemHeight: 19,
               length: 1000000,
               selectionController: _selectionController,
@@ -185,7 +186,7 @@ class MultiSelectListDemo extends StatefulWidget {
 }
 
 class _MultiSelectListDemoState extends State<MultiSelectListDemo> {
-  late chicago.ListViewSelectionController _selectionController;
+  late ListViewSelectionController _selectionController;
 
   static const List<String> _shapes = [
     'Circle',
@@ -210,8 +211,8 @@ class _MultiSelectListDemoState extends State<MultiSelectListDemo> {
   @override
   void initState() {
     super.initState();
-    _selectionController = chicago.ListViewSelectionController(selectMode: chicago.SelectMode.multi)
-      ..selectedRanges = [chicago.Span(0, 0), chicago.Span(2, 3)];
+    _selectionController = ListViewSelectionController(selectMode: SelectMode.multi)
+      ..selectedRanges = [Span(0, 0), Span(2, 3)];
   }
 
   @override
@@ -230,9 +231,9 @@ class _MultiSelectListDemoState extends State<MultiSelectListDemo> {
         SizedBox(
           width: 90,
           height: 90,
-          child: chicago.BorderPane(
+          child: BorderPane(
             borderColor: const Color(0xff999999),
-            child: chicago.ScrollableListView(
+            child: ScrollableListView(
               itemHeight: 19,
               length: _shapes.length,
               selectionController: _selectionController,
@@ -260,8 +261,8 @@ class _ImageItem {
 }
 
 class _ImageListDemoState extends State<ImageListDemo> {
-  late chicago.ListViewSelectionController _selectionController;
-  late chicago.ListViewItemDisablerController _disablerController;
+  late ListViewSelectionController _selectionController;
+  late ListViewItemDisablerController _disablerController;
 
   static const List<_ImageItem> _items = [
     _ImageItem('Anchor', 'assets/anchor.png'),
@@ -296,8 +297,8 @@ class _ImageListDemoState extends State<ImageListDemo> {
   @override
   void initState() {
     super.initState();
-    _selectionController = chicago.ListViewSelectionController();
-    _disablerController = chicago.ListViewItemDisablerController()
+    _selectionController = ListViewSelectionController();
+    _disablerController = ListViewItemDisablerController()
       ..filter = (int index) => index == 2 || index == 3;
   }
 
@@ -318,9 +319,9 @@ class _ImageListDemoState extends State<ImageListDemo> {
         SizedBox(
           width: 90,
           height: 90,
-          child: chicago.BorderPane(
+          child: BorderPane(
             borderColor: const Color(0xff999999),
-            child: chicago.ScrollableListView(
+            child: ScrollableListView(
               itemHeight: 19,
               length: _items.length,
               selectionController: _selectionController,
@@ -349,9 +350,9 @@ class _ColorItem {
 }
 
 class _ListButtonsDemoState extends State<ListButtonsDemo> {
-  late chicago.ListViewSelectionController _basicSelectionController;
-  late chicago.ListViewSelectionController _imageSelectionController;
-  late chicago.ListViewSelectionController _colorSelectionController;
+  late ListViewSelectionController _basicSelectionController;
+  late ListViewSelectionController _imageSelectionController;
+  late ListViewSelectionController _colorSelectionController;
 
   Widget _buildColorItem(
     _ColorItem item, {
@@ -361,7 +362,7 @@ class _ListButtonsDemoState extends State<ListButtonsDemo> {
     Widget result = SizedBox(
       width: 19,
       height: 19,
-      child: chicago.SetBaseline(
+      child: SetBaseline(
         baseline: 15.5,
         child: DecoratedBox(
           decoration: BoxDecoration(
@@ -386,9 +387,9 @@ class _ListButtonsDemoState extends State<ListButtonsDemo> {
   @override
   void initState() {
     super.initState();
-    _basicSelectionController = chicago.ListViewSelectionController()..selectedIndex = 0;
-    _imageSelectionController = chicago.ListViewSelectionController()..selectedIndex = 2;
-    _colorSelectionController = chicago.ListViewSelectionController()..selectedIndex = 0;
+    _basicSelectionController = ListViewSelectionController()..selectedIndex = 0;
+    _imageSelectionController = ListViewSelectionController()..selectedIndex = 2;
+    _colorSelectionController = ListViewSelectionController()..selectedIndex = 0;
   }
 
   @override
@@ -409,14 +410,14 @@ class _ListButtonsDemoState extends State<ListButtonsDemo> {
           children: [
             chicago.FormField(
               label: 'Basic',
-              child: chicago.ListButton<String>(
+              child: ListButton<String>(
                 items: ['Red', 'Orange', 'Yellow', 'Green', 'Blue', 'Purple'],
                 selectionController: _basicSelectionController,
               ),
             ),
             chicago.FormField(
               label: 'Image',
-              child: chicago.ListButton<String>(
+              child: ListButton<String>(
                 items: ['anchor', 'bell', 'clock', 'cup', 'house', 'star'],
                 selectionController: _imageSelectionController,
                 builder: (BuildContext context, String? item, bool isForMeasurementOnly) {
@@ -466,7 +467,7 @@ class _ListButtonsDemoState extends State<ListButtonsDemo> {
             ),
             chicago.FormField(
               label: 'Color',
-              child: chicago.ListButton<_ColorItem>(
+              child: ListButton<_ColorItem>(
                 selectionController: _colorSelectionController,
                 items: const <_ColorItem>[
                   _ColorItem(Color(0xffff0000), 'Red'),

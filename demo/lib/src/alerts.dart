@@ -1,4 +1,4 @@
-import 'package:chicago/chicago.dart' as chicago;
+import 'package:chicago/chicago.dart';
 import 'package:flutter/widgets.dart';
 
 import 'text.dart';
@@ -11,19 +11,19 @@ class AlertsDemo extends StatefulWidget {
 }
 
 class _AlertsDemoState extends State<AlertsDemo> {
-  late chicago.RadioButtonController<chicago.MessageType?> _controller;
-  late chicago.RadioButtonController<String> _iconController;
+  late RadioButtonController<MessageType?> _controller;
+  late RadioButtonController<String> _iconController;
 
-  static const Map<chicago.MessageType, String> _messages = {
-    chicago.MessageType.error: 'This is an error message.',
-    chicago.MessageType.warning: 'This is a warning message.',
-    chicago.MessageType.question: 'This is a question message.',
-    chicago.MessageType.info: 'This is an info message.',
+  static const Map<MessageType, String> _messages = {
+    MessageType.error: 'This is an error message.',
+    MessageType.warning: 'This is a warning message.',
+    MessageType.question: 'This is a question message.',
+    MessageType.info: 'This is an info message.',
   };
 
   void _handleShowPrompt() {
     if (_controller.value != null) {
-      chicago.Prompt.open(
+      Prompt.open(
         context: context,
         messageType: _controller.value!,
         message: _messages[_controller.value!]!,
@@ -32,14 +32,14 @@ class _AlertsDemoState extends State<AlertsDemo> {
         selectedOption: 0,
       );
     } else {
-      chicago.Prompt.open(
+      Prompt.open(
         context: context,
-        messageType: chicago.MessageType.question,
+        messageType: MessageType.question,
         message: 'Please select your favorite icon:',
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            chicago.RadioButton<String>(
+            RadioButton<String>(
               value: 'bell',
               controller: _iconController,
               trailing: Row(
@@ -51,7 +51,7 @@ class _AlertsDemoState extends State<AlertsDemo> {
               ),
             ),
             SizedBox(height: 4),
-            chicago.RadioButton<String>(
+            RadioButton<String>(
               value: 'clock',
               controller: _iconController,
               trailing: Row(
@@ -63,7 +63,7 @@ class _AlertsDemoState extends State<AlertsDemo> {
               ),
             ),
             SizedBox(height: 4),
-            chicago.RadioButton<String>(
+            RadioButton<String>(
               value: 'house',
               controller: _iconController,
               trailing: Row(
@@ -85,8 +85,8 @@ class _AlertsDemoState extends State<AlertsDemo> {
   @override
   void initState() {
     super.initState();
-    _controller = chicago.RadioButtonController<chicago.MessageType>(chicago.MessageType.error);
-    _iconController = chicago.RadioButtonController<String>('house');
+    _controller = RadioButtonController<MessageType>(MessageType.error);
+    _iconController = RadioButtonController<String>('house');
   }
 
   @override
@@ -98,10 +98,10 @@ class _AlertsDemoState extends State<AlertsDemo> {
 
   @override
   Widget build(BuildContext context) {
-    return chicago.Rollup(
+    return Rollup(
       heading: HeaderText('Alerts'),
       childBuilder: (BuildContext context) {
-        return chicago.BorderPane(
+        return BorderPane(
           borderColor: Color(0xff999999),
           backgroundColor: const Color(0xffffffff),
           child: Padding(
@@ -109,37 +109,37 @@ class _AlertsDemoState extends State<AlertsDemo> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                chicago.RadioButton<chicago.MessageType?>(
-                  value: chicago.MessageType.error,
+                RadioButton<MessageType?>(
+                  value: MessageType.error,
                   controller: _controller,
                   trailing: Text('Error'),
                 ),
                 SizedBox(height: 4),
-                chicago.RadioButton<chicago.MessageType?>(
-                  value: chicago.MessageType.warning,
+                RadioButton<MessageType?>(
+                  value: MessageType.warning,
                   controller: _controller,
                   trailing: Text('Warning'),
                 ),
                 SizedBox(height: 4),
-                chicago.RadioButton<chicago.MessageType?>(
-                  value: chicago.MessageType.question,
+                RadioButton<MessageType?>(
+                  value: MessageType.question,
                   controller: _controller,
                   trailing: Text('Question'),
                 ),
                 SizedBox(height: 4),
-                chicago.RadioButton<chicago.MessageType?>(
-                  value: chicago.MessageType.info,
+                RadioButton<MessageType?>(
+                  value: MessageType.info,
                   controller: _controller,
                   trailing: Text('Info'),
                 ),
                 SizedBox(height: 4),
-                chicago.RadioButton<chicago.MessageType?>(
+                RadioButton<MessageType?>(
                   value: null,
                   controller: _controller,
                   trailing: Text('Custom'),
                 ),
                 SizedBox(height: 6),
-                chicago.PushButton(
+                PushButton(
                   label: 'Show Prompt',
                   onPressed: _handleShowPrompt,
                 ),

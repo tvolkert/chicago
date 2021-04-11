@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import 'package:chicago/chicago.dart' as chicago;
+import 'package:chicago/chicago.dart';
 import 'package:flutter/widgets.dart';
 
 import 'text.dart';
@@ -23,7 +23,7 @@ class NavigationDemo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return chicago.Rollup(
+    return Rollup(
       heading: const HeaderText('Navigation'),
       childBuilder: (BuildContext context) {
         return Row(
@@ -51,18 +51,18 @@ class RollupDemo extends StatefulWidget {
 }
 
 class _RollupDemoState extends State<RollupDemo> {
-  late chicago.CheckboxController _ellipseController;
-  late chicago.CheckboxController _squareController;
-  late chicago.CheckboxController _octagonController;
-  late chicago.RadioButtonController<String> _radioController;
+  late CheckboxController _ellipseController;
+  late CheckboxController _squareController;
+  late CheckboxController _octagonController;
+  late RadioButtonController<String> _radioController;
 
   @override
   void initState() {
     super.initState();
-    _ellipseController = chicago.CheckboxController.simple(true);
-    _squareController = chicago.CheckboxController.simple(true);
-    _octagonController = chicago.CheckboxController.simple(true);
-    _radioController = chicago.RadioButtonController<String>('star');
+    _ellipseController = CheckboxController.simple(true);
+    _squareController = CheckboxController.simple(true);
+    _octagonController = CheckboxController.simple(true);
+    _radioController = RadioButtonController<String>('star');
   }
 
   @override
@@ -76,7 +76,7 @@ class _RollupDemoState extends State<RollupDemo> {
 
   @override
   Widget build(BuildContext context) {
-    return chicago.BorderPane(
+    return BorderPane(
       borderColor: Color(0xff999999),
       backgroundColor: const Color(0xffffffff),
       child: Padding(
@@ -86,7 +86,7 @@ class _RollupDemoState extends State<RollupDemo> {
           children: [
             BoldText('Rollups'),
             SizedBox(height: 4),
-            chicago.Rollup(
+            Rollup(
               heading: Text('Colors'),
               childBuilder: (BuildContext context) {
                 return Column(
@@ -102,29 +102,29 @@ class _RollupDemoState extends State<RollupDemo> {
                 );
               },
             ),
-            chicago.Rollup(
+            Rollup(
               heading: Text('Shapes'),
               childBuilder: (BuildContext context) {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const chicago.Checkbox(trailing: Text('Circle')),
-                    chicago.Checkbox(trailing: Text('Ellipse'), controller: _ellipseController),
-                    chicago.Checkbox(trailing: Text('Square'), controller: _squareController),
-                    const chicago.Checkbox(trailing: Text('Rectangle')),
-                    const chicago.Checkbox(trailing: Text('Hexagon')),
-                    chicago.Checkbox(trailing: Text('Octagon'), controller: _octagonController),
+                    const Checkbox(trailing: Text('Circle')),
+                    Checkbox(trailing: Text('Ellipse'), controller: _ellipseController),
+                    Checkbox(trailing: Text('Square'), controller: _squareController),
+                    const Checkbox(trailing: Text('Rectangle')),
+                    const Checkbox(trailing: Text('Hexagon')),
+                    Checkbox(trailing: Text('Octagon'), controller: _octagonController),
                   ],
                 );
               },
             ),
-            chicago.Rollup(
+            Rollup(
               heading: Text('Images'),
               childBuilder: (BuildContext context) {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    chicago.RadioButton<String>(
+                    RadioButton<String>(
                       value: 'anchor',
                       controller: _radioController,
                       trailing: Row(
@@ -135,7 +135,7 @@ class _RollupDemoState extends State<RollupDemo> {
                         ],
                       ),
                     ),
-                    chicago.RadioButton<String>(
+                    RadioButton<String>(
                       value: 'bell',
                       controller: _radioController,
                       trailing: Row(
@@ -146,7 +146,7 @@ class _RollupDemoState extends State<RollupDemo> {
                         ],
                       ),
                     ),
-                    chicago.RadioButton<String>(
+                    RadioButton<String>(
                       value: 'clock',
                       controller: _radioController,
                       trailing: Row(
@@ -157,7 +157,7 @@ class _RollupDemoState extends State<RollupDemo> {
                         ],
                       ),
                     ),
-                    chicago.RadioButton<String>(
+                    RadioButton<String>(
                       value: 'cup',
                       controller: _radioController,
                       trailing: Row(
@@ -168,7 +168,7 @@ class _RollupDemoState extends State<RollupDemo> {
                         ],
                       ),
                     ),
-                    chicago.RadioButton<String>(
+                    RadioButton<String>(
                       value: 'house',
                       controller: _radioController,
                       trailing: Row(
@@ -179,7 +179,7 @@ class _RollupDemoState extends State<RollupDemo> {
                         ],
                       ),
                     ),
-                    chicago.RadioButton<String>(
+                    RadioButton<String>(
                       value: 'star',
                       controller: _radioController,
                       trailing: Row(

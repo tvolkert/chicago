@@ -13,16 +13,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import 'package:chicago/chicago.dart' as chicago;
+import 'package:chicago/chicago.dart';
 import 'package:flutter/widgets.dart';
 
 import 'text.dart';
 
 VoidCallback _acknowledgeAction(BuildContext context, String action) {
   return () {
-    chicago.Prompt.open(
+    Prompt.open(
       context: context,
-      messageType: chicago.MessageType.info,
+      messageType: MessageType.info,
       message: 'Registered $action.',
       body: Container(),
       options: ['OK'],
@@ -47,12 +47,12 @@ class ButtonsDemo extends StatefulWidget {
 }
 
 class _ButtonsDemoState extends State<ButtonsDemo> {
-  late chicago.RollupController _controller;
+  late RollupController _controller;
 
   @override
   void initState() {
     super.initState();
-    _controller = chicago.RollupController(isExpanded: true);
+    _controller = RollupController(isExpanded: true);
   }
 
   @override
@@ -63,7 +63,7 @@ class _ButtonsDemoState extends State<ButtonsDemo> {
 
   @override
   Widget build(BuildContext context) {
-    return chicago.Rollup(
+    return Rollup(
       controller: _controller,
       heading: HeaderText('Buttons'),
       childBuilder: (BuildContext context) {
@@ -87,7 +87,7 @@ class _ButtonsDemoState extends State<ButtonsDemo> {
 class BasicButtonsDemo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return chicago.BorderPane(
+    return BorderPane(
       borderColor: Color(0xff999999),
       backgroundColor: const Color(0xffffffff),
       child: Padding(
@@ -99,17 +99,17 @@ class BasicButtonsDemo extends StatelessWidget {
             SizedBox(height: 4),
             Row(
               children: [
-                chicago.PushButton(
+                PushButton(
                   label: 'One',
                   onPressed: _acknowledgeButtonPress(context),
                 ),
                 SizedBox(width: 4),
-                chicago.PushButton(
+                PushButton(
                   label: 'Two',
                   onPressed: _acknowledgeButtonPress(context),
                 ),
                 SizedBox(width: 4),
-                chicago.PushButton(label: 'Three'),
+                PushButton(label: 'Three'),
               ],
             ),
             SizedBox(height: 10),
@@ -118,20 +118,20 @@ class BasicButtonsDemo extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                chicago.PushButton(
+                PushButton(
                   label: 'Bell',
                   icon: 'assets/bell.png',
                   onPressed: _acknowledgeButtonPress(context),
                 ),
                 SizedBox(width: 4),
-                chicago.PushButton(
+                PushButton(
                   label: 'Clock',
                   icon: 'assets/clock.png',
                   axis: Axis.vertical,
                   onPressed: _acknowledgeButtonPress(context),
                 ),
                 SizedBox(width: 4),
-                chicago.PushButton(
+                PushButton(
                   label: 'House',
                   icon: 'assets/house.png',
                 ),
@@ -142,19 +142,19 @@ class BasicButtonsDemo extends StatelessWidget {
             SizedBox(height: 4),
             Row(
               children: [
-                chicago.PushButton(
+                PushButton(
                   icon: 'assets/bell.png',
                   isToolbar: true,
                   onPressed: _acknowledgeButtonPress(context),
                 ),
                 SizedBox(width: 4),
-                chicago.PushButton(
+                PushButton(
                   icon: 'assets/clock.png',
                   isToolbar: true,
                   onPressed: _acknowledgeButtonPress(context),
                 ),
                 SizedBox(width: 4),
-                chicago.PushButton(
+                PushButton(
                   icon: 'assets/house.png',
                   isToolbar: true,
                 ),
@@ -173,14 +173,14 @@ class RadioButtonsDemo extends StatefulWidget {
 }
 
 class _RadioButtonsDemoState extends State<RadioButtonsDemo> {
-  late chicago.RadioButtonController<String> _basicController;
-  late chicago.RadioButtonController<String> _imageController;
+  late RadioButtonController<String> _basicController;
+  late RadioButtonController<String> _imageController;
 
   @override
   void initState() {
     super.initState();
-    _basicController = chicago.RadioButtonController('three');
-    _imageController = chicago.RadioButtonController('house');
+    _basicController = RadioButtonController('three');
+    _imageController = RadioButtonController('house');
   }
 
   @override
@@ -191,7 +191,7 @@ class _RadioButtonsDemoState extends State<RadioButtonsDemo> {
 
   @override
   Widget build(BuildContext context) {
-    return chicago.BorderPane(
+    return BorderPane(
       borderColor: Color(0xff999999),
       backgroundColor: const Color(0xffffffff),
       child: Padding(
@@ -203,19 +203,19 @@ class _RadioButtonsDemoState extends State<RadioButtonsDemo> {
             SizedBox(height: 4),
             Row(
               children: [
-                chicago.RadioButton<String>(
+                RadioButton<String>(
                   value: 'one',
                   controller: _basicController,
                   trailing: Text('One'),
                 ),
                 SizedBox(width: 4),
-                chicago.RadioButton<String>(
+                RadioButton<String>(
                   value: 'two',
                   controller: _basicController,
                   trailing: Text('Two'),
                 ),
                 SizedBox(width: 4),
-                chicago.RadioButton<String>(
+                RadioButton<String>(
                   value: 'three',
                   controller: _basicController,
                   trailing: Text('Three'),
@@ -229,7 +229,7 @@ class _RadioButtonsDemoState extends State<RadioButtonsDemo> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                chicago.RadioButton<String>(
+                RadioButton<String>(
                   value: 'bell',
                   controller: _imageController,
                   trailing: Row(
@@ -241,7 +241,7 @@ class _RadioButtonsDemoState extends State<RadioButtonsDemo> {
                   ),
                 ),
                 SizedBox(height: 4),
-                chicago.RadioButton<String>(
+                RadioButton<String>(
                   value: 'clock',
                   controller: _imageController,
                   trailing: Row(
@@ -253,7 +253,7 @@ class _RadioButtonsDemoState extends State<RadioButtonsDemo> {
                   ),
                 ),
                 SizedBox(height: 4),
-                chicago.RadioButton<String>(
+                RadioButton<String>(
                   value: 'house',
                   controller: _imageController,
                   isEnabled: false,
@@ -280,27 +280,27 @@ class CheckboxesDemo extends StatefulWidget {
 }
 
 class _CheckboxesDemoState extends State<CheckboxesDemo> {
-  late chicago.CheckboxController _threeController;
-  late chicago.CheckboxController _houseController;
-  late chicago.CheckboxController _readController;
-  late chicago.CheckboxController _writeController;
-  late chicago.CheckboxController _executeController;
+  late CheckboxController _threeController;
+  late CheckboxController _houseController;
+  late CheckboxController _readController;
+  late CheckboxController _writeController;
+  late CheckboxController _executeController;
 
   @override
   void initState() {
     super.initState();
-    _threeController = chicago.CheckboxController.simple(true);
-    _houseController = chicago.CheckboxController.simple(true);
-    _readController = chicago.CheckboxController.triState(
-      state: chicago.CheckboxState.checked,
+    _threeController = CheckboxController.simple(true);
+    _houseController = CheckboxController.simple(true);
+    _readController = CheckboxController.triState(
+      state: CheckboxState.checked,
       canUserToggleMixed: true,
     );
-    _writeController = chicago.CheckboxController.triState(
-      state: chicago.CheckboxState.unchecked,
+    _writeController = CheckboxController.triState(
+      state: CheckboxState.unchecked,
       canUserToggleMixed: true,
     );
-    _executeController = chicago.CheckboxController.triState(
-      state: chicago.CheckboxState.mixed,
+    _executeController = CheckboxController.triState(
+      state: CheckboxState.mixed,
       canUserToggleMixed: true,
     );
   }
@@ -317,7 +317,7 @@ class _CheckboxesDemoState extends State<CheckboxesDemo> {
 
   @override
   Widget build(BuildContext context) {
-    return chicago.BorderPane(
+    return BorderPane(
       borderColor: Color(0xff999999),
       backgroundColor: const Color(0xffffffff),
       child: Padding(
@@ -329,11 +329,11 @@ class _CheckboxesDemoState extends State<CheckboxesDemo> {
             SizedBox(height: 4),
             Row(
               children: [
-                chicago.Checkbox(trailing: Text('One')),
+                Checkbox(trailing: Text('One')),
                 SizedBox(width: 4),
-                chicago.Checkbox(trailing: Text('Two')),
+                Checkbox(trailing: Text('Two')),
                 SizedBox(width: 4),
-                chicago.Checkbox(
+                Checkbox(
                   trailing: Text('Three'),
                   controller: _threeController,
                   isEnabled: false,
@@ -346,7 +346,7 @@ class _CheckboxesDemoState extends State<CheckboxesDemo> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                chicago.Checkbox(
+                Checkbox(
                   trailing: Row(
                     children: [
                       Image.asset('assets/clock.png'),
@@ -356,7 +356,7 @@ class _CheckboxesDemoState extends State<CheckboxesDemo> {
                   ),
                 ),
                 SizedBox(height: 4),
-                chicago.Checkbox(
+                Checkbox(
                   trailing: Row(
                     children: [
                       Image.asset('assets/bell.png'),
@@ -366,7 +366,7 @@ class _CheckboxesDemoState extends State<CheckboxesDemo> {
                   ),
                 ),
                 SizedBox(height: 4),
-                chicago.Checkbox(
+                Checkbox(
                   controller: _houseController,
                   isEnabled: false,
                   trailing: Row(
@@ -385,17 +385,17 @@ class _CheckboxesDemoState extends State<CheckboxesDemo> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                chicago.Checkbox(
+                Checkbox(
                   controller: _readController,
                   trailing: Text('Read'),
                 ),
                 SizedBox(height: 4),
-                chicago.Checkbox(
+                Checkbox(
                   controller: _writeController,
                   trailing: Text('Write'),
                 ),
                 SizedBox(height: 4),
-                chicago.Checkbox(
+                Checkbox(
                   controller: _executeController,
                   trailing: Text('Execute'),
                   isEnabled: false,
@@ -412,7 +412,7 @@ class _CheckboxesDemoState extends State<CheckboxesDemo> {
 class LinkButtonsDemo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return chicago.BorderPane(
+    return BorderPane(
       borderColor: Color(0xff999999),
       backgroundColor: const Color(0xffffffff),
       child: Padding(
@@ -424,17 +424,17 @@ class LinkButtonsDemo extends StatelessWidget {
             SizedBox(height: 4),
             Row(
               children: [
-                chicago.LinkButton(
+                LinkButton(
                   text: 'One',
                   onPressed: _acknowledgeLinkPress(context),
                 ),
                 SizedBox(width: 4),
-                chicago.LinkButton(
+                LinkButton(
                   text: 'Two',
                   onPressed: _acknowledgeLinkPress(context),
                 ),
                 SizedBox(width: 4),
-                chicago.LinkButton(text: 'Three'),
+                LinkButton(text: 'Three'),
               ],
             ),
             SizedBox(height: 10),
@@ -443,19 +443,19 @@ class LinkButtonsDemo extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                chicago.LinkButton(
+                LinkButton(
                   text: 'Bell',
                   image: AssetImage('assets/bell.png'),
                   onPressed: _acknowledgeLinkPress(context),
                 ),
                 SizedBox(height: 4),
-                chicago.LinkButton(
+                LinkButton(
                   text: 'Clock',
                   image: AssetImage('assets/clock.png'),
                   onPressed: _acknowledgeLinkPress(context),
                 ),
                 SizedBox(height: 4),
-                chicago.LinkButton(
+                LinkButton(
                   text: 'House',
                   image: AssetImage('assets/house.png'),
                 ),
