@@ -628,7 +628,7 @@ class _RenderSpinner extends RenderBox {
   double computeMinIntrinsicHeight(double width) => computeMaxIntrinsicHeight(width);
 
   /// Intrinsic height is the maximum of the button height and the
-  /// renderer's intrinsic height (plus the border), where button height is
+  /// builder's intrinsic height (plus the border), where button height is
   /// defined as the larger of the two buttons' intrinsic height, doubled.
   @override
   double computeMaxIntrinsicHeight(double width) {

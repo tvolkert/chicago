@@ -82,21 +82,21 @@ class _SortableTableDemoState extends State<SortableTableDemo> {
     return TableColumnController(
       key: key,
       width: ConstrainedTableColumnWidth(width: 48),
-      headerRenderer: ({
-        required BuildContext context,
-        required int columnIndex,
-      }) {
+      headerBuilder: (
+        BuildContext context,
+        int columnIndex,
+      ) {
         return Text(name);
       },
-      cellRenderer: ({
-        required BuildContext context,
-        required int rowIndex,
-        required int columnIndex,
-        required bool rowSelected,
-        required bool rowHighlighted,
-        required bool isEditing,
-        required bool isRowDisabled,
-      }) {
+      cellBuilder: (
+        BuildContext context,
+        int rowIndex,
+        int columnIndex,
+        bool rowSelected,
+        bool rowHighlighted,
+        bool isEditing,
+        bool isRowDisabled,
+      ) {
         final int? value = tableData[rowIndex][key];
         TextStyle style = DefaultTextStyle.of(context).style;
         if (rowSelected) {
@@ -110,21 +110,21 @@ class _SortableTableDemoState extends State<SortableTableDemo> {
   static TableColumnController _createFlexTableColumn() {
     return TableColumnController(
       key: 'flex',
-      headerRenderer: ({
-        required BuildContext context,
-        required int columnIndex,
-      }) {
+      headerBuilder: (
+        BuildContext context,
+        int columnIndex,
+      ) {
         return Text('');
       },
-      cellRenderer: ({
-        required BuildContext context,
-        required int rowIndex,
-        required int columnIndex,
-        required bool rowSelected,
-        required bool rowHighlighted,
-        required bool isEditing,
-        required bool isRowDisabled,
-      }) {
+      cellBuilder: (
+        BuildContext context,
+        int rowIndex,
+        int columnIndex,
+        bool rowSelected,
+        bool rowHighlighted,
+        bool isEditing,
+        bool isRowDisabled,
+      ) {
         return Container();
       },
     );
@@ -244,22 +244,19 @@ class _CustomTableDemoState extends State<CustomTableDemo> {
   late TableViewSelectionController _selectionController;
   late List<_CustomItem> _items;
 
-  static Widget _buildIsCheckedHeader({
-    required BuildContext context,
-    required int columnIndex,
-  }) {
+  static Widget _buildIsCheckedHeader(BuildContext context, int columnIndex) {
     return Image.asset('assets/flag_red.png');
   }
 
-  Widget _buildIsCheckedCell({
-    required BuildContext context,
-    required int rowIndex,
-    required int columnIndex,
-    required bool rowSelected,
-    required bool rowHighlighted,
-    required bool isEditing,
-    required bool isRowDisabled,
-  }) {
+  Widget _buildIsCheckedCell(
+    BuildContext context,
+    int rowIndex,
+    int columnIndex,
+    bool rowSelected,
+    bool rowHighlighted,
+    bool isEditing,
+    bool isRowDisabled,
+  ) {
     final _CustomItem item = _items[rowIndex];
     return Padding(
       padding: EdgeInsets.all(2),
@@ -274,43 +271,43 @@ class _CustomTableDemoState extends State<CustomTableDemo> {
     );
   }
 
-  static Widget _buildIconHeader({
-    required BuildContext context,
-    required int columnIndex,
-  }) {
+  static Widget _buildIconHeader(
+    BuildContext context,
+    int columnIndex,
+  ) {
     return Text('Icon');
   }
 
-  Widget _buildIconCell({
-    required BuildContext context,
-    required int rowIndex,
-    required int columnIndex,
-    required bool rowSelected,
-    required bool rowHighlighted,
-    required bool isEditing,
-    required bool isRowDisabled,
-  }) {
+  Widget _buildIconCell(
+    BuildContext context,
+    int rowIndex,
+    int columnIndex,
+    bool rowSelected,
+    bool rowHighlighted,
+    bool isEditing,
+    bool isRowDisabled,
+  ) {
     final _CustomItem item = _items[rowIndex];
     final String asset = 'assets/${item.asset}.png';
     return Image.asset(asset);
   }
 
-  static Widget _buildNameHeader({
-    required BuildContext context,
-    required int columnIndex,
-  }) {
+  static Widget _buildNameHeader(
+    BuildContext context,
+    int columnIndex,
+  ) {
     return Text('Name');
   }
 
-  Widget _buildNameCell({
-    required BuildContext context,
-    required int rowIndex,
-    required int columnIndex,
-    required bool rowSelected,
-    required bool rowHighlighted,
-    required bool isEditing,
-    required bool isRowDisabled,
-  }) {
+  Widget _buildNameCell(
+    BuildContext context,
+    int rowIndex,
+    int columnIndex,
+    bool rowSelected,
+    bool rowHighlighted,
+    bool isEditing,
+    bool isRowDisabled,
+  ) {
     final _CustomItem item = _items[rowIndex];
     return rowSelected ? WhiteText(item.name) : Text(item.name);
   }
@@ -358,20 +355,20 @@ class _CustomTableDemoState extends State<CustomTableDemo> {
                 TableColumnController(
                   key: 'flag',
                   width: FixedTableColumnWidth(20),
-                  headerRenderer: _buildIsCheckedHeader,
-                  cellRenderer: _buildIsCheckedCell,
+                  headerBuilder: _buildIsCheckedHeader,
+                  cellBuilder: _buildIsCheckedCell,
                 ),
                 TableColumnController(
                   key: 'icon',
                   width: ConstrainedTableColumnWidth(width: 50),
-                  headerRenderer: _buildIconHeader,
-                  cellRenderer: _buildIconCell,
+                  headerBuilder: _buildIconHeader,
+                  cellBuilder: _buildIconCell,
                 ),
                 TableColumnController(
                   key: 'name',
                   width: FlexTableColumnWidth(),
-                  headerRenderer: _buildNameHeader,
-                  cellRenderer: _buildNameCell,
+                  headerBuilder: _buildNameHeader,
+                  cellBuilder: _buildNameCell,
                 ),
               ],
             ),
@@ -411,22 +408,22 @@ class _EditableTableDemoState extends State<EditableTableDemo> {
     'Bird',
   ];
 
-  static Widget _buildTypeHeader({
-    required BuildContext context,
-    required int columnIndex,
-  }) {
+  static Widget _buildTypeHeader(
+    BuildContext context,
+    int columnIndex,
+  ) {
     return Text('Type');
   }
 
-  Widget _buildTypeCell({
-    required BuildContext context,
-    required int rowIndex,
-    required int columnIndex,
-    required bool rowSelected,
-    required bool rowHighlighted,
-    required bool isEditing,
-    required bool isRowDisabled,
-  }) {
+  Widget _buildTypeCell(
+    BuildContext context,
+    int rowIndex,
+    int columnIndex,
+    bool rowSelected,
+    bool rowHighlighted,
+    bool isEditing,
+    bool isRowDisabled,
+  ) {
     if (isEditing) {
       return ListButton<String>(
         items: editableTableListButtonOptions,
@@ -441,22 +438,22 @@ class _EditableTableDemoState extends State<EditableTableDemo> {
     }
   }
 
-  static Widget _buildNameHeader({
-    required BuildContext context,
-    required int columnIndex,
-  }) {
+  static Widget _buildNameHeader(
+    BuildContext context,
+    int columnIndex,
+  ) {
     return Text('Name');
   }
 
-  Widget _buildNameCell({
-    required BuildContext context,
-    required int rowIndex,
-    required int columnIndex,
-    required bool rowSelected,
-    required bool rowHighlighted,
-    required bool isEditing,
-    required bool isRowDisabled,
-  }) {
+  Widget _buildNameCell(
+    BuildContext context,
+    int rowIndex,
+    int columnIndex,
+    bool rowSelected,
+    bool rowHighlighted,
+    bool isEditing,
+    bool isRowDisabled,
+  ) {
     if (isEditing) {
       return TextInput(
         controller: _textController,
@@ -470,22 +467,22 @@ class _EditableTableDemoState extends State<EditableTableDemo> {
     }
   }
 
-  static Widget _buildFlexHeader({
-    required BuildContext context,
-    required int columnIndex,
-  }) {
+  static Widget _buildFlexHeader(
+    BuildContext context,
+    int columnIndex,
+  ) {
     return Container();
   }
 
-  static Widget _buildFlexCell({
-    required BuildContext context,
-    required int rowIndex,
-    required int columnIndex,
-    required bool rowSelected,
-    required bool rowHighlighted,
-    required bool isEditing,
-    required bool isRowDisabled,
-  }) {
+  static Widget _buildFlexCell(
+    BuildContext context,
+    int rowIndex,
+    int columnIndex,
+    bool rowSelected,
+    bool rowHighlighted,
+    bool isEditing,
+    bool isRowDisabled,
+  ) {
     return Container();
   }
 
@@ -562,20 +559,20 @@ class _EditableTableDemoState extends State<EditableTableDemo> {
                 TableColumnController(
                   key: 'type',
                   width: ConstrainedTableColumnWidth(width: 100),
-                  headerRenderer: _buildTypeHeader,
-                  cellRenderer: _buildTypeCell,
+                  headerBuilder: _buildTypeHeader,
+                  cellBuilder: _buildTypeCell,
                 ),
                 TableColumnController(
                   key: 'name',
                   width: ConstrainedTableColumnWidth(width: 100),
-                  headerRenderer: _buildNameHeader,
-                  cellRenderer: _buildNameCell,
+                  headerBuilder: _buildNameHeader,
+                  cellBuilder: _buildNameCell,
                 ),
                 TableColumnController(
                   key: 'flex',
                   width: FlexTableColumnWidth(),
-                  headerRenderer: _buildFlexHeader,
-                  cellRenderer: _buildFlexCell,
+                  headerBuilder: _buildFlexHeader,
+                  cellBuilder: _buildFlexCell,
                 ),
               ],
             ),

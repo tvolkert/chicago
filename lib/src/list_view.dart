@@ -38,13 +38,13 @@ void main() {
           selectionController: ListViewSelectionController(),
           length: 1000,
           itemHeight: 20,
-          itemBuilder: ({
-            required BuildContext context,
-            required int index,
-            required bool isSelected,
-            required bool isHighlighted,
-            required bool isDisabled,
-          }) {
+          itemBuilder: (
+            BuildContext context,
+            int index,
+            bool isSelected,
+            bool isHighlighted,
+            bool isDisabled,
+          ) {
             return Padding(padding: EdgeInsets.only(left: index.toDouble()), child: Text('$index'));
           },
         ),
@@ -53,13 +53,13 @@ void main() {
   );
 }
 
-typedef ListItemBuilder = Widget Function({
-  required BuildContext context,
-  required int index,
-  required bool isSelected,
-  required bool isHighlighted,
-  required bool isDisabled,
-});
+typedef ListItemBuilder = Widget Function(
+  BuildContext context,
+  int index,
+  bool isSelected,
+  bool isHighlighted,
+  bool isDisabled,
+);
 
 class ListViewSelectionController with ChangeNotifier {
   ListViewSelectionController({
@@ -380,11 +380,11 @@ class ListViewElement extends RenderObjectElement with ListViewElementMixin {
   @protected
   Widget renderItem(int index) {
     return widget.itemBuilder(
-      context: this,
-      index: index,
-      isSelected: widget.selectionController?.isItemSelected(index) ?? false,
-      isHighlighted: renderObject.highlightedItem == index,
-      isDisabled: widget.itemDisabledController?.isItemDisabled(index) ?? false,
+      this,
+      index,
+      widget.selectionController?.isItemSelected(index) ?? false,
+      renderObject.highlightedItem == index,
+      widget.itemDisabledController?.isItemDisabled(index) ?? false,
     );
   }
 }

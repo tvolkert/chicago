@@ -28,13 +28,13 @@ const double _kDoublePrecisionTolerance = 0.001;
 
 /// Signature for a function that renders cells in a [BasicTableView].
 ///
-/// Cell renderers are properties of the [BasicTableColumn], so each column
-/// specifies the cell renderer for cells in that column.
-typedef BasicTableCellRenderer = Widget Function({
-  required BuildContext context,
-  required int rowIndex,
-  required int columnIndex,
-});
+/// Cell builders are properties of the [BasicTableColumn], so each column
+/// specifies the cell builder for cells in that column.
+typedef BasicTableCellBuilder = Widget Function(
+  BuildContext context,
+  int rowIndex,
+  int columnIndex,
+);
 
 typedef TableCellVisitor = void Function(int rowIndex, int columnIndex);
 
@@ -75,7 +75,7 @@ abstract class TableColumn with Diagnosticable {
 class BasicTableColumn extends TableColumn {
   const BasicTableColumn({
     this.width = const FlexTableColumnWidth(),
-    required this.cellRenderer,
+    required this.cellBuilder,
     this.prototypeCellBuilder,
   });
 
@@ -83,8 +83,8 @@ class BasicTableColumn extends TableColumn {
   @override
   final TableColumnWidth width;
 
-  /// The renderer responsible for the look & feel of cells in this column.
-  final BasicTableCellRenderer cellRenderer;
+  /// The builder responsible for the look & feel of cells in this column.
+  final BasicTableCellBuilder cellBuilder;
 
   /// The builder responsible for building the "prototype cell" for this
   /// column.
@@ -106,12 +106,12 @@ class BasicTableColumn extends TableColumn {
   final WidgetBuilder? prototypeCellBuilder;
 
   @override
-  int get hashCode => hashValues(super.hashCode, cellRenderer);
+  int get hashCode => hashValues(super.hashCode, cellBuilder);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return super == other && other is BasicTableColumn && cellRenderer == other.cellRenderer;
+    return super == other && other is BasicTableColumn && cellBuilder == other.cellBuilder;
   }
 }
 
@@ -604,11 +604,7 @@ class BasicTableViewElement extends RenderObjectElement with TableViewElementMix
   @protected
   Widget renderCell(int rowIndex, int columnIndex) {
     final BasicTableColumn column = widget.columns[columnIndex];
-    return column.cellRenderer(
-      context: this,
-      rowIndex: rowIndex,
-      columnIndex: columnIndex,
-    );
+    return column.cellBuilder(this, rowIndex, columnIndex);
   }
 
   @override

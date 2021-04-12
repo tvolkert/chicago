@@ -36,20 +36,20 @@ const double _kResizeHandleTargetPixels = 10; // logical
 
 /// Signature for a function that renders headers in a [ScrollableTableView].
 ///
-/// Header renderers are properties of the [TableColumnController], so each
-/// column specifies the renderer for that column's header.
+/// Header builders are properties of the [TableColumnController], so each
+/// column specifies the builder for that column's header.
 ///
 /// See also:
-///  * [TableCellRenderer], which renders table body cells.
-typedef TableHeaderRenderer = Widget Function({
-  required BuildContext context,
-  required int columnIndex,
-});
+///  * [TableCellBuilder], which renders table body cells.
+typedef TableHeaderBuilder = Widget Function(
+  BuildContext context,
+  int columnIndex,
+);
 
 /// Signature for a function that renders cells in a [ScrollableTableView].
 ///
-/// Cell renderers are properties of the [TableColumnController], so each
-/// column specifies the cell renderer for cells in that column.
+/// Cell builders are properties of the [TableColumnController], so each
+/// column specifies the cell builder for cells in that column.
 ///
 /// The `rowSelected` argument specifies whether the row is currently selected,
 /// as indicated by the [TableViewSelectionController] that's associated with
@@ -63,20 +63,20 @@ typedef TableHeaderRenderer = Widget Function({
 /// on the specified cell.
 ///
 /// See also:
-///  * [TableHeaderRenderer], which renders a column's header.
+///  * [TableHeaderBuilder], which renders a column's header.
 ///  * [TableViewSelectionController.selectMode], which dictates whether rows
 ///    are eligible to become highlighted.
-///  * [BasicTableCellRenderer], the equivalent cell renderer for a
+///  * [BasicTableCellBuilder], the equivalent cell builder for a
 ///    [BasicTableView].
-typedef TableCellRenderer = Widget Function({
-  required BuildContext context,
-  required int rowIndex,
-  required int columnIndex,
-  required bool rowSelected,
-  required bool rowHighlighted,
-  required bool isEditing,
-  required bool isRowDisabled,
-});
+typedef TableCellBuilder = Widget Function(
+  BuildContext context,
+  int rowIndex,
+  int columnIndex,
+  bool isRowSelected,
+  bool isRowHighlighted,
+  bool isEditing,
+  bool isRowDisabled,
+);
 
 typedef PreviewTableViewEditStartedHandler = Vote Function(
   TableViewEditorController controller,
@@ -133,13 +133,13 @@ class TableViewEditorListener {
 enum TableViewEditorBehavior {
   /// When initiating an edit of a table cell via
   /// [TableViewEditorController.beginEditing], re-render all cells in the row,
-  /// and set the `isEditing` [TableCellRenderer] flag to true for all cells in
+  /// and set the `isEditing` [TableCellBuilder] flag to true for all cells in
   /// the row.
   wholeRow,
 
   /// When initiating an edit of a table cell via
   /// [TableViewEditorController.beginEditing], re-render only the requested
-  /// cell, and set the `isEditing` [TableCellRenderer] flag to true for only
+  /// cell, and set the `isEditing` [TableCellBuilder] flag to true for only
   /// that cell and not any other cells in the row.
   singleCell,
 
@@ -280,9 +280,9 @@ class TableViewEditorController with ListenerNotifier<TableViewEditorListener> {
 class TableColumnController extends TableColumn with ChangeNotifier {
   TableColumnController({
     required this.key,
-    required this.cellRenderer,
+    required this.cellBuilder,
     this.prototypeCellBuilder,
-    this.headerRenderer,
+    this.headerBuilder,
     TableColumnWidth width = const FlexTableColumnWidth(),
   }) : _width = width;
 
@@ -291,8 +291,8 @@ class TableColumnController extends TableColumn with ChangeNotifier {
   /// This is the key by which we sort columns in [TableViewSortController].
   final String key;
 
-  /// The renderer responsible for the look & feel of cells in this column.
-  final TableCellRenderer cellRenderer;
+  /// The builder responsible for the look & feel of cells in this column.
+  final TableCellBuilder cellBuilder;
 
   /// The builder responsible for building the "prototype cell" for this
   /// column.
@@ -313,13 +313,13 @@ class TableColumnController extends TableColumn with ChangeNotifier {
   /// view will report no baseline.
   final WidgetBuilder? prototypeCellBuilder;
 
-  /// The renderer responsible for the look & feel of the header for this column.
+  /// The builder responsible for the look & feel of the header for this column.
   ///
   /// See also:
   ///
   ///  * [ScrollableTableView.includeHeader], which if false will allow for
   ///    this field to be null.
-  final TableHeaderRenderer? headerRenderer;
+  final TableHeaderBuilder? headerBuilder;
 
   TableColumnWidth _width;
 
@@ -338,15 +338,15 @@ class TableColumnController extends TableColumn with ChangeNotifier {
   }
 
   @override
-  int get hashCode => hashValues(super.hashCode, cellRenderer, headerRenderer);
+  int get hashCode => hashValues(super.hashCode, cellBuilder, headerBuilder);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return super == other &&
         other is TableColumnController &&
-        cellRenderer == other.cellRenderer &&
-        headerRenderer == other.headerRenderer;
+        cellBuilder == other.cellBuilder &&
+        headerBuilder == other.headerBuilder;
   }
 }
 
@@ -973,14 +973,14 @@ class TableViewElement extends RenderObjectElement with TableViewElementMixin {
   @protected
   Widget renderCell(int rowIndex, int columnIndex) {
     final TableColumnController column = widget.columns[columnIndex];
-    return column.cellRenderer(
-      context: this,
-      rowIndex: rowIndex,
-      columnIndex: columnIndex,
-      rowHighlighted: renderObject.highlightedRow == rowIndex,
-      rowSelected: widget.selectionController?.isRowSelected(rowIndex) ?? false,
-      isEditing: widget.editorController?.isEditingCell(rowIndex, columnIndex) ?? false,
-      isRowDisabled: widget.rowDisabledController?.isRowDisabled(rowIndex) ?? false,
+    return column.cellBuilder(
+      this,
+      rowIndex,
+      columnIndex,
+      widget.selectionController?.isRowSelected(rowIndex) ?? false,
+      renderObject.highlightedRow == rowIndex,
+      widget.editorController?.isEditingCell(rowIndex, columnIndex) ?? false,
+      widget.rowDisabledController?.isRowDisabled(rowIndex) ?? false,
     );
   }
 
@@ -1569,11 +1569,8 @@ class _TableViewHeaderEnvelopeState extends State<TableViewHeaderEnvelope> {
 
     Widget renderedHeader = Padding(
       padding: EdgeInsets.only(left: 3),
-      // TODO: better error than "Null check operator used on a null" when headerRenderer is null
-      child: widget.column.headerRenderer!(
-        context: context,
-        columnIndex: widget.columnIndex,
-      ),
+      // TODO: better error than "Null check operator used on a null" when headerBuilder is null
+      child: widget.column.headerBuilder!(context, widget.columnIndex),
     );
 
     if (widget.sortController != null &&

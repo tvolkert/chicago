@@ -221,13 +221,13 @@ class _ListButtonState<T> extends State<ListButton<T>> {
   }
 
   ListItemBuilder _adaptItemBuilder(ListButtonItemBuilder<T> itemBuilder) {
-    return ({
-      required BuildContext context,
-      required int index,
-      required bool isSelected,
-      required bool isHighlighted,
-      required bool isDisabled,
-    }) {
+    return (
+      BuildContext context,
+      int index,
+      bool isSelected,
+      bool isHighlighted,
+      bool isDisabled,
+    ) {
       return itemBuilder(
         context,
         widget.items[index],
@@ -752,13 +752,7 @@ class _PopupListState<T> extends State<_PopupList<T>> {
     for (int i = 0; i < widget.length; i++) {
       final Widget item = Directionality(
         textDirection: textDirection,
-        child: widget.itemBuilder(
-          context: context,
-          index: i,
-          isSelected: false,
-          isHighlighted: false,
-          isDisabled: false,
-        ),
+        child: widget.itemBuilder(context, i, false, false, false),
       );
       final Size itemSize = surveyor.measureWidget(item);
       maxWidth = math.max(maxWidth, itemSize.width);

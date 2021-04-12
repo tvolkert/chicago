@@ -71,13 +71,13 @@ class _BasicListDemoState extends State<BasicListDemo> {
     'Yellow',
   ];
 
-  static Widget _buildItem({
-    required BuildContext context,
-    required int index,
-    required bool isSelected,
-    required bool isHighlighted,
-    required bool isDisabled,
-  }) {
+  static Widget _buildItem(
+    BuildContext context,
+    int index,
+    bool isSelected,
+    bool isHighlighted,
+    bool isDisabled,
+  ) {
     String text = _colors[index];
     return isSelected ? WhiteText(text) : Text(text);
   }
@@ -129,13 +129,13 @@ class LazyListDemo extends StatefulWidget {
 class _LazyListDemoState extends State<LazyListDemo> {
   late ListViewSelectionController _selectionController;
 
-  static Widget _buildItem({
-    required BuildContext context,
-    required int index,
-    required bool isSelected,
-    required bool isHighlighted,
-    required bool isDisabled,
-  }) {
+  static Widget _buildItem(
+    BuildContext context,
+    int index,
+    bool isSelected,
+    bool isHighlighted,
+    bool isDisabled,
+  ) {
     String text = '${index + 1}';
     return isSelected ? WhiteText(text) : Text(text);
   }
@@ -196,13 +196,13 @@ class _MultiSelectListDemoState extends State<MultiSelectListDemo> {
     'Octagon',
   ];
 
-  static Widget _buildItem({
-    required BuildContext context,
-    required int index,
-    required bool isSelected,
-    required bool isHighlighted,
-    required bool isDisabled,
-  }) {
+  static Widget _buildItem(
+    BuildContext context,
+    int index,
+    bool isSelected,
+    bool isHighlighted,
+    bool isDisabled,
+  ) {
     String text = _shapes[index];
     return isSelected ? WhiteText(text) : Text(text);
   }
@@ -272,13 +272,13 @@ class _ImageListDemoState extends State<ImageListDemo> {
     _ImageItem('Star', 'assets/star.png'),
   ];
 
-  static Widget _buildItem({
-    required BuildContext context,
-    required int index,
-    required bool isSelected,
-    required bool isHighlighted,
-    required bool isDisabled,
-  }) {
+  static Widget _buildItem(
+    BuildContext context,
+    int index,
+    bool isSelected,
+    bool isHighlighted,
+    bool isDisabled,
+  ) {
     final String text = _items[index].name;
     return Row(
       children: [
