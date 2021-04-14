@@ -1,6 +1,7 @@
 name: chicago
 description: The Chicago widget set for Flutter
 version: 0.0.1-dev
+repository: https://github.com/tvolkert/chicago
 
 environment:
   sdk: ">=2.12.0 <3.0.0"
@@ -8,8 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  collection: any
   intl: any
-  meta: any
 
 dev_dependencies:
   flutter_test:
