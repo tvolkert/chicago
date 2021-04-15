@@ -269,7 +269,7 @@ class ScrollPaneListener {
 class ScrollPaneController with ListenerNotifier<ScrollPaneListener> {
   ScrollPaneController({
     Offset scrollOffset = Offset.zero,
-  })  : _scrollOffset = scrollOffset;
+  }) : _scrollOffset = scrollOffset;
 
   Offset _scrollOffset;
   Offset get scrollOffset => _scrollOffset;
@@ -395,7 +395,7 @@ class ScrollPane extends StatefulWidget {
     this.bottomRightCorner = const _EmptyCorner(),
     this.topRightCorner = const _EmptyCorner(),
     required this.view,
-  })  : super(key: key);
+  }) : super(key: key);
 
   /// The policy for how to lay the view out and show a scroll bar in the
   /// horizontal axis.
@@ -492,16 +492,73 @@ class ScrollPane extends StatefulWidget {
   /// pane.
   final Widget view;
 
+  /// Gets the nearest scroll pane ancestor of the specified build context, or
+  /// null if the context doesn't have a scroll pane ancestor.
+  ///
+  /// The given context will _not_ be rebuilt if the scroll pane's scroll
+  /// offset changes. Thus, this method effectively does not introduce a
+  /// dependency on the resulting scroll pane.
+  static ScrollPaneState? of(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<_WriteOnlyScrollPaneScope>()?.state;
+  }
+
   @override
-  _ScrollPaneState createState() => _ScrollPaneState();
+  ScrollPaneState createState() => ScrollPaneState();
 }
 
-class _ScrollPaneState extends State<ScrollPane> {
+class ScrollPaneState extends State<ScrollPane> {
   ScrollPaneController? _scrollController;
+
+  void _handleFocusChange() {
+    final BuildContext? focusContext = FocusManager.instance.primaryFocus?.context;
+    if (focusContext != null && ScrollPane.of(focusContext) == this) {
+      // This state object represents the nearest ScrollPane ancestor of the
+      // widget with the primary focus.
+      final RenderObject? childRenderObject = focusContext.findRenderObject();
+      if (childRenderObject is RenderBox) {
+        final ParentData? parentData = childRenderObject.parentData;
+        final Offset offset = parentData is BoxParentData ? parentData.offset : Offset.zero;
+        final Rect childLocation = offset & childRenderObject.size;
+        scrollToVisible(childLocation, context: focusContext);
+      }
+    }
+  }
+
+  /// The scroll controller that controls this scroll pane's offset.
+  ScrollPaneController get scrollController => widget.scrollController ?? _scrollController!;
+
+  /// Recursively scrolls an area to be visible in this scroll pane and all
+  /// ancestor scroll panes.
+  ///
+  /// If the area is not able to be made entirely visible, then this will
+  /// scroll to reveal as much of the area as possible.
+  ///
+  /// The `rect` argument specifies the area to make visible.
+  ///
+  /// If supplied, the `context` argument specifies a descendant build context
+  /// of the scroll pane that defines the coordinate space of `rect`. If this
+  /// argument is not specified, `rect` will be interpreted as in the
+  /// coordinate space of the scroll pane itself.
+  void scrollToVisible(Rect rect, {BuildContext? context}) {
+    context ??= this.context;
+    final RenderObject? childRenderObject = context.findRenderObject();
+    final RenderObject? renderScrollPane = this.context.findRenderObject();
+    assert(childRenderObject != null);
+    assert(renderScrollPane != null);
+    final Matrix4 transform = childRenderObject!.getTransformTo(renderScrollPane!);
+    Rect scrollToRect = MatrixUtils.transformRect(transform, rect);
+    if (context != this.context) {
+      scrollToRect = scrollToRect.shift(scrollController.scrollOffset);
+    }
+    scrollController.scrollToVisible(scrollToRect);
+    final Rect adjustedRect = scrollToRect.shift(scrollController.scrollOffset * -1);
+    ScrollPane.of(this.context)?.scrollToVisible(adjustedRect, context: this.context);
+  }
 
   @override
   void initState() {
     super.initState();
+    FocusManager.instance.addListener(_handleFocusChange);
     if (widget.scrollController == null) {
       _scrollController = ScrollPaneController();
     }
@@ -525,31 +582,35 @@ class _ScrollPaneState extends State<ScrollPane> {
   @override
   void dispose() {
     _scrollController?.dispose();
+    FocusManager.instance.removeListener(_handleFocusChange);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return _ScrollPane(
-      view: widget.view,
-      rowHeader: widget.rowHeader,
-      columnHeader: widget.columnHeader,
-      topLeftCorner: widget.topLeftCorner,
-      bottomLeftCorner: widget.bottomLeftCorner,
-      bottomRightCorner: widget.bottomRightCorner,
-      topRightCorner: widget.topRightCorner,
-      horizontalScrollBar: const ScrollBar(
-        orientation: Axis.horizontal,
-        unitIncrement: 10,
+    return _WriteOnlyScrollPaneScope(
+      state: this,
+      child: _ScrollPane(
+        view: widget.view,
+        rowHeader: widget.rowHeader,
+        columnHeader: widget.columnHeader,
+        topLeftCorner: widget.topLeftCorner,
+        bottomLeftCorner: widget.bottomLeftCorner,
+        bottomRightCorner: widget.bottomRightCorner,
+        topRightCorner: widget.topRightCorner,
+        horizontalScrollBar: const ScrollBar(
+          orientation: Axis.horizontal,
+          unitIncrement: 10,
+        ),
+        verticalScrollBar: const ScrollBar(
+          orientation: Axis.vertical,
+          unitIncrement: 10,
+        ),
+        horizontalScrollBarPolicy: widget.horizontalScrollBarPolicy,
+        verticalScrollBarPolicy: widget.verticalScrollBarPolicy,
+        clipBehavior: widget.clipBehavior,
+        scrollController: scrollController,
       ),
-      verticalScrollBar: const ScrollBar(
-        orientation: Axis.vertical,
-        unitIncrement: 10,
-      ),
-      horizontalScrollBarPolicy: widget.horizontalScrollBarPolicy,
-      verticalScrollBarPolicy: widget.verticalScrollBarPolicy,
-      clipBehavior: widget.clipBehavior,
-      scrollController: widget.scrollController ?? _scrollController!,
     );
   }
 }
@@ -597,7 +658,7 @@ class _ScrollPane extends RenderObjectWidget {
     required this.verticalScrollBarPolicy,
     required this.clipBehavior,
     required this.scrollController,
-  })  : super(key: key);
+  }) : super(key: key);
 
   final Widget view;
   final Widget? rowHeader;
@@ -634,6 +695,19 @@ class _ScrollPane extends RenderObjectWidget {
       ..clipBehavior = clipBehavior
       ..scrollController = scrollController;
   }
+}
+
+/// A scope class that never notifies on update (because it's write-only).
+class _WriteOnlyScrollPaneScope extends InheritedWidget {
+  const _WriteOnlyScrollPaneScope({
+    required this.state,
+    required Widget child,
+  }) : super(child: child);
+
+  final ScrollPaneState state;
+
+  @override
+  bool updateShouldNotify(_WriteOnlyScrollPaneScope _) => false;
 }
 
 enum _ScrollPaneSlot {
@@ -803,7 +877,8 @@ class ScrollPaneViewportResolver implements ViewportResolver {
 
   @override
   Rect resolve(Size size) {
-    Size viewportSize = viewportConstraints.constrain(size + sizeAdjustment) - sizeAdjustment as Size;
+    Size viewportSize =
+        viewportConstraints.constrain(size + sizeAdjustment) - sizeAdjustment as Size;
     viewportSize = Size(
       max(viewportSize.width, 0),
       max(viewportSize.height, 0),
@@ -1020,8 +1095,10 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
   void _onPointerScroll(PointerScrollEvent event) {
     if ((scrollController.scrollOffset.dx > 0 && event.scrollDelta.dx < 0) ||
         (scrollController.scrollOffset.dy > 0 && event.scrollDelta.dy < 0) ||
-        (scrollController.scrollOffset.dx < scrollController._maxScrollLeft && event.scrollDelta.dx > 0) ||
-        (scrollController.scrollOffset.dy < scrollController._maxScrollTop && event.scrollDelta.dy > 0)) {
+        (scrollController.scrollOffset.dx < scrollController._maxScrollLeft &&
+            event.scrollDelta.dx > 0) ||
+        (scrollController.scrollOffset.dy < scrollController._maxScrollTop &&
+            event.scrollDelta.dy > 0)) {
       GestureBinding.instance!.pointerSignalResolver.register(event, (PointerSignalEvent event) {
         PointerScrollEvent scrollEvent = event as PointerScrollEvent;
         deferMarkNeedsLayout(() {
