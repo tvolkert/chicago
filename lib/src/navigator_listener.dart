@@ -93,7 +93,7 @@ class NavigatorListener extends StatefulWidget {
   /// given context.
   static NavigatorListenerController of(BuildContext context) {
     _Scope scope = context.dependOnInheritedWidgetOfExactType<_Scope>()!;
-    return scope.navigatorListenerStateState;
+    return scope.navigatorListenerState;
   }
 }
 
@@ -160,7 +160,7 @@ class _NavigatorListenerState extends State<NavigatorListener>
   @override
   Widget build(BuildContext context) {
     return _Scope(
-      navigatorListenerStateState: this,
+      navigatorListenerState: this,
       child: widget.child,
     );
   }
@@ -168,15 +168,15 @@ class _NavigatorListenerState extends State<NavigatorListener>
 
 class _Scope extends InheritedWidget {
   const _Scope({
-    required this.navigatorListenerStateState,
+    required this.navigatorListenerState,
     required Widget child,
   }) : super(child: child);
 
-  final _NavigatorListenerState navigatorListenerStateState;
+  final _NavigatorListenerState navigatorListenerState;
 
   @override
   bool updateShouldNotify(_Scope old) {
-    return navigatorListenerStateState.observer != old.navigatorListenerStateState.observer;
+    return navigatorListenerState.observer != old.navigatorListenerState.observer;
   }
 }
 
