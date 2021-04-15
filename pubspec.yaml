@@ -1,10 +1,14 @@
 name: chicago
-description: The Chicago widget set for Flutter
 version: 0.0.1-dev
 repository: https://github.com/tvolkert/chicago
 
+description:
+  The Chicago widget set is an alternate design language for Flutter designed
+  for desktop (keyboard and mouse) form factors. It is based on Apache Pivot.
+
 environment:
   sdk: ">=2.12.0 <3.0.0"
+  flutter: ">=2.0.0"
 
 dependencies:
   flutter:
