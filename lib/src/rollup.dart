@@ -1,7 +1,10 @@
 import 'dart:math' as math;
 
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+
+import 'focus_indicator.dart';
 
 const double _arrowWidth = 7;
 
@@ -29,12 +32,14 @@ class Rollup extends StatefulWidget {
     required this.childBuilder,
     this.controller,
     this.isCollapsible = true,
+    this.semanticLabel,
   }) : super(key: key);
 
   final Widget heading;
   final WidgetBuilder childBuilder;
   final RollupController? controller;
   final bool isCollapsible;
+  final String? semanticLabel;
 
   @override
   _RollupState createState() => _RollupState();
@@ -42,6 +47,7 @@ class Rollup extends StatefulWidget {
 
 class _RollupState extends State<Rollup> {
   RollupController? _controller;
+  FocusNode? _focusNode;
 
   RollupController get controller => _controller ?? widget.controller!;
 
@@ -62,6 +68,7 @@ class _RollupState extends State<Rollup> {
       _controller = RollupController();
     }
     controller.addListener(_handleIsExpandedChanged);
+    _focusNode = FocusNode();
   }
 
   @override
@@ -84,6 +91,8 @@ class _RollupState extends State<Rollup> {
     controller.removeListener(_handleIsExpandedChanged);
     _controller?.dispose();
     _controller = null;
+    _focusNode!.dispose();
+    _focusNode = null;
     super.dispose();
   }
 
@@ -92,9 +101,11 @@ class _RollupState extends State<Rollup> {
     return RawRollup(
       heading: widget.heading,
       childBuilder: widget.childBuilder,
+      focusNode: _focusNode!,
       isExpanded: controller.isExpanded,
       isCollapsible: widget.isCollapsible,
       onToggleExpanded: _handleToggleExpanded,
+      semanticLabel: widget.semanticLabel,
     );
   }
 }
@@ -104,24 +115,35 @@ class RawRollup extends ImplicitlyAnimatedWidget {
     Key? key,
     required this.heading,
     required this.childBuilder,
+    required this.focusNode,
     required this.isExpanded,
     required this.isCollapsible,
     required this.onToggleExpanded,
+    required this.semanticLabel,
   }) : super(key: key, duration: const Duration(milliseconds: 250), curve: Curves.easeOut);
 
   final Widget heading;
   final WidgetBuilder childBuilder;
+  final FocusNode focusNode;
   final bool isExpanded;
   final bool isCollapsible;
   final VoidCallback onToggleExpanded;
+  final String? semanticLabel;
 
   @override
   _RawRollupState createState() => _RawRollupState();
 }
 
 class _RawRollupState extends AnimatedWidgetBaseState<RawRollup> {
+  bool _isFocused = false;
   Tween<double>? _expansionTween;
   Tween<double>? _arrowRotationTween;
+
+  void _handleFocusChange(bool hasFocus) {
+    setState(() {
+      _isFocused = hasFocus;
+    });
+  }
 
   @override
   void forEachTween(TweenVisitor<dynamic> visitor) {
@@ -140,22 +162,40 @@ class _RawRollupState extends AnimatedWidgetBaseState<RawRollup> {
       children: [
         GestureDetector(
           onTap: widget.onToggleExpanded,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              MouseRegion(
-                cursor: SystemMouseCursors.click,
-                child: Transform.rotate(
-                  angle: _arrowRotationTween?.evaluate(animation) ?? 0.0,
-                  child: CustomPaint(
-                    size: Size.square(_arrowWidth),
-                    painter: _ArrowPainter(),
+          child: Actions(
+            actions: <Type, Action<Intent>>{
+              ActivateIntent: _ActivateRollupAction(this),
+            },
+            child: Semantics(
+              label: widget.semanticLabel ?? 'Rollup widget',
+              focusable: true,
+              focused: _isFocused,
+              child: Focus(
+                focusNode: widget.focusNode,
+                onFocusChange: _handleFocusChange,
+                child: FocusIndicator(
+                  isFocused: _isFocused,
+                  insets: EdgeInsets.fromLTRB(-3, 0, -3, -1),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        child: Transform.rotate(
+                          angle: _arrowRotationTween?.evaluate(animation) ?? 0.0,
+                          child: CustomPaint(
+                            size: Size.square(_arrowWidth),
+                            painter: _ArrowPainter(),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 4),
+                      widget.heading,
+                    ],
                   ),
                 ),
               ),
-              SizedBox(width: 4),
-              widget.heading,
-            ],
+            ),
           ),
         ),
         if (reveal > 0)
@@ -174,6 +214,17 @@ class _RawRollupState extends AnimatedWidgetBaseState<RawRollup> {
           ),
       ],
     );
+  }
+}
+
+class _ActivateRollupAction extends ActivateAction {
+  _ActivateRollupAction(this._state);
+
+  final _RawRollupState _state;
+
+  @override
+  void invoke(Intent intent) {
+    _state.widget.onToggleExpanded();
   }
 }
 
