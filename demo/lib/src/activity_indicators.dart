@@ -25,6 +25,7 @@ class ActivityIndicatorsDemo extends StatelessWidget {
   Widget build(BuildContext context) {
     return Rollup(
       heading: const HeaderText('Meters & Activity Indicators'),
+      semanticLabel: 'Meters and activity indicators',
       childBuilder: (BuildContext context) {
         return BorderPane(
           borderColor: const Color(0xff999999),

@@ -25,6 +25,7 @@ class ListsDemo extends StatelessWidget {
   Widget build(BuildContext context) {
     return Rollup(
       heading: const HeaderText('Lists'),
+      semanticLabel: 'Lists',
       childBuilder: (BuildContext context) {
         return BorderPane(
           borderColor: const Color(0xff999999),

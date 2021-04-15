@@ -25,6 +25,7 @@ class NavigationDemo extends StatelessWidget {
   Widget build(BuildContext context) {
     return Rollup(
       heading: const HeaderText('Navigation'),
+      semanticLabel: 'Navigation',
       childBuilder: (BuildContext context) {
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -88,6 +89,7 @@ class _RollupDemoState extends State<RollupDemo> {
             SizedBox(height: 4),
             Rollup(
               heading: Text('Colors'),
+              semanticLabel: 'Colors',
               childBuilder: (BuildContext context) {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -104,6 +106,7 @@ class _RollupDemoState extends State<RollupDemo> {
             ),
             Rollup(
               heading: Text('Shapes'),
+              semanticLabel: 'Shapes',
               childBuilder: (BuildContext context) {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -120,6 +123,7 @@ class _RollupDemoState extends State<RollupDemo> {
             ),
             Rollup(
               heading: Text('Images'),
+              semanticLabel: 'Images',
               childBuilder: (BuildContext context) {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

@@ -25,6 +25,7 @@ class SplittersDemo extends StatelessWidget {
   Widget build(BuildContext context) {
     return Rollup(
       heading: HeaderText('Splitters'),
+      semanticLabel: 'Splitters',
       childBuilder: (BuildContext context) {
         return BorderPane(
           borderColor: Color(0xff999999),

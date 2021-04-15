@@ -65,6 +65,7 @@ class _SpinnersDemoState extends State<SpinnersDemo> {
   Widget build(BuildContext context) {
     return Rollup(
       heading: const HeaderText('Spinners'),
+      semanticLabel: 'Spinners',
       childBuilder: (BuildContext context) {
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,

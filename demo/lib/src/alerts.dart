@@ -100,6 +100,7 @@ class _AlertsDemoState extends State<AlertsDemo> {
   Widget build(BuildContext context) {
     return Rollup(
       heading: HeaderText('Alerts'),
+      semanticLabel: 'Alerts',
       childBuilder: (BuildContext context) {
         return BorderPane(
           borderColor: Color(0xff999999),

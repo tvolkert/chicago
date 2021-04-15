@@ -42,6 +42,7 @@ class TablesDemo extends StatelessWidget {
   Widget build(BuildContext context) {
     return Rollup(
       heading: const HeaderText('Tables'),
+      semanticLabel: 'Tables',
       childBuilder: (BuildContext context) {
         return BorderPane(
           borderColor: const Color(0xff999999),

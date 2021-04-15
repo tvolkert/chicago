@@ -25,6 +25,7 @@ class CalendarsDemo extends StatelessWidget {
   Widget build(BuildContext context) {
     return Rollup(
       heading: HeaderText('Calendars'),
+      semanticLabel: 'Calendars',
       childBuilder: (BuildContext context) {
         return BorderPane(
           backgroundColor: Color(0xffffffff),

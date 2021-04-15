@@ -66,6 +66,7 @@ class _ButtonsDemoState extends State<ButtonsDemo> {
     return Rollup(
       controller: _controller,
       heading: HeaderText('Buttons'),
+      semanticLabel: 'Buttons',
       childBuilder: (BuildContext context) {
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
