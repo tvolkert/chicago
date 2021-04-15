@@ -21,8 +21,8 @@ class FocusIndicator extends StatelessWidget {
   const FocusIndicator({
     Key? key,
     required this.isFocused,
-    this.insets = const EdgeInsets.all(2),
-    required this.color,
+    this.insets = EdgeInsets.zero,
+    this.color = const Color(0xff999999),
     this.child,
   }) : super(key: key);
 
