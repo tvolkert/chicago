@@ -212,10 +212,14 @@ class _SpinnerState extends State<Spinner> {
     }
   }
 
+  void _requestFocus() {
+    _focusNode!.requestFocus();
+  }
+
   @override
   void initState() {
     super.initState();
-    _focusNode = FocusNode();
+    _focusNode = FocusNode(canRequestFocus: widget.isEnabled);
     if (widget.controller == null) {
       _controller = SpinnerController();
     }
@@ -247,6 +251,7 @@ class _SpinnerState extends State<Spinner> {
       }
       _worker = _Worker(widget, controller);
     }
+    _focusNode!.canRequestFocus = widget.isEnabled;
     _index = _boundsCheckIndex();
     _updateContentWidth();
   }
@@ -272,22 +277,25 @@ class _SpinnerState extends State<Spinner> {
         child: content,
       );
     }
-    content = Focus(
-      focusNode: _focusNode,
-      onKey: _handleKey,
-      onFocusChange: _handleFocusChange,
-      child: Semantics(
-        enabled: widget.isEnabled,
-        focusable: true,
-        focused: _focusNode!.hasFocus,
-        label: widget.semanticLabel ?? 'Spinner',
-        onIncrease: () => _worker.spin(1),
-        onDecrease: () => _worker.spin(-1),
-        child: Padding(
-          padding: EdgeInsets.all(1),
-          child: FocusIndicator(
-            isFocused: _isFocused,
-            child: content,
+    content = GestureDetector(
+      onTap: _requestFocus,
+      child: Focus(
+        focusNode: _focusNode,
+        onKey: _handleKey,
+        onFocusChange: _handleFocusChange,
+        child: Semantics(
+          enabled: widget.isEnabled,
+          focusable: true,
+          focused: _focusNode!.hasFocus,
+          label: widget.semanticLabel ?? 'Spinner',
+          onIncrease: () => _worker.spin(1),
+          onDecrease: () => _worker.spin(-1),
+          child: Padding(
+            padding: EdgeInsets.all(1),
+            child: FocusIndicator(
+              isFocused: _isFocused,
+              child: content,
+            ),
           ),
         ),
       ),
@@ -303,10 +311,12 @@ class _SpinnerState extends State<Spinner> {
       upButton: _SpinnerButton(
         worker: _worker,
         direction: 1,
+        onTapDown: _requestFocus,
       ),
       downButton: _SpinnerButton(
         worker: _worker,
         direction: -1,
+        onTapDown: _requestFocus,
       ),
     );
   }
@@ -317,10 +327,12 @@ class _SpinnerButton extends StatefulWidget {
     Key? key,
     required this.worker,
     required this.direction,
+    required this.onTapDown,
   }) : super(key: key);
 
   final _Worker worker;
   final int direction;
+  final VoidCallback onTapDown;
 
   @override
   _SpinnerButtonState createState() => _SpinnerButtonState();
@@ -332,6 +344,7 @@ class _SpinnerButtonState extends State<_SpinnerButton> {
   void _handleTapDown(TapDownDetails details) {
     setState(() => _pressed = true);
     widget.worker.start(widget.direction);
+    widget.onTapDown();
   }
 
   void _handleTapUp(TapUpDetails details) {
