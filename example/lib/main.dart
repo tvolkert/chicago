@@ -55,61 +55,63 @@ class KitchenSink extends StatelessWidget {
           fontSize: 14,
           color: Color(0xff000000),
         ),
-        child: Material(
-          child: MediaQuery(
-            data: MediaQueryData.fromWindow(window),
-            child: Directionality(
-              textDirection: TextDirection.ltr,
-              child: Navigator(
-                observers: [NavigatorListener.of(context).observer],
-                onGenerateRoute: (RouteSettings settings) {
-                  return PageRouteBuilder<void>(
-                    settings: settings,
-                    pageBuilder: (BuildContext context, Animation<double> _, Animation<double> __) {
-                      return ColoredBox(
-                        color: const Color(0xffdddcd5),
-                        child: Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: BorderPane(
-                            borderColor: const Color(0xff999999),
-                            backgroundColor: const Color(0xfff7f5ee),
-                            child: AssetImagePrecache(
-                              paths: const <String>[
-                                'assets/anchor.png',
-                                'assets/bell.png',
-                                'assets/clock.png',
-                                'assets/cup.png',
-                                'assets/flag_red.png',
-                                'assets/house.png',
-                                'assets/star.png',
-                              ],
-                              loadingIndicator: Container(),
-                              child: ScrollPane(
-                                view: Padding(
-                                  padding: EdgeInsets.all(6),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: const <Widget>[
-                                      ButtonsDemo(),
-                                      ListsDemo(),
-                                      CalendarsDemo(),
-                                      NavigationDemo(),
-                                      SplittersDemo(),
-                                      ActivityIndicatorsDemo(),
-                                      SpinnersDemo(),
-                                      TablesDemo(),
-                                      AlertsDemo(),
-                                    ],
+        child: SafeArea(
+          child: Material(
+            child: MediaQuery(
+              data: MediaQueryData.fromWindow(window),
+              child: Directionality(
+                textDirection: TextDirection.ltr,
+                child: Navigator(
+                  observers: [NavigatorListener.of(context).observer],
+                  onGenerateRoute: (RouteSettings settings) {
+                    return PageRouteBuilder<void>(
+                      settings: settings,
+                      pageBuilder: (BuildContext context, Animation<double> _, Animation<double> __) {
+                        return ColoredBox(
+                          color: const Color(0xffdddcd5),
+                          child: Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: BorderPane(
+                              borderColor: const Color(0xff999999),
+                              backgroundColor: const Color(0xfff7f5ee),
+                              child: AssetImagePrecache(
+                                paths: const <String>[
+                                  'assets/anchor.png',
+                                  'assets/bell.png',
+                                  'assets/clock.png',
+                                  'assets/cup.png',
+                                  'assets/flag_red.png',
+                                  'assets/house.png',
+                                  'assets/star.png',
+                                ],
+                                loadingIndicator: Container(),
+                                child: ScrollPane(
+                                  view: Padding(
+                                    padding: EdgeInsets.all(6),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: const <Widget>[
+                                        ButtonsDemo(),
+                                        ListsDemo(),
+                                        CalendarsDemo(),
+                                        NavigationDemo(),
+                                        SplittersDemo(),
+                                        ActivityIndicatorsDemo(),
+                                        SpinnersDemo(),
+                                        TablesDemo(),
+                                        AlertsDemo(),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                      );
-                    },
-                  );
-                },
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
             ),
           ),
