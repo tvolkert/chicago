@@ -23,6 +23,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import 'colors.dart';
+import 'focus_indicator.dart';
 import 'hover_builder.dart';
 import 'widget_surveyor.dart';
 
@@ -284,10 +285,8 @@ class _SpinnerState extends State<Spinner> {
         onDecrease: () => _worker.spin(-1),
         child: Padding(
           padding: EdgeInsets.all(1),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              border: _isFocused ? Border.fromBorderSide(BorderSide(style: BorderStyle.solid, color: Color(0xffcdcdcd))) : null,
-            ),
+          child: FocusIndicator(
+            isFocused: _isFocused,
             child: content,
           ),
         ),
