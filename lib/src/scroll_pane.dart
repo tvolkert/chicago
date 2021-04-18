@@ -864,47 +864,46 @@ class _ScrollPaneElement extends RenderObjectElement {
   }
 }
 
-class ScrollPaneViewportResolver implements ViewportResolver {
-  const ScrollPaneViewportResolver({
-    required this.viewportOffset,
+class _ScrollPaneViewportResolver implements ViewportResolver {
+  const _ScrollPaneViewportResolver({
+    required this.constraints,
+    required this.offset,
     required this.sizeAdjustment,
-    required this.viewportConstraints,
   });
 
-  final Offset viewportOffset;
+  final BoxConstraints constraints;
+  final Offset offset;
   final Offset sizeAdjustment;
-  final BoxConstraints viewportConstraints;
 
   @override
   Rect resolve(Size size) {
-    Size viewportSize =
-        viewportConstraints.constrain(size + sizeAdjustment) - sizeAdjustment as Size;
+    Size viewportSize = constraints.constrain(size + sizeAdjustment) - sizeAdjustment as Size;
     viewportSize = Size(
       max(viewportSize.width, 0),
       max(viewportSize.height, 0),
     );
-    return viewportOffset & viewportSize;
+    return offset & viewportSize;
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is ScrollPaneViewportResolver &&
-        other.viewportOffset == viewportOffset &&
+    return other is _ScrollPaneViewportResolver &&
+        other.offset == offset &&
         other.sizeAdjustment == sizeAdjustment &&
-        other.viewportConstraints == viewportConstraints;
+        other.constraints == constraints;
   }
 
   @override
   int get hashCode {
-    return hashValues(super.hashCode, viewportOffset, sizeAdjustment, viewportConstraints);
+    return hashValues(offset, sizeAdjustment, constraints);
   }
 
   @override
   String toString() {
-    return 'ScrollPaneViewportResolver(viewportOffset=$viewportOffset, '
+    return 'ScrollPaneViewportResolver(viewportOffset=$offset, '
         'sizeAdjustment=$sizeAdjustment, '
-        'viewportConstraints=$viewportConstraints)';
+        'viewportConstraints=$constraints)';
   }
 }
 
@@ -1441,9 +1440,9 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
       previousHorizontalScrollBarHeight = horizontalScrollBarHeight;
       previousVerticalScrollBarWidth = verticalScrollBarWidth;
 
-      final ScrollPaneViewportResolver viewportResolver = ScrollPaneViewportResolver(
-        viewportOffset: scrollController.scrollOffset,
-        viewportConstraints: constraints,
+      final _ScrollPaneViewportResolver viewportResolver = _ScrollPaneViewportResolver(
+        constraints: constraints,
+        offset: scrollController.scrollOffset,
         sizeAdjustment: Offset(
           rowHeaderWidth + verticalScrollBarWidth,
           columnHeaderHeight + horizontalScrollBarHeight,

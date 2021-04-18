@@ -16,18 +16,26 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 
+/// Class that serves as the defining property of [SegmentConstraints].
+///
+/// This allows callers to find out what the parent's viewport will be given a
+/// child's size. Classes that are set as the [ScrollPane.view] will be passed
+/// [SegmentConstraints] and can use the [SegmentConstraints.viewportResolver]
+/// to optimize their building, layout, and/or painting.
 @immutable
 abstract class ViewportResolver {
   Rect resolve(Size size);
 }
 
+/// A [ViewportResolver] whose viewport does not depend on the size passed to
+/// [resolve].
 class StaticViewportResolver implements ViewportResolver {
   const StaticViewportResolver(this.viewport);
 
   StaticViewportResolver.fromParts({
     required Offset offset,
     required Size size,
-  })  : viewport = offset & size;
+  }) : viewport = offset & size;
 
   final Rect viewport;
 
@@ -37,14 +45,11 @@ class StaticViewportResolver implements ViewportResolver {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is StaticViewportResolver &&
-        other.viewport == viewport;
+    return other is StaticViewportResolver && other.viewport == viewport;
   }
 
   @override
-  int get hashCode {
-    return hashValues(super.hashCode, viewport);
-  }
+  int get hashCode => viewport.hashCode;
 
   @override
   String toString() {
@@ -52,6 +57,12 @@ class StaticViewportResolver implements ViewportResolver {
   }
 }
 
+/// Constraints that are passed by [RenderScrollPane].
+///
+/// Segment constraints are specialized box constraints; in addition to the
+/// basic box constraints properties, they provide a [ViewportResolver], which
+/// tells the child what the scroll pane's viewport will be given the child's
+/// size.
 class SegmentConstraints extends BoxConstraints {
   const SegmentConstraints({
     double minWidth = 0,
