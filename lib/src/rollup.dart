@@ -158,6 +158,7 @@ class _RawRollupState extends AnimatedWidgetBaseState<RawRollup> {
     final double reveal = _expansionTween?.evaluate(animation) ?? 1;
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         GestureDetector(
@@ -178,6 +179,7 @@ class _RawRollupState extends AnimatedWidgetBaseState<RawRollup> {
                   insets: EdgeInsets.fromLTRB(-3, 0, -3, -1),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       MouseRegion(
                         cursor: SystemMouseCursors.click,
@@ -204,6 +206,7 @@ class _RawRollupState extends AnimatedWidgetBaseState<RawRollup> {
             child: Padding(
               padding: EdgeInsets.only(top: 4),
               child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   SizedBox(width: _arrowWidth),
                   SizedBox(width: 4),
