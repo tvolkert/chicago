@@ -17,6 +17,7 @@ export 'src/activity_indicator.dart';
 export 'src/basic_list_view.dart' hide main;
 export 'src/basic_table_view.dart';
 export 'src/border_pane.dart';
+export 'src/box_pane.dart';
 export 'src/calendar.dart';
 export 'src/calendar_button.dart';
 export 'src/checkbox.dart';
