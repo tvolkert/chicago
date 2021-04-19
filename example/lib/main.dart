@@ -16,7 +16,7 @@
 import 'dart:ui' show window;
 
 // Needed because chicago.TextInput still depends on Material
-import 'package:flutter/material.dart' show Material, DefaultMaterialLocalizations;
+import 'package:flutter/material.dart' show DefaultMaterialLocalizations, Material;
 import 'package:flutter/widgets.dart';
 import 'package:chicago/chicago.dart';
 
@@ -86,22 +86,19 @@ class KitchenSink extends StatelessWidget {
                                 ],
                                 loadingIndicator: Container(),
                                 child: ScrollPane(
-                                  view: Padding(
-                                    padding: EdgeInsets.all(6),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: const <Widget>[
-                                        ButtonsDemo(),
-                                        ListsDemo(),
-                                        CalendarsDemo(),
-                                        NavigationDemo(),
-                                        SplittersDemo(),
-                                        ActivityIndicatorsDemo(),
-                                        SpinnersDemo(),
-                                        TablesDemo(),
-                                        AlertsDemo(),
-                                      ],
-                                    ),
+                                  view: BoxPane(
+                                    padding: const EdgeInsets.all(6),
+                                    children: const <Widget>[
+                                      ButtonsDemo(),
+                                      ListsDemo(),
+                                      CalendarsDemo(),
+                                      NavigationDemo(),
+                                      SplittersDemo(),
+                                      ActivityIndicatorsDemo(),
+                                      SpinnersDemo(),
+                                      TablesDemo(),
+                                      AlertsDemo(),
+                                    ],
                                   ),
                                 ),
                               ),
