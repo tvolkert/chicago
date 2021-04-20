@@ -34,6 +34,7 @@ class RadioButton<T> extends StatefulWidget {
     this.spacing = 4,
     this.trailing,
     this.isEnabled = true,
+    this.onSelected,
     this.semanticLabel,
   }) : super(key: key);
 
@@ -42,6 +43,7 @@ class RadioButton<T> extends StatefulWidget {
   final double spacing;
   final Widget? trailing;
   final bool isEnabled;
+  final VoidCallback? onSelected;
   final String? semanticLabel;
 
   @override
@@ -69,7 +71,11 @@ class _RadioButtonState<T> extends State<RadioButton<T>> {
   }
 
   void _handleSelected() {
+    _handleTap();
     widget.controller.value = widget.value;
+    if (widget.onSelected != null) {
+      widget.onSelected!();
+    }
   }
 
   @override
