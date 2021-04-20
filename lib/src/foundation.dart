@@ -81,6 +81,15 @@ bool isPlatformCommandKeyPressed([TargetPlatform? platform]) {
   }
 }
 
+bool isActivateKey(LogicalKeyboardKey key) {
+  final Iterable<LogicalKeyboardKey> activateKeys = WidgetsApp.defaultShortcuts.entries
+      .where((MapEntry<LogicalKeySet, Intent> entry) => entry.value is ActivateIntent)
+      .map<LogicalKeySet>((MapEntry<LogicalKeySet, Intent> entry) => entry.key)
+      .where((LogicalKeySet keySet) => keySet.keys.length == 1)
+      .map<LogicalKeyboardKey>((LogicalKeySet keySet) => keySet.keys.single);
+  return activateKeys.contains(key);
+}
+
 class Vote {
   const Vote._(this._name);
 

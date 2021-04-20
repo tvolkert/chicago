@@ -26,6 +26,7 @@ import 'package:flutter/widgets.dart';
 import 'action_tracker.dart';
 import 'colors.dart';
 import 'focus_indicator.dart';
+import 'foundation.dart';
 import 'sorting.dart';
 
 const Axis _defaultAxis = Axis.horizontal;
@@ -112,12 +113,7 @@ class _PushButtonState<T extends Object> extends State<PushButton<T>> {
   KeyEventResult _handleKey(FocusNode focusNode, RawKeyEvent event) {
     // The actual "pressing" of the button happens via the `ActivateIntent`.
     // This code merely visually shows the button in the pressed state.
-    final Iterable<LogicalKeyboardKey> activateKeys = WidgetsApp.defaultShortcuts.entries
-        .where((MapEntry<LogicalKeySet, Intent> entry) => entry.value is ActivateIntent)
-        .map<LogicalKeySet>((MapEntry<LogicalKeySet, Intent> entry) => entry.key)
-        .where((LogicalKeySet keySet) => keySet.keys.length == 1)
-        .map<LogicalKeyboardKey>((LogicalKeySet keySet) => keySet.keys.single);
-    if (activateKeys.contains(event.logicalKey)) {
+    if (isActivateKey(event.logicalKey)) {
       setState(() {
         pressed = event is RawKeyDownEvent;
       });
