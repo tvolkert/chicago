@@ -246,6 +246,22 @@ class _PushButtonState<T extends Object> extends State<PushButton<T>> {
     Widget button =
         widget.axis == Axis.horizontal ? Row(children: buttonData) : Column(children: buttonData);
 
+    button = Center(
+      child: Padding(
+        padding: widget.padding,
+        child: button,
+      ),
+    );
+
+    if (!widget.isToolbar) {
+      button = FocusIndicator(
+        isFocused: focused,
+        insets: widget.focusIndicatorPadding,
+        color: widget.borderColor,
+        child: button,
+      );
+    }
+
     button = Actions(
       actions: <Type, Action<Intent>>{
         ActivateIntent: _ActivatePushButtonAction<T>(this),
@@ -254,17 +270,7 @@ class _PushButtonState<T extends Object> extends State<PushButton<T>> {
         focusNode: focusNode,
         onKey: _handleKey,
         onFocusChange: _handleFocusChange,
-        child: FocusIndicator(
-          isFocused: focused,
-          insets: widget.focusIndicatorPadding,
-          color: widget.borderColor,
-          child: Center(
-            child: Padding(
-              padding: widget.padding,
-              child: button,
-            ),
-          ),
-        ),
+        child: button,
       ),
     );
 
@@ -291,7 +297,7 @@ class _PushButtonState<T extends Object> extends State<PushButton<T>> {
       );
     }
 
-    if (menuActive || hover || !widget.isToolbar) {
+    if (menuActive || hover || focused || !widget.isToolbar) {
       final Border border = Border.fromBorderSide(
         BorderSide(color: isEnabled ? widget.borderColor : widget.disabledBorderColor),
       );
