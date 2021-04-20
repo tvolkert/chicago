@@ -17,7 +17,10 @@ import 'dart:ui' as ui;
 
 import 'package:chicago/chicago.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+
+import 'focus_indicator.dart';
 
 class RadioButtonController<T> extends ValueNotifier<T?> {
   RadioButtonController([T? value]) : super(value);
@@ -31,6 +34,7 @@ class RadioButton<T> extends StatefulWidget {
     this.spacing = 4,
     this.trailing,
     this.isEnabled = true,
+    this.semanticLabel,
   }) : super(key: key);
 
   final T value;
@@ -38,12 +42,26 @@ class RadioButton<T> extends StatefulWidget {
   final double spacing;
   final Widget? trailing;
   final bool isEnabled;
+  final String? semanticLabel;
 
   @override
   _RadioButtonState<T> createState() => _RadioButtonState<T>();
 }
 
 class _RadioButtonState<T> extends State<RadioButton<T>> {
+  FocusNode? _focusNode;
+  bool _isFocused = false;
+
+  void _handleFocusChange(bool hasFocus) {
+    setState(() {
+      _isFocused = hasFocus;
+    });
+  }
+
+  void _handleTap() {
+    _focusNode!.requestFocus();
+  }
+
   void _handleGroupValueChanged() {
     setState(() {
       // State is held in our controller.
@@ -57,24 +75,72 @@ class _RadioButtonState<T> extends State<RadioButton<T>> {
   @override
   void initState() {
     super.initState();
+    _focusNode = FocusNode(canRequestFocus: widget.isEnabled);
     widget.controller.addListener(_handleGroupValueChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant RadioButton<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _focusNode!.canRequestFocus = widget.isEnabled;
   }
 
   @override
   void dispose() {
     widget.controller.removeListener(_handleGroupValueChanged);
+    _focusNode!.dispose();
+    _focusNode = null;
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return BasicRadioButton(
-      key: widget.key,
-      isSelected: widget.value == widget.controller.value,
-      spacing: widget.spacing,
-      trailing: widget.trailing,
-      onSelected: widget.isEnabled ? _handleSelected : null,
+    final bool isSelected = widget.value == widget.controller.value;
+    final VoidCallback? onSelected = widget.isEnabled ? _handleSelected : null;
+    return Semantics(
+      excludeSemantics: true,
+      label: widget.semanticLabel ?? 'Radio button',
+      inMutuallyExclusiveGroup: true,
+      enabled: widget.isEnabled,
+      button: true,
+      focusable: widget.isEnabled,
+      focused: _isFocused,
+      toggled: isSelected,
+      onTap: onSelected,
+      child: Actions(
+        actions: <Type, Action<Intent>>{
+          ActivateIntent: _ActivateRadioButtonAction<T>(this),
+        },
+        child: Focus(
+          focusNode: _focusNode,
+          onFocusChange: _handleFocusChange,
+          child: FocusIndicator(
+            isFocused: _isFocused,
+            child: GestureDetector(
+              onTap: _handleTap,
+              child: BasicRadioButton(
+                key: widget.key,
+                isSelected: isSelected,
+                spacing: widget.spacing,
+                trailing: widget.trailing,
+                onSelected: onSelected,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
+  }
+}
+
+class _ActivateRadioButtonAction<T> extends ActivateAction {
+  _ActivateRadioButtonAction(this._state);
+
+  final _RadioButtonState<T> _state;
+
+  @override
+  void invoke(Intent intent) {
+    _state._handleSelected();
   }
 }
 
