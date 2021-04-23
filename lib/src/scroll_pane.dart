@@ -13,11 +13,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import 'dart:math' show min, max;
+import 'dart:math' show log, min, max;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/painting.dart';
+import 'package:flutter/physics.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
@@ -506,8 +507,11 @@ class ScrollPane extends StatefulWidget {
   ScrollPaneState createState() => ScrollPaneState();
 }
 
-class ScrollPaneState extends State<ScrollPane> {
+class ScrollPaneState extends State<ScrollPane> with SingleTickerProviderStateMixin<ScrollPane> {
   ScrollPaneController? _scrollController;
+  bool _isUserPanning = false;
+  Animation<Offset>? _panAnimation;
+  late AnimationController _panAnimationController;
 
   void _handleFocusChange() {
     final BuildContext? focusContext = FocusManager.instance.primaryFocus?.context;
@@ -521,6 +525,88 @@ class ScrollPaneState extends State<ScrollPane> {
         final Rect childLocation = offset & childRenderObject.size;
         scrollToVisible(childLocation, context: focusContext);
       }
+    }
+  }
+
+  void _resetPanAnimation() {
+    _panAnimation?.removeListener(_handleAnimatePan);
+    _panAnimation = null;
+    _panAnimationController.stop();
+    _panAnimationController.reset();
+  }
+
+  void _handlePanDown(DragDownDetails details) {
+    assert(!_isUserPanning);
+    if (_panAnimationController.isAnimating) {
+      assert(_panAnimation != null);
+      _resetPanAnimation();
+    }
+  }
+
+  void _handlePanStart(DragStartDetails details) {
+    assert(!_isUserPanning);
+    assert(!_panAnimationController.isAnimating);
+    assert(_panAnimation == null);
+    if (details.kind == PointerDeviceKind.touch) {
+      _isUserPanning = true;
+    }
+  }
+
+  void _handlePanUpdate(DragUpdateDetails details) {
+    assert(!_panAnimationController.isAnimating);
+    assert(_panAnimation == null);
+    if (_isUserPanning) {
+      scrollController.scrollOffset -= details.delta;
+    }
+  }
+
+  void _handlePanEnd(DragEndDetails details) {
+    if (_isUserPanning) {
+      _isUserPanning = false;
+      final Offset velocity = details.velocity.pixelsPerSecond;
+      if (velocity.distance == 0) {
+        // No need to animate
+        return;
+      }
+
+      const double drag = 0.0000135;
+      final frictionX = FrictionSimulation(drag, scrollController.scrollOffset.dx, -velocity.dx);
+      final frictionY = FrictionSimulation(drag, scrollController.scrollOffset.dy, -velocity.dy);
+      final Duration duration = _getPanAnimationDuration(velocity.distance, drag);
+      _panAnimation = Tween<Offset>(
+        begin: scrollController.scrollOffset,
+        end: Offset(frictionX.finalX, frictionY.finalX),
+      ).animate(CurvedAnimation(
+        parent: _panAnimationController,
+        curve: Curves.decelerate,
+      ));
+      _panAnimationController.duration = duration;
+      _panAnimation!.addListener(_handleAnimatePan);
+      _panAnimationController.forward();
+    }
+  }
+
+  /// Given a velocity and drag coefficient, calculate the time at which motion will come
+  /// to a stop, within the margin of effectivelyMotionless.
+  Duration _getPanAnimationDuration(double velocity, double drag) {
+    const double effectivelyMotionless = 10.0;
+    final double seconds = log(effectivelyMotionless / velocity) / log(drag / 100);
+    return Duration(milliseconds: (seconds * 1000).round());
+  }
+
+  void _handleAnimatePan() {
+    assert(!_isUserPanning);
+    assert(mounted);
+    assert(_panAnimation != null);
+
+    final Offset maxScrollOffset = scrollController.maxScrollOffset;
+    scrollController.scrollOffset = Offset(
+      min(max(_panAnimation!.value.dx, 0), maxScrollOffset.dx),
+      min(max(_panAnimation!.value.dy, 0), maxScrollOffset.dy),
+    );
+
+    if (!_panAnimationController.isAnimating) {
+      return _resetPanAnimation();
     }
   }
 
@@ -562,6 +648,7 @@ class ScrollPaneState extends State<ScrollPane> {
     if (widget.scrollController == null) {
       _scrollController = ScrollPaneController();
     }
+    _panAnimationController = AnimationController(vsync: this);
   }
 
   @override
@@ -581,6 +668,9 @@ class ScrollPaneState extends State<ScrollPane> {
 
   @override
   void dispose() {
+    _panAnimation?.removeListener(_handleAnimatePan);
+    _panAnimation = null;
+    _panAnimationController.dispose();
     _scrollController?.dispose();
     FocusManager.instance.removeListener(_handleFocusChange);
     super.dispose();
@@ -591,7 +681,14 @@ class ScrollPaneState extends State<ScrollPane> {
     return _WriteOnlyScrollPaneScope(
       state: this,
       child: _ScrollPane(
-        view: widget.view,
+        view: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onPanDown: _handlePanDown,
+          onPanStart: _handlePanStart,
+          onPanUpdate: _handlePanUpdate,
+          onPanEnd: _handlePanEnd,
+          child: widget.view,
+        ),
         rowHeader: widget.rowHeader,
         columnHeader: widget.columnHeader,
         topLeftCorner: widget.topLeftCorner,
