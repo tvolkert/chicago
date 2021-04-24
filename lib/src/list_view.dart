@@ -242,7 +242,7 @@ class ScrollableListView extends StatelessWidget {
     return ScrollPane(
       horizontalScrollBarPolicy: ScrollBarPolicy.stretch,
       verticalScrollBarPolicy: ScrollBarPolicy.auto,
-      scrollController: scrollController,
+      controller: scrollController,
       view: ListView(
         itemHeight: itemHeight,
         length: length,

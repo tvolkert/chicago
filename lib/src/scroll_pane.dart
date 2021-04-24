@@ -27,170 +27,6 @@ import 'listener_list.dart';
 import 'scroll_bar.dart';
 import 'segment.dart';
 
-class ScrollPaneTest extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.ltr,
-      child: ScrollPane(
-        horizontalScrollBarPolicy: ScrollBarPolicy.auto,
-        verticalScrollBarPolicy: ScrollBarPolicy.auto,
-        topLeftCorner: Image.asset('assets/IMG_20200701_131732.jpg', fit: BoxFit.cover),
-        columnHeader: ColoredBox(
-          color: Color(0xffff0000),
-          child: Table(
-            defaultColumnWidth: FixedColumnWidth(100),
-            children: [
-              TableRow(
-                children: [
-                  Text('HAAA'),
-                  Text('Hb'),
-                  Text('Hc'),
-                  Text('Hd'),
-                  Text('He'),
-                  Text('Hf'),
-                  Text('Hg'),
-                  Text('Hh'),
-                  Text('Hi'),
-                  Text('Hj'),
-                  Text('Hk'),
-                ],
-              ),
-            ],
-          ),
-        ),
-        rowHeader: ColoredBox(
-          color: Color(0xff00ff00),
-          child: Table(
-            defaultColumnWidth: FixedColumnWidth(100),
-            columnWidths: {0: IntrinsicColumnWidth()},
-            children: [
-              TableRow(children: [SizedBox(height: 100), Text('0H')]),
-              TableRow(children: [SizedBox(height: 100), Text('1H')]),
-              TableRow(children: [SizedBox(height: 100), Text('2H')]),
-              TableRow(children: [SizedBox(height: 100), Text('3H')]),
-              TableRow(children: [SizedBox(height: 100), Text('4H')]),
-              TableRow(children: [SizedBox(height: 100), Text('5H')]),
-            ],
-          ),
-        ),
-//        view: ColoredBox(
-//          color: Color(0xff0000ff),
-//          child: Table(
-//            defaultColumnWidth: FixedColumnWidth(100),
-//            columnWidths: {0: IntrinsicColumnWidth(), 12: FixedColumnWidth(2)},
-//            children: [
-//              TableRow(
-//                children: [
-//                  SizedBox(height: 100),
-//                  Text('0a'),
-//                  Text('0b'),
-//                  Text('0c'),
-//                  Text('0d'),
-//                  Text('0e'),
-//                  Text('0f'),
-//                  Text('0g'),
-//                  Text('0h'),
-//                  Text('0i'),
-//                  Text('0j'),
-//                  Text('0k'),
-//                  ColoredBox(color: Color(0xffabcdef), child: SizedBox(height: 20)),
-//                ],
-//              ),
-//              TableRow(
-//                children: [
-//                  SizedBox(height: 100),
-//                  Text('1a'),
-//                  Text('1b'),
-//                  Text('1c'),
-//                  Text('1d'),
-//                  Text('1e'),
-//                  Text('1f'),
-//                  Text('1g'),
-//                  Text('1h'),
-//                  Text('1i'),
-//                  Text('1j'),
-//                  Text('1k'),
-//                  ColoredBox(color: Color(0xffabcdef), child: SizedBox(height: 20)),
-//                ],
-//              ),
-//              TableRow(
-//                children: [
-//                  SizedBox(height: 100),
-//                  Text('2a'),
-//                  Text('2b'),
-//                  Text('2c'),
-//                  Text('2d'),
-//                  Text('2e'),
-//                  Text('2f'),
-//                  Text('2g'),
-//                  Text('2h'),
-//                  Text('2i'),
-//                  Text('2j'),
-//                  Text('2k'),
-//                  ColoredBox(color: Color(0xffabcdef), child: SizedBox(height: 20)),
-//                ],
-//              ),
-//              TableRow(
-//                children: [
-//                  SizedBox(height: 100),
-//                  Text('3a'),
-//                  Text('3b'),
-//                  Text('3c'),
-//                  Text('3d'),
-//                  Text('3e'),
-//                  Text('3f'),
-//                  Text('3g'),
-//                  Text('3h'),
-//                  Text('3i'),
-//                  Text('3j'),
-//                  Text('3k'),
-//                  ColoredBox(color: Color(0xffabcdef), child: SizedBox(height: 20)),
-//                ],
-//              ),
-//              TableRow(
-//                children: [
-//                  SizedBox(height: 100),
-//                  Text('4a'),
-//                  Text('4b'),
-//                  Text('4c'),
-//                  Text('4d'),
-//                  Text('4e'),
-//                  Text('4f'),
-//                  Text('4g'),
-//                  Text('4h'),
-//                  Text('4i'),
-//                  Text('4j'),
-//                  Text('4k'),
-//                  ColoredBox(color: Color(0xffabcdef), child: SizedBox(height: 20)),
-//                ],
-//              ),
-//              TableRow(
-//                children: [
-//                  SizedBox(height: 100),
-//                  Text('5a'),
-//                  Text('5b'),
-//                  Text('5c'),
-//                  Text('5d'),
-//                  Text('5e'),
-//                  Text('5f'),
-//                  Text('5g'),
-//                  Text('5h'),
-//                  Text('5i'),
-//                  Text('5j'),
-//                  Text('5k'),
-//                  ColoredBox(color: Color(0xffabcdef), child: SizedBox(height: 20)),
-//                ],
-//              ),
-//            ],
-//          ),
-//        ),
-        view: Image.asset('assets/IMG_20200701_131732.jpg'),
-      ),
-    );
-  }
-}
-
 /// The policy that dictates how a [ScrollPane] will lay its [ScrollPane.view]
 /// out within a given [Axis], which directly affects how and when the
 /// scrollbar is shown in that axis.
@@ -213,8 +49,8 @@ enum ScrollBarPolicy {
   /// a scrollbar, even if the viewport's size is less than needed to display
   /// the entirety of the view.
   ///
-  /// The scroll pane will still respond to trackpad / mouse wheel events by
-  /// scrolling.
+  /// The scroll pane will still respond to trackpad / mouse wheel and padding
+  /// (with a touch input) events by scrolling.
   ///
   /// Along with the [always] and [stretch] policies, this policy is the
   /// cheapest in terms of  layout performance.
@@ -225,14 +61,14 @@ enum ScrollBarPolicy {
   /// entirety of the view.
   ///
   /// If the viewport's size is large enough to display the entirety of the
-  /// view, the scrollback will be disabled.
+  /// view, the scrollbar will be disabled.
   ///
   /// Along with the [never] and [stretch] policies, this policy is the
   /// cheapest in terms of  layout performance.
   always,
 
   /// Lays the view out with tight constraints such that the view will be
-  /// exactly the same size in the axis as the viewport.
+  /// exactly the same size in the axis as the viewport's size in that axis.
   ///
   /// With this policy, a scrollbar will never be shown because the view is
   /// always exactly as big as the viewport, even if that size is less than
@@ -242,8 +78,9 @@ enum ScrollBarPolicy {
   /// cheapest in terms of  layout performance.
   stretch,
 
-  /// Gives the view at least its min intrinsic size, and stretches the view
-  /// to match the viewport's size in the axis if there's any excess space.
+  /// Gives the view _at least_ its minimum intrinsic size, and stretches the
+  /// view to match the viewport's size in the axis if there's any excess
+  /// space.
   ///
   /// The existence of the scrollbar is the same with this policy as with the
   /// [auto] policy. The difference between the two policies is that with this
@@ -254,28 +91,72 @@ enum ScrollBarPolicy {
   expand,
 }
 
+/// Signature for a listener function that gets called when a
+/// [ScrollPaneController]'s scroll offset has changed.
+///
+/// See also:
+///  * [ScrollPaneListener.onScrollOffsetChanged], the listener property that
+///    uses this signature.
 typedef ScrollOffsetChangedHandler = void Function(
   ScrollPaneController controller,
   Offset previousOffset,
 );
 
+/// An object that will be notified of events fired by [ScrollPaneController].
+///
+/// Listeners can be registered using [ScrollPaneController.addListener].
 class ScrollPaneListener {
+  /// Creates a new [ScrollPaneListener].
   const ScrollPaneListener({
     required this.onScrollOffsetChanged,
   });
 
+  /// Listener that will be called when the [ScrollPaneController.scrollOffset]
+  /// changes.
   final ScrollOffsetChangedHandler onScrollOffsetChanged;
 }
 
+/// A controller for a [ScrollPane].
+///
+/// A controller can only control one scroll pane at a time. Controllers can be
+/// attached to a scroll pane by setting them as the [ScrollPane.controller].
+///
+/// When callers modify values in this class, the attached scroll pane will
+/// respond, and registered listeners will be notified.
 class ScrollPaneController with ListenerNotifier<ScrollPaneListener> {
+  /// Creates a new [ScrollPaneController].
+  ///
+  /// If the `scrollOffset` argument is not specified, it defaults to a zero
+  /// offset.
   ScrollPaneController({
     Offset scrollOffset = Offset.zero,
   }) : _scrollOffset = scrollOffset;
 
   Offset _scrollOffset;
+  /// The amount that a [ScrollPane.view] has been scrolled within the scroll
+  /// pane's viewport.
+  ///
+  /// An offset of zero indicates that the view's origin (its point in the
+  /// upper-left corner) is drawn at the viewport's origin. A positive
+  /// [Offset.dx] value indicates that the view is translated in the x-axis
+  /// such that its origin exists to the left of the viewport's origin.
+  /// Similarly, a positive [Offset.dy] value indicates that the view is
+  /// translated in the y-axis such that its origin exists above of the
+  /// viewport's origin.
+  ///
+  /// This [Offset.direction] of this scroll offset will always be between zero
+  /// and [pi]/2 (inclusive), meaning that the [Offset.dx] and [Offset.dy]
+  /// values are guaranteed to be greater than or equal to zero. Attempts to
+  /// set an offset with negative values will be fenced.
+  ///
+  /// Changing this value will cause the attached scroll pane (if any) to
+  /// relayout and registered [ScrollPaneListener]s to be notified.
   Offset get scrollOffset => _scrollOffset;
   set scrollOffset(Offset value) {
-    value = _boundsCheckScrollOffset(value);
+    value = Offset(
+      min(max(value.dx, 0), _maxScrollLeft),
+      min(max(value.dy, 0), _maxScrollTop),
+    );
     if (value == _scrollOffset) return;
     final Offset previousOffset = _scrollOffset;
     _scrollOffset = value;
@@ -298,23 +179,24 @@ class ScrollPaneController with ListenerNotifier<ScrollPaneListener> {
     this.scrollOffset = scrollOffset;
   }
 
-  Offset _boundsCheckScrollOffset(Offset value) {
-    return Offset(
-      min(max(value.dx, 0), _maxScrollLeft),
-      min(max(value.dy, 0), _maxScrollTop),
-    );
-  }
-
   double get _maxScrollLeft => max(_viewSize.width - _viewportSize.width, 0);
 
   double get _maxScrollTop => max(_viewSize.height - _viewportSize.height, 0);
 
+  /// The maximum scroll offset given the view size and viewport size.
+  ///
+  /// Attempts to set a [scrollOffset] that's larger than this value will be
+  /// fenced, and this value will be set instead.
   Offset get maxScrollOffset => Offset(_maxScrollLeft, _maxScrollTop);
 
-  /// The coordinates of [rect] are in the coordinate space of the viewport
-  /// (the same coordinate space as [scrollOffset]).
+  /// Scrolls this controller until the [scrollOffset] is such that the
+  /// specified `rect` is fully visible in the viewport.
   ///
-  /// If the [animation] argument is non-null, the scroll offset will be
+  /// The coordinates of `rect` are in the coordinate space of the viewport
+  /// (the same coordinate space as [scrollOffset]).  So if you call this with
+  /// [Rect.zero], this will scroll to a scroll offset of [Offset.zero].
+  ///
+  /// If the `animation` argument is non-null, the scroll offset will be
   /// animated to its destination value. Otherwise, the scroll offset will
   /// jump to its destination.
   void scrollToVisible(Rect rect, {AnimationController? animation}) {
@@ -388,7 +270,7 @@ class ScrollPane extends StatefulWidget {
     this.horizontalScrollBarPolicy = ScrollBarPolicy.auto,
     this.verticalScrollBarPolicy = ScrollBarPolicy.auto,
     this.clipBehavior = Clip.hardEdge,
-    this.scrollController,
+    this.controller,
     this.rowHeader,
     this.columnHeader,
     this.topLeftCorner = const _EmptyCorner(),
@@ -425,7 +307,7 @@ class ScrollPane extends StatefulWidget {
   ///
   /// If this is not provided, one will be created and maintained automatically
   /// by this widget's [State] object.
-  final ScrollPaneController? scrollController;
+  final ScrollPaneController? controller;
 
   /// Optional widget that will be laid out to the left of the view, vertically
   /// aligned with the top of the view.
@@ -611,7 +493,7 @@ class ScrollPaneState extends State<ScrollPane> with SingleTickerProviderStateMi
   }
 
   /// The scroll controller that controls this scroll pane's offset.
-  ScrollPaneController get scrollController => widget.scrollController ?? _scrollController!;
+  ScrollPaneController get scrollController => widget.controller ?? _scrollController!;
 
   /// Recursively scrolls an area to be visible in this scroll pane and all
   /// ancestor scroll panes.
@@ -645,7 +527,7 @@ class ScrollPaneState extends State<ScrollPane> with SingleTickerProviderStateMi
   void initState() {
     super.initState();
     FocusManager.instance.addListener(_handleFocusChange);
-    if (widget.scrollController == null) {
+    if (widget.controller == null) {
       _scrollController = ScrollPaneController();
     }
     _panAnimationController = AnimationController(vsync: this);
@@ -654,8 +536,8 @@ class ScrollPaneState extends State<ScrollPane> with SingleTickerProviderStateMi
   @override
   void didUpdateWidget(ScrollPane oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.scrollController != widget.scrollController) {
-      if (oldWidget.scrollController == null) {
+    if (oldWidget.controller != widget.controller) {
+      if (oldWidget.controller == null) {
         assert(_scrollController != null);
         _scrollController!.dispose();
         _scrollController = null;

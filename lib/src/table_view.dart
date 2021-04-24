@@ -727,7 +727,7 @@ class ScrollableTableView extends StatelessWidget {
     return ScrollPane(
       horizontalScrollBarPolicy: ScrollBarPolicy.expand,
       verticalScrollBarPolicy: ScrollBarPolicy.auto,
-      scrollController: scrollController,
+      controller: scrollController,
       columnHeader: columnHeader,
       view: table,
     );
