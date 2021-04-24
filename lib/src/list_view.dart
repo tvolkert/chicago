@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
@@ -257,7 +255,7 @@ class ScrollableListView extends StatelessWidget {
   }
 }
 
-class ListView extends StatefulWidget {
+class ListView extends RenderObjectWidget {
   const ListView({
     Key? key,
     required this.itemHeight,
@@ -268,77 +266,12 @@ class ListView extends StatefulWidget {
     this.platform,
   }) : super(key: key);
 
-  final double itemHeight;
   final int length;
+  final double itemHeight;
   final ListItemBuilder itemBuilder;
   final ListViewSelectionController? selectionController;
   final ListViewItemDisablerController? itemDisabledController;
   final TargetPlatform? platform;
-
-  @override
-  _ListViewState createState() => _ListViewState();
-}
-
-class _ListViewState extends State<ListView> {
-  late StreamController<PointerEvent> _pointerEvents;
-
-  @override
-  void initState() {
-    super.initState();
-    _pointerEvents = StreamController<PointerEvent>.broadcast();
-  }
-
-  @override
-  void dispose() {
-    _pointerEvents.close();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    Widget result = RawListView(
-      itemHeight: widget.itemHeight,
-      length: widget.length,
-      itemBuilder: widget.itemBuilder,
-      selectionController: widget.selectionController,
-      itemDisabledController: widget.itemDisabledController,
-      pointerEvents: _pointerEvents.stream,
-      platform: widget.platform ?? defaultTargetPlatform,
-    );
-
-    if (widget.selectionController != null &&
-        widget.selectionController!.selectMode != SelectMode.none) {
-      result = MouseRegion(
-        onEnter: _pointerEvents.add,
-        onExit: _pointerEvents.add,
-        onHover: _pointerEvents.add,
-        child: result,
-      );
-    }
-
-    return result;
-  }
-}
-
-class RawListView extends RenderObjectWidget {
-  const RawListView({
-    Key? key,
-    required this.itemHeight,
-    required this.length,
-    required this.itemBuilder,
-    this.selectionController,
-    this.itemDisabledController,
-    required this.pointerEvents,
-    required this.platform,
-  }) : super(key: key);
-
-  final int length;
-  final double itemHeight;
-  final ListItemBuilder itemBuilder;
-  final ListViewSelectionController? selectionController;
-  final ListViewItemDisablerController? itemDisabledController;
-  final Stream<PointerEvent> pointerEvents;
-  final TargetPlatform platform;
 
   @override
   ListViewElement createElement() => ListViewElement(this);
@@ -350,8 +283,7 @@ class RawListView extends RenderObjectWidget {
       length: length,
       selectionController: selectionController,
       itemDisabledController: itemDisabledController,
-      pointerEvents: pointerEvents,
-      platform: platform,
+      platform: platform ?? defaultTargetPlatform,
     );
   }
 
@@ -362,16 +294,15 @@ class RawListView extends RenderObjectWidget {
       ..length = length
       ..selectionController = selectionController
       ..itemDisabledController = itemDisabledController
-      ..pointerEvents = pointerEvents
-      ..platform = platform;
+      ..platform = platform ?? defaultTargetPlatform;
   }
 }
 
 class ListViewElement extends RenderObjectElement with ListViewElementMixin {
-  ListViewElement(RawListView listView) : super(listView);
+  ListViewElement(ListView listView) : super(listView);
 
   @override
-  RawListView get widget => super.widget as RawListView;
+  ListView get widget => super.widget as ListView;
 
   @override
   RenderListView get renderObject => super.renderObject as RenderListView;
@@ -389,13 +320,14 @@ class ListViewElement extends RenderObjectElement with ListViewElementMixin {
   }
 }
 
-class RenderListView extends RenderBasicListView with DeferredLayoutMixin {
+class RenderListView extends RenderBasicListView
+    with DeferredLayoutMixin
+    implements MouseTrackerAnnotation {
   RenderListView({
     required double itemHeight,
     required int length,
     ListViewSelectionController? selectionController,
     ListViewItemDisablerController? itemDisabledController,
-    required Stream<PointerEvent> pointerEvents,
     required TargetPlatform platform,
   }) : super(itemHeight: itemHeight, length: length) {
     _itemDisablerListener = ListViewItemDisablerListener(
@@ -403,11 +335,11 @@ class RenderListView extends RenderBasicListView with DeferredLayoutMixin {
     );
     this.selectionController = selectionController;
     this.itemDisabledController = itemDisabledController;
-    this.pointerEvents = pointerEvents;
     this.platform = platform;
   }
 
   late final ListViewItemDisablerListener _itemDisablerListener;
+  late TapGestureRecognizer _tap;
 
   ListViewSelectionController? _selectionController;
   ListViewSelectionController? get selectionController => _selectionController;
@@ -446,17 +378,6 @@ class RenderListView extends RenderBasicListView with DeferredLayoutMixin {
   }
 
   bool _isItemDisabled(int index) => _itemDisabledController?.isItemDisabled(index) ?? false;
-
-  StreamSubscription<PointerEvent> _pointerEventsSubscription =
-      const FakeSubscription<PointerEvent>();
-  Stream<PointerEvent>? _pointerEvents;
-  Stream<PointerEvent> get pointerEvents => _pointerEvents!;
-  set pointerEvents(Stream<PointerEvent> value) {
-    if (_pointerEvents == value) return;
-    _pointerEventsSubscription.cancel();
-    _pointerEvents = value;
-    _pointerEventsSubscription = value.listen(_onPointerEvent);
-  }
 
   TargetPlatform? _platform;
   TargetPlatform get platform => _platform!;
@@ -515,75 +436,79 @@ class RenderListView extends RenderBasicListView with DeferredLayoutMixin {
     }
   }
 
-  int _selectIndex = -1;
+  _ListViewSelectionUpdateTask? _tapDownSelectionUpdateTask;
 
-  void _onPointerDown(PointerDownEvent event) {
+  void _handleTapDown(TapDownDetails details) {
     ListViewSelectionController? selectionController = this.selectionController;
     final SelectMode selectMode = selectionController?.selectMode ?? SelectMode.none;
     if (selectionController != null && selectMode != SelectMode.none) {
-      final int index = getItemAt(event.localPosition.dy);
+      final int index = getItemAt(details.localPosition.dy);
       if (index >= 0 && index < length && !_isItemDisabled(index)) {
-        final Set<LogicalKeyboardKey> keys = RawKeyboard.instance.keysPressed;
-
         if (isShiftKeyPressed() && selectMode == SelectMode.multi) {
           final int startIndex = selectionController.firstSelectedIndex;
           if (startIndex == -1) {
-            selectionController.addSelectedIndex(index);
+            _tapDownSelectionUpdateTask = _ListViewAddToSelection(index);
           } else {
             final int endIndex = selectionController.lastSelectedIndex;
             final Span range = Span(index, index > startIndex ? startIndex : endIndex);
-            selectionController.selectedRange = range;
+            _tapDownSelectionUpdateTask = _ListViewSetSelectedRange(range);
           }
         } else if (isPlatformCommandKeyPressed(platform) && selectMode == SelectMode.multi) {
           if (selectionController.isItemSelected(index)) {
-            selectionController.removeSelectedIndex(index);
+            _tapDownSelectionUpdateTask = _ListViewRemoveFromSelection(index);
           } else {
-            selectionController.addSelectedIndex(index);
+            _tapDownSelectionUpdateTask = _ListViewAddToSelection(index);
           }
-        } else if (keys.contains(LogicalKeyboardKey.control) && selectMode == SelectMode.single) {
+        } else if (isPlatformCommandKeyPressed(platform) && selectMode == SelectMode.single) {
           if (selectionController.isItemSelected(index)) {
-            selectionController.selectedIndex = -1;
+            _tapDownSelectionUpdateTask = _ListViewSetSelectedIndex(-1);
           } else {
-            selectionController.selectedIndex = index;
+            _tapDownSelectionUpdateTask = _ListViewSetSelectedIndex(index);
           }
         } else if (selectMode != SelectMode.none) {
-          if (!selectionController.isItemSelected(index)) {
-            selectionController.selectedIndex = index;
-          }
-          _selectIndex = index;
+          _tapDownSelectionUpdateTask = _ListViewSetSelectedIndex(index);
         }
       }
     }
   }
 
-  void _onPointerUp(PointerUpEvent event) {
-    ListViewSelectionController? selectionController = this.selectionController;
-    if (selectionController != null &&
-        _selectIndex != -1 &&
-        selectionController.firstSelectedIndex != selectionController.lastSelectedIndex) {
-      selectionController.selectedIndex = _selectIndex;
-    }
-    _selectIndex = -1;
+  void _handleTapCancel() {
+    _tapDownSelectionUpdateTask = null;
   }
 
-  void _onPointerEvent(PointerEvent event) {
-    if (event is PointerHoverEvent) return _onPointerHover(event);
-    if (event is PointerScrollEvent) return _onPointerScroll(event);
-    if (event is PointerExitEvent) return _onPointerExit(event);
-    if (event is PointerDownEvent) return _onPointerDown(event);
-    if (event is PointerUpEvent) return _onPointerUp(event);
+  void _handleTap() {
+    _tapDownSelectionUpdateTask?.run(selectionController);
+    _tapDownSelectionUpdateTask = null;
   }
+
+  @override
+  MouseCursor get cursor => MouseCursor.defer;
+
+  @override
+  PointerEnterEventListener? get onEnter => null;
+
+  @override
+  PointerExitEventListener? get onExit => _onPointerExit;
+
+  @override
+  bool get validForMouseTracker => true;
 
   @override
   void handleEvent(PointerEvent event, BoxHitTestEntry entry) {
     assert(debugHandleEvent(event, entry));
-    _onPointerEvent(event);
+    if (event is PointerHoverEvent) return _onPointerHover(event);
+    if (event is PointerScrollEvent) return _onPointerScroll(event);
+    if (event is PointerDownEvent) return _tap.addPointer(event);
     super.handleEvent(event, entry);
   }
 
   @override
   void attach(PipelineOwner owner) {
     super.attach(owner);
+    _tap = TapGestureRecognizer(debugOwner: this)
+      ..onTapDown = _handleTapDown
+      ..onTapCancel = _handleTapCancel
+      ..onTap = _handleTap;
     if (_selectionController != null) {
       _selectionController!._attach(this);
     }
@@ -591,6 +516,7 @@ class RenderListView extends RenderBasicListView with DeferredLayoutMixin {
 
   @override
   void detach() {
+    _tap.dispose();
     if (_selectionController != null) {
       _selectionController!._detach();
     }
@@ -618,4 +544,47 @@ class RenderListView extends RenderBasicListView with DeferredLayoutMixin {
     }
     super.paint(context, offset);
   }
+}
+
+@immutable
+abstract class _ListViewSelectionUpdateTask {
+  const _ListViewSelectionUpdateTask();
+
+  void run(ListViewSelectionController? controller);
+}
+
+class _ListViewAddToSelection extends _ListViewSelectionUpdateTask {
+  const _ListViewAddToSelection(this.index);
+
+  final int index;
+
+  @override
+  void run(ListViewSelectionController? controller) => controller?.addSelectedIndex(index);
+}
+
+class _ListViewRemoveFromSelection extends _ListViewSelectionUpdateTask {
+  const _ListViewRemoveFromSelection(this.index);
+
+  final int index;
+
+  @override
+  void run(ListViewSelectionController? controller) => controller?.removeSelectedIndex(index);
+}
+
+class _ListViewSetSelectedRange extends _ListViewSelectionUpdateTask {
+  const _ListViewSetSelectedRange(this.range);
+
+  final Span range;
+
+  @override
+  void run(ListViewSelectionController? controller) => controller?.selectedRange = range;
+}
+
+class _ListViewSetSelectedIndex extends _ListViewSelectionUpdateTask {
+  const _ListViewSetSelectedIndex(this.index);
+
+  final int index;
+
+  @override
+  void run(ListViewSelectionController? controller) => controller?.selectedIndex = index;
 }
