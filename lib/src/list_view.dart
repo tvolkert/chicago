@@ -428,7 +428,7 @@ class RenderListView extends RenderBasicListView
   }
 
   void _onPointerHover(PointerHoverEvent event) {
-    if (selectionController != null) {
+    if (selectionController != null && event.kind == PointerDeviceKind.mouse) {
       deferMarkNeedsLayout(() {
         final int index = getItemAt(event.localPosition.dy);
         highlightedItem = index != -1 && !_isItemDisabled(index) ? index : null;
