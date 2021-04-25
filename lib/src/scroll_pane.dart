@@ -1151,16 +1151,18 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
 
   @override
   bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
+    // Order is important here; since the corners and scrollbars overlap the
+    // view and headers, they must be hit tested first.
     final List<RenderBox?> children = <RenderBox?>[
-      view,
       verticalScrollBar,
       horizontalScrollBar,
-      columnHeader,
-      rowHeader,
       topRightCorner,
       bottomRightCorner,
       bottomLeftCorner,
       topLeftCorner,
+      columnHeader,
+      rowHeader,
+      view,
     ];
 
     for (RenderBox? child in children) {
