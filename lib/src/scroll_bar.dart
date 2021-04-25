@@ -21,6 +21,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import 'colors.dart' as colorUtils;
@@ -784,18 +785,11 @@ class ScrollBarValueListener {
   final ScrollBarValueChangedHandler valueChanged;
 }
 
-class _RenderScrollBarButton extends RenderBox
-    with RenderObjectWithChildMixin<RenderBox>, RenderBoxWithChildDefaultsMixin {
+class _RenderScrollBarButton extends RenderBox implements MouseTrackerAnnotation {
   _RenderScrollBarButton({
     this.orientation = Axis.vertical,
     this.direction = 1,
-  }) {
-    child = RenderMouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: _onEnter,
-      onExit: _onExit,
-    );
-  }
+  });
 
   final Axis orientation;
   final int direction;
@@ -808,11 +802,6 @@ class _RenderScrollBarButton extends RenderBox
     if (_enabled == value) return;
     parent!.automaticScroller.stop();
     _enabled = value;
-    if (_enabled) {
-      child.cursor = SystemMouseCursors.click;
-    } else {
-      child.cursor = MouseCursor.defer;
-    }
     markNeedsPaint();
   }
 
@@ -866,7 +855,16 @@ class _RenderScrollBarButton extends RenderBox
   _ScrollBarParentData? get parentData => super.parentData as _ScrollBarParentData?;
 
   @override
-  RenderMouseRegion get child => super.child as RenderMouseRegion;
+  MouseCursor get cursor => _enabled ? SystemMouseCursors.click : MouseCursor.defer;
+
+  @override
+  PointerEnterEventListener? get onEnter => _onEnter;
+
+  @override
+  PointerExitEventListener? get onExit => _onExit;
+
+  @override
+  bool get validForMouseTracker => true;
 
   @override
   void handleEvent(PointerEvent event, BoxHitTestEntry entry) {
@@ -879,11 +877,6 @@ class _RenderScrollBarButton extends RenderBox
   }
 
   @override
-  bool hitTestChildren(BoxHitTestResult result, {required ui.Offset position}) {
-    return defaultHitTestChild(result, position: position);
-  }
-
-  @override
   bool hitTestSelf(ui.Offset position) => true;
 
   @override
@@ -893,9 +886,11 @@ class _RenderScrollBarButton extends RenderBox
   double computeMinIntrinsicWidth(double height) => _length;
 
   @override
-  void performLayout() {
-    size = constraints.constrain(Size.square(_length));
-    child.layout(BoxConstraints.tight(size));
+  bool get sizedByParent => true;
+
+  @override
+  Size computeDryLayout(BoxConstraints constraints) {
+    return constraints.constrain(Size.square(_length));
   }
 
   @override
@@ -914,19 +909,11 @@ class _RenderScrollBarButton extends RenderBox
     } finally {
       context.canvas.restore();
     }
-
-    context.paintChild(child, offset);
   }
 }
 
-class _RenderScrollBarHandle extends RenderBox
-    with RenderObjectWithChildMixin<RenderBox>, RenderBoxWithChildDefaultsMixin {
-  _RenderScrollBarHandle({required this.orientation}) {
-    child = RenderMouseRegion(
-      onEnter: _onEnter,
-      onExit: _onExit,
-    );
-  }
+class _RenderScrollBarHandle extends RenderBox implements MouseTrackerAnnotation {
+  _RenderScrollBarHandle({required this.orientation});
 
   final Axis orientation;
 
@@ -984,6 +971,18 @@ class _RenderScrollBarHandle extends RenderBox
   _ScrollBarParentData? get parentData => super.parentData as _ScrollBarParentData?;
 
   @override
+  MouseCursor get cursor => MouseCursor.defer;
+
+  @override
+  PointerEnterEventListener? get onEnter => _onEnter;
+
+  @override
+  PointerExitEventListener? get onExit => _onExit;
+
+  @override
+  bool get validForMouseTracker => true;
+
+  @override
   void handleEvent(PointerEvent event, BoxHitTestEntry entry) {
     assert(debugHandleEvent(event, entry));
     if (event is PointerDownEvent) return _onPointerDown(event);
@@ -993,18 +992,13 @@ class _RenderScrollBarHandle extends RenderBox
   }
 
   @override
-  bool hitTestChildren(BoxHitTestResult result, {required ui.Offset position}) {
-    return defaultHitTestChild(result, position: position);
-  }
-
-  @override
   bool hitTestSelf(ui.Offset position) => true;
 
   @override
-  void performLayout() {
-    size = constraints.smallest;
-    child!.layout(BoxConstraints.tight(size));
-  }
+  bool get sizedByParent => true;
+
+  @override
+  Size computeDryLayout(BoxConstraints constraints) => constraints.smallest;
 
   @override
   void paint(PaintingContext context, Offset offset) {
@@ -1019,8 +1013,6 @@ class _RenderScrollBarHandle extends RenderBox
     } finally {
       context.canvas.restore();
     }
-
-    context.paintChild(child!, offset);
   }
 }
 
