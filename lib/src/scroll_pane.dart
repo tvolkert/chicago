@@ -264,6 +264,8 @@ class ScrollPaneController with ListenerNotifier<ScrollPaneListener> {
   }
 }
 
+/// A layout container that provides a scrollable viewport into which a child
+/// view widget is rendered.
 class ScrollPane extends StatefulWidget {
   const ScrollPane({
     Key? key,
@@ -390,16 +392,18 @@ class ScrollPane extends StatefulWidget {
 }
 
 class ScrollPaneState extends State<ScrollPane> with SingleTickerProviderStateMixin<ScrollPane> {
-  ScrollPaneController? _scrollController;
+  ScrollPaneController? _controller;
   bool _isUserPanning = false;
   Animation<Offset>? _panAnimation;
   late AnimationController _panAnimationController;
 
+  /// Scrolls the newly focused widget to visible if it's a descendant of a
+  /// scroll pane.
   void _handleFocusChange() {
     final BuildContext? focusContext = FocusManager.instance.primaryFocus?.context;
     if (focusContext != null && ScrollPane.of(focusContext) == this) {
-      // This state object represents the nearest ScrollPane ancestor of the
-      // widget with the primary focus.
+      // This scroll pane is the nearest ScrollPane ancestor of the widget with
+      // the primary focus.
       final RenderObject? childRenderObject = focusContext.findRenderObject();
       if (childRenderObject is RenderBox) {
         final ParentData? parentData = childRenderObject.parentData;
@@ -434,11 +438,17 @@ class ScrollPaneState extends State<ScrollPane> with SingleTickerProviderStateMi
     }
   }
 
+  void _handlePanCancel() {
+    assert(!_panAnimationController.isAnimating);
+    assert(_panAnimation == null);
+    _isUserPanning = false;
+  }
+
   void _handlePanUpdate(DragUpdateDetails details) {
     assert(!_panAnimationController.isAnimating);
     assert(_panAnimation == null);
     if (_isUserPanning) {
-      scrollController.scrollOffset -= details.delta;
+      controller.scrollOffset -= details.delta;
     }
   }
 
@@ -451,12 +461,12 @@ class ScrollPaneState extends State<ScrollPane> with SingleTickerProviderStateMi
         return;
       }
 
-      const double drag = 0.0000135;
-      final frictionX = FrictionSimulation(drag, scrollController.scrollOffset.dx, -velocity.dx);
-      final frictionY = FrictionSimulation(drag, scrollController.scrollOffset.dy, -velocity.dy);
+      const double drag = 0.0001135;
+      final frictionX = FrictionSimulation(drag, controller.scrollOffset.dx, -velocity.dx);
+      final frictionY = FrictionSimulation(drag, controller.scrollOffset.dy, -velocity.dy);
       final Duration duration = _getPanAnimationDuration(velocity.distance, drag);
       _panAnimation = Tween<Offset>(
-        begin: scrollController.scrollOffset,
+        begin: controller.scrollOffset,
         end: Offset(frictionX.finalX, frictionY.finalX),
       ).animate(CurvedAnimation(
         parent: _panAnimationController,
@@ -468,8 +478,8 @@ class ScrollPaneState extends State<ScrollPane> with SingleTickerProviderStateMi
     }
   }
 
-  /// Given a velocity and drag coefficient, calculate the time at which motion will come
-  /// to a stop, within the margin of effectivelyMotionless.
+  /// Given a velocity and drag coefficient, calculate the time at which motion
+  /// will come to a stop, within the margin of effectivelyMotionless.
   Duration _getPanAnimationDuration(double velocity, double drag) {
     const double effectivelyMotionless = 10.0;
     final double seconds = log(effectivelyMotionless / velocity) / log(drag / 100);
@@ -480,20 +490,18 @@ class ScrollPaneState extends State<ScrollPane> with SingleTickerProviderStateMi
     assert(!_isUserPanning);
     assert(mounted);
     assert(_panAnimation != null);
-
-    final Offset maxScrollOffset = scrollController.maxScrollOffset;
-    scrollController.scrollOffset = Offset(
+    final Offset maxScrollOffset = controller.maxScrollOffset;
+    controller.scrollOffset = Offset(
       min(max(_panAnimation!.value.dx, 0), maxScrollOffset.dx),
       min(max(_panAnimation!.value.dy, 0), maxScrollOffset.dy),
     );
-
     if (!_panAnimationController.isAnimating) {
       return _resetPanAnimation();
     }
   }
 
-  /// The scroll controller that controls this scroll pane's offset.
-  ScrollPaneController get scrollController => widget.controller ?? _scrollController!;
+  /// The controller for this scroll pane's offset.
+  ScrollPaneController get controller => widget.controller ?? _controller!;
 
   /// Recursively scrolls an area to be visible in this scroll pane and all
   /// ancestor scroll panes.
@@ -516,10 +524,10 @@ class ScrollPaneState extends State<ScrollPane> with SingleTickerProviderStateMi
     final Matrix4 transform = childRenderObject!.getTransformTo(renderScrollPane!);
     Rect scrollToRect = MatrixUtils.transformRect(transform, rect);
     if (context != this.context) {
-      scrollToRect = scrollToRect.shift(scrollController.scrollOffset);
+      scrollToRect = scrollToRect.shift(controller.scrollOffset);
     }
-    scrollController.scrollToVisible(scrollToRect);
-    final Rect adjustedRect = scrollToRect.shift(scrollController.scrollOffset * -1);
+    controller.scrollToVisible(scrollToRect);
+    final Rect adjustedRect = scrollToRect.shift(controller.scrollOffset * -1);
     ScrollPane.of(this.context)?.scrollToVisible(adjustedRect, context: this.context);
   }
 
@@ -528,7 +536,7 @@ class ScrollPaneState extends State<ScrollPane> with SingleTickerProviderStateMi
     super.initState();
     FocusManager.instance.addListener(_handleFocusChange);
     if (widget.controller == null) {
-      _scrollController = ScrollPaneController();
+      _controller = ScrollPaneController();
     }
     _panAnimationController = AnimationController(vsync: this);
   }
@@ -538,12 +546,12 @@ class ScrollPaneState extends State<ScrollPane> with SingleTickerProviderStateMi
     super.didUpdateWidget(oldWidget);
     if (oldWidget.controller != widget.controller) {
       if (oldWidget.controller == null) {
-        assert(_scrollController != null);
-        _scrollController!.dispose();
-        _scrollController = null;
+        assert(_controller != null);
+        _controller!.dispose();
+        _controller = null;
       } else {
-        assert(_scrollController == null);
-        _scrollController = ScrollPaneController();
+        assert(_controller == null);
+        _controller = ScrollPaneController();
       }
     }
   }
@@ -553,7 +561,7 @@ class ScrollPaneState extends State<ScrollPane> with SingleTickerProviderStateMi
     _panAnimation?.removeListener(_handleAnimatePan);
     _panAnimation = null;
     _panAnimationController.dispose();
-    _scrollController?.dispose();
+    _controller?.dispose();
     FocusManager.instance.removeListener(_handleFocusChange);
     super.dispose();
   }
@@ -562,36 +570,50 @@ class ScrollPaneState extends State<ScrollPane> with SingleTickerProviderStateMi
   Widget build(BuildContext context) {
     return _WriteOnlyScrollPaneScope(
       state: this,
-      child: _ScrollPane(
-        view: GestureDetector(
-          behavior: HitTestBehavior.translucent,
-          onPanDown: _handlePanDown,
-          onPanStart: _handlePanStart,
-          onPanUpdate: _handlePanUpdate,
-          onPanEnd: _handlePanEnd,
-          child: widget.view,
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onPanDown: _handlePanDown,
+        onPanStart: _handlePanStart,
+        onPanCancel: _handlePanCancel,
+        onPanUpdate: _handlePanUpdate,
+        onPanEnd: _handlePanEnd,
+        child: _ScrollPane(
+          view: widget.view,
+          rowHeader: widget.rowHeader,
+          columnHeader: widget.columnHeader,
+          topLeftCorner: widget.topLeftCorner,
+          bottomLeftCorner: widget.bottomLeftCorner,
+          bottomRightCorner: widget.bottomRightCorner,
+          topRightCorner: widget.topRightCorner,
+          horizontalScrollBar: const ScrollBar(
+            orientation: Axis.horizontal,
+            unitIncrement: 10,
+          ),
+          verticalScrollBar: const ScrollBar(
+            orientation: Axis.vertical,
+            unitIncrement: 10,
+          ),
+          horizontalScrollBarPolicy: widget.horizontalScrollBarPolicy,
+          verticalScrollBarPolicy: widget.verticalScrollBarPolicy,
+          clipBehavior: widget.clipBehavior,
+          controller: controller,
         ),
-        rowHeader: widget.rowHeader,
-        columnHeader: widget.columnHeader,
-        topLeftCorner: widget.topLeftCorner,
-        bottomLeftCorner: widget.bottomLeftCorner,
-        bottomRightCorner: widget.bottomRightCorner,
-        topRightCorner: widget.topRightCorner,
-        horizontalScrollBar: const ScrollBar(
-          orientation: Axis.horizontal,
-          unitIncrement: 10,
-        ),
-        verticalScrollBar: const ScrollBar(
-          orientation: Axis.vertical,
-          unitIncrement: 10,
-        ),
-        horizontalScrollBarPolicy: widget.horizontalScrollBarPolicy,
-        verticalScrollBarPolicy: widget.verticalScrollBarPolicy,
-        clipBehavior: widget.clipBehavior,
-        scrollController: scrollController,
       ),
     );
   }
+}
+
+/// A scope class that never notifies on update (because it's write-only).
+class _WriteOnlyScrollPaneScope extends InheritedWidget {
+  const _WriteOnlyScrollPaneScope({
+    required this.state,
+    required Widget child,
+  }) : super(child: child);
+
+  final ScrollPaneState state;
+
+  @override
+  bool updateShouldNotify(_WriteOnlyScrollPaneScope _) => false;
 }
 
 class _EmptyCorner extends LeafRenderObjectWidget {
@@ -636,7 +658,7 @@ class _ScrollPane extends RenderObjectWidget {
     required this.horizontalScrollBarPolicy,
     required this.verticalScrollBarPolicy,
     required this.clipBehavior,
-    required this.scrollController,
+    required this.controller,
   }) : super(key: key);
 
   final Widget view;
@@ -651,7 +673,7 @@ class _ScrollPane extends RenderObjectWidget {
   final ScrollBarPolicy horizontalScrollBarPolicy;
   final ScrollBarPolicy verticalScrollBarPolicy;
   final Clip clipBehavior;
-  final ScrollPaneController scrollController;
+  final ScrollPaneController controller;
 
   @override
   RenderObjectElement createElement() => _ScrollPaneElement(this);
@@ -662,7 +684,7 @@ class _ScrollPane extends RenderObjectWidget {
       horizontalScrollBarPolicy: horizontalScrollBarPolicy,
       verticalScrollBarPolicy: verticalScrollBarPolicy,
       clipBehavior: clipBehavior,
-      scrollController: scrollController,
+      controller: controller,
     );
   }
 
@@ -672,21 +694,8 @@ class _ScrollPane extends RenderObjectWidget {
       ..horizontalScrollBarPolicy = horizontalScrollBarPolicy
       ..verticalScrollBarPolicy = verticalScrollBarPolicy
       ..clipBehavior = clipBehavior
-      ..scrollController = scrollController;
+      ..scrollController = controller;
   }
-}
-
-/// A scope class that never notifies on update (because it's write-only).
-class _WriteOnlyScrollPaneScope extends InheritedWidget {
-  const _WriteOnlyScrollPaneScope({
-    required this.state,
-    required Widget child,
-  }) : super(child: child);
-
-  final ScrollPaneState state;
-
-  @override
-  bool updateShouldNotify(_WriteOnlyScrollPaneScope _) => false;
 }
 
 enum _ScrollPaneSlot {
@@ -843,6 +852,7 @@ class _ScrollPaneElement extends RenderObjectElement {
   }
 }
 
+@immutable
 class _ScrollPaneViewportResolver implements ViewportResolver {
   const _ScrollPaneViewportResolver({
     required this.constraints,
@@ -893,13 +903,13 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
     ScrollBarPolicy horizontalScrollBarPolicy = ScrollBarPolicy.auto,
     ScrollBarPolicy verticalScrollBarPolicy = ScrollBarPolicy.auto,
     Clip clipBehavior = Clip.hardEdge,
-    required ScrollPaneController scrollController,
+    required ScrollPaneController controller,
   })  : _horizontalScrollBarPolicy = horizontalScrollBarPolicy,
         _verticalScrollBarPolicy = verticalScrollBarPolicy,
         _clipBehavior = clipBehavior {
     _scrollBarValueListener = ScrollBarValueListener(valueChanged: _onScrollBarValueChanged);
     _scrollPaneListener = ScrollPaneListener(onScrollOffsetChanged: _onScrollOffsetChanged);
-    this.scrollController = scrollController;
+    this.scrollController = controller;
   }
 
   late final ScrollBarValueListener _scrollBarValueListener;
@@ -1047,9 +1057,9 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
     }
   }
 
-  // TODO: see if there's a way to get rid of the need for this.
   bool _ignoreScrollControllerEvents = false;
-  void _ignoreScrollControllerNotifications(VoidCallback callback) {
+  void _invokeUpdateScrollOffsetCallback(VoidCallback callback) {
+    assert(!_ignoreScrollControllerEvents);
     _ignoreScrollControllerEvents = true;
     try {
       callback();
@@ -1142,15 +1152,15 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
   @override
   bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
     final List<RenderBox?> children = <RenderBox?>[
+      view,
       verticalScrollBar,
       horizontalScrollBar,
+      columnHeader,
+      rowHeader,
       topRightCorner,
       bottomRightCorner,
       bottomLeftCorner,
       topLeftCorner,
-      columnHeader,
-      rowHeader,
-      view,
     ];
 
     for (RenderBox? child in children) {
@@ -1609,7 +1619,7 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
       parentDataFor(topRightCorner!).visible = false;
     }
 
-    _ignoreScrollControllerNotifications(() {
+    _invokeUpdateScrollOffsetCallback(() {
       // This will bounds-check the scroll offset. We ignore scroll controller
       // notifications so as to keep from adjusting the scroll bar values
       // (we do so below when we lay the scroll bars out)
@@ -1744,7 +1754,7 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
 
     if (view != null) {
       final _ScrollPaneParentData viewParentData = parentDataFor(view!);
-      if (_clipBehavior == Clip.none) {
+      if (clipBehavior == Clip.none) {
         context.paintChild(view!, offset + viewParentData.offset);
       } else {
         Rect clipRect = Rect.fromLTWH(
@@ -1753,7 +1763,7 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
           viewportWidth,
           viewportHeight,
         ).shift(offset);
-        context.clipRectAndPaint(clipRect, _clipBehavior, clipRect, () {
+        context.clipRectAndPaint(clipRect, clipBehavior, clipRect, () {
           context.paintChild(view!, offset + viewParentData.offset);
         });
       }
@@ -1762,7 +1772,7 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
     if (rowHeader != null) {
       final _ScrollPaneParentData rowHeaderParentData = parentDataFor(rowHeader!);
       if (rowHeaderParentData.visible) {
-        if (_clipBehavior == Clip.none) {
+        if (clipBehavior == Clip.none) {
           context.paintChild(rowHeader!, offset + rowHeaderParentData.offset);
         } else {
           Rect clipRect = Rect.fromLTWH(
@@ -1771,7 +1781,7 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
             rowHeaderWidth,
             viewportHeight,
           ).shift(offset);
-          context.clipRectAndPaint(clipRect, _clipBehavior, clipRect, () {
+          context.clipRectAndPaint(clipRect, clipBehavior, clipRect, () {
             context.paintChild(rowHeader!, offset + rowHeaderParentData.offset);
           });
         }
@@ -1781,7 +1791,7 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
     if (columnHeader != null) {
       final _ScrollPaneParentData columnHeaderParentData = parentDataFor(columnHeader!);
       if (columnHeaderParentData.visible) {
-        if (_clipBehavior == Clip.none) {
+        if (clipBehavior == Clip.none) {
           context.paintChild(columnHeader!, offset + columnHeaderParentData.offset);
         } else {
           Rect clipRect = Rect.fromLTWH(
@@ -1790,7 +1800,7 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
             viewportWidth,
             columnHeaderHeight,
           ).shift(offset);
-          context.clipRectAndPaint(clipRect, _clipBehavior, clipRect, () {
+          context.clipRectAndPaint(clipRect, clipBehavior, clipRect, () {
             context.paintChild(columnHeader!, offset + columnHeaderParentData.offset);
           });
         }
