@@ -54,7 +54,7 @@ mixin VisibilityAwareMixin on RenderBox {
         }
       }
       child.visitChildren(visitor);
-    };
+    }
     return visitor;
   }
 
@@ -68,7 +68,7 @@ mixin VisibilityAwareMixin on RenderBox {
         }
       }
       child.visitChildren(visitor);
-    };
+    }
     return visitor;
   }
 

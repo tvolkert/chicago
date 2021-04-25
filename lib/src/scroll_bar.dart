@@ -25,7 +25,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import 'colors.dart' as colorUtils;
-import 'foundation.dart';
 import 'listener_list.dart';
 
 class ScrollBar extends StatelessWidget {
