@@ -35,8 +35,21 @@ class ScrollBar extends StatelessWidget {
     this.blockIncrement = 1,
   }) : super(key: key);
 
+  /// This scroll bar's orientation.
+  ///
+  /// This defaults to [Axis.vertical] if it's not specified in the
+  /// constructor.
+  ///
+  /// changing a scroll bar's orientation when rebuilding the widget is
+  /// currently not supported.
   final Axis orientation;
+
+  /// The value adjustment that will be made (up or down) when the user presses
+  /// the scroll bar buttons.
   final double unitIncrement;
+
+  /// The value adjustment that will be made (up or down) when the user taps
+  /// on the scroll bar track (on either side of the scroll bar handle).
   final double blockIncrement;
 
   @override
@@ -45,17 +58,10 @@ class ScrollBar extends StatelessWidget {
       orientation: orientation,
       unitIncrement: unitIncrement,
       blockIncrement: blockIncrement,
-      upButton: _ScrollBarButton(
-        orientation: orientation,
-        direction: -1,
-      ),
-      downButton: _ScrollBarButton(
-        orientation: orientation,
-        direction: 1,
-      ),
-      handle: _ScrollBarHandle(
-        orientation: orientation,
-      ),
+      upButton: _ScrollBarButton(orientation: orientation, direction: -1),
+      downButton: _ScrollBarButton(orientation: orientation, direction: 1),
+      handle: _ScrollBarHandle(orientation: orientation),
+      track: _ScrollBarTrack(orientation: orientation),
     );
   }
 }
@@ -77,6 +83,11 @@ class _ScrollBarButton extends LeafRenderObjectWidget {
       direction: direction,
     );
   }
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderScrollBarButton renderObject) {
+    assert(orientation == renderObject.orientation);
+  }
 }
 
 class _ScrollBarHandle extends LeafRenderObjectWidget {
@@ -93,6 +104,30 @@ class _ScrollBarHandle extends LeafRenderObjectWidget {
       orientation: orientation,
     );
   }
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderScrollBarHandle renderObject) {
+    assert(orientation == renderObject.orientation);
+  }
+}
+
+class _ScrollBarTrack extends LeafRenderObjectWidget {
+  const _ScrollBarTrack({
+    Key? key,
+    required this.orientation,
+  }) : super(key: key);
+
+  final Axis orientation;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) {
+    return _RenderScrollBarTrack(orientation: orientation);
+  }
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderScrollBarTrack renderObject) {
+    assert(orientation == renderObject.orientation);
+  }
 }
 
 class _ScrollBar extends RenderObjectWidget {
@@ -104,6 +139,7 @@ class _ScrollBar extends RenderObjectWidget {
     required this.upButton,
     required this.downButton,
     required this.handle,
+    required this.track,
   }) : super(key: key);
 
   final Axis orientation;
@@ -112,6 +148,7 @@ class _ScrollBar extends RenderObjectWidget {
   final Widget upButton;
   final Widget downButton;
   final Widget handle;
+  final Widget track;
 
   @override
   RenderObjectElement createElement() => _ScrollBarElement(this);
@@ -138,6 +175,7 @@ enum _ScrollBarSlot {
   upButton,
   downButton,
   handle,
+  track,
 }
 
 class _ScrollBarElement extends RenderObjectElement {
@@ -146,6 +184,7 @@ class _ScrollBarElement extends RenderObjectElement {
   Element? _upButton;
   Element? _downButton;
   Element? _handle;
+  Element? _track;
 
   @override
   _ScrollBar get widget => super.widget as _ScrollBar;
@@ -170,6 +209,7 @@ class _ScrollBarElement extends RenderObjectElement {
     _upButton = updateChild(_upButton, widget.upButton, _ScrollBarSlot.upButton);
     _downButton = updateChild(_downButton, widget.downButton, _ScrollBarSlot.downButton);
     _handle = updateChild(_handle, widget.handle, _ScrollBarSlot.handle);
+    _track = updateChild(_track, widget.track, _ScrollBarSlot.track);
   }
 
   @override
@@ -177,6 +217,7 @@ class _ScrollBarElement extends RenderObjectElement {
     if (_upButton != null) visitor(_upButton!);
     if (_downButton != null) visitor(_downButton!);
     if (_handle != null) visitor(_handle!);
+    if (_track != null) visitor(_track!);
   }
 
   @override
@@ -198,13 +239,16 @@ class _ScrollBarElement extends RenderObjectElement {
   void _updateChildSlot(_ScrollBarSlot slot, RenderBox? child) {
     switch (slot) {
       case _ScrollBarSlot.upButton:
-        renderObject.upButton = child as _RenderScrollBarButton;
+        renderObject.upButton = child as _RenderScrollBarButton?;
         break;
       case _ScrollBarSlot.downButton:
-        renderObject.downButton = child as _RenderScrollBarButton;
+        renderObject.downButton = child as _RenderScrollBarButton?;
         break;
       case _ScrollBarSlot.handle:
-        renderObject.handle = child as _RenderScrollBarHandle;
+        renderObject.handle = child as _RenderScrollBarHandle?;
+        break;
+      case _ScrollBarSlot.track:
+        renderObject.track = child as _RenderScrollBarTrack?;
         break;
     }
   }
@@ -352,6 +396,15 @@ class RenderScrollBar extends RenderBox with ListenerNotifier<ScrollBarValueList
     if (_handle != null) adoptChild(_handle!);
   }
 
+  _RenderScrollBarTrack? _track;
+  _RenderScrollBarTrack? get track => _track;
+  set track(_RenderScrollBarTrack? value) {
+    if (value == _track) return;
+    if (_track != null) dropChild(_track!);
+    _track = value;
+    if (_track != null) adoptChild(_track!);
+  }
+
   bool _enabled;
   bool get enabled => _enabled;
 
@@ -372,13 +425,13 @@ class RenderScrollBar extends RenderBox with ListenerNotifier<ScrollBarValueList
     // markNeedsLayout() would yield the correct behavior but would do more
     // work than needed. If all that has changed is the value, we can just
     // update the handle's location and save the work of a full layout.
-    if (parentDataFor(handle!).visible) {
+    if (handle!.parentData!.visible) {
       if (orientation == Axis.horizontal) {
-        double handleX = (value * _pixelValueRatio) + _upButtonSize.width - 1;
-        parentDataFor(handle!).offset = Offset(handleX, 1);
+        final double handleX = (value * _pixelValueRatio) + _upButtonSize.width - 1;
+        handle!.parentData!.offset = Offset(handleX, 1);
       } else {
-        double handleY = (value * _pixelValueRatio) + _upButtonSize.height - 1;
-        parentDataFor(handle!).offset = Offset(1, handleY);
+        final double handleY = (value * _pixelValueRatio) + _upButtonSize.height - 1;
+        handle!.parentData!.offset = Offset(1, handleY);
       }
     }
 
@@ -436,23 +489,20 @@ class RenderScrollBar extends RenderBox with ListenerNotifier<ScrollBarValueList
     return numLegalPixelValues / numLegalRealValues;
   }
 
-  _ScrollBarParentData parentDataFor(RenderBox child) => child.parentData as _ScrollBarParentData;
-
   @override
   ScrollBarConstraints get constraints => super.constraints as ScrollBarConstraints;
 
-  void _onPointerDown(PointerDownEvent event) {
-    if (event.buttons & kPrimaryMouseButton != 0 && parentDataFor(handle!).visible) {
+  void _handleTrackTapDown(Offset position) {
+    if (handle!.parentData!.visible) {
       // Begin automatic block scrolling. Calculate the direction of
       // the scroll by checking to see if the user pressed the pointer
       // in the area "before" the handle or "after" it.
-      int direction;
-      double realStopValue;
+      final int direction;
+      final double realStopValue;
 
       if (orientation == Axis.horizontal) {
-        direction = event.localPosition.dx < parentDataFor(handle!).offset.dx ? -1 : 1;
-
-        double pixelStopValue = event.localPosition.dx - _upButtonSize.width + 1;
+        direction = position.dx < handle!.parentData!.offset.dx ? -1 : 1;
+        double pixelStopValue = position.dx - _upButtonSize.width + 1;
 
         if (direction == 1) {
           // If we're scrolling down, account for the width of the
@@ -463,9 +513,8 @@ class RenderScrollBar extends RenderBox with ListenerNotifier<ScrollBarValueList
 
         realStopValue = pixelStopValue / _pixelValueRatio;
       } else {
-        direction = event.localPosition.dy < parentDataFor(handle!).offset.dy ? -1 : 1;
-
-        double pixelStopValue = event.localPosition.dy - _upButtonSize.height + 1;
+        direction = position.dy < handle!.parentData!.offset.dy ? -1 : 1;
+        double pixelStopValue = position.dy - _upButtonSize.height + 1;
 
         if (direction == 1) {
           // If we're scrolling down, account for the height of the
@@ -482,7 +531,11 @@ class RenderScrollBar extends RenderBox with ListenerNotifier<ScrollBarValueList
     }
   }
 
-  void _onPointerUp(PointerUpEvent event) {
+  void _handleTrackTapCancel() {
+    automaticScroller.stop();
+  }
+
+  void _handleTrackTapUp() {
     automaticScroller.stop();
   }
 
@@ -497,14 +550,16 @@ class RenderScrollBar extends RenderBox with ListenerNotifier<ScrollBarValueList
     upButton?.attach(owner);
     downButton?.attach(owner);
     handle?.attach(owner);
+    track?.attach(owner);
   }
 
   @override
   void detach() {
-    super.detach();
     upButton?.detach();
     downButton?.detach();
     handle?.detach();
+    track?.detach();
+    super.detach();
   }
 
   @override
@@ -512,14 +567,7 @@ class RenderScrollBar extends RenderBox with ListenerNotifier<ScrollBarValueList
     if (upButton != null) visitor(upButton!);
     if (downButton != null) visitor(downButton!);
     if (handle != null) visitor(handle!);
-  }
-
-  @override
-  void handleEvent(PointerEvent event, BoxHitTestEntry entry) {
-    assert(debugHandleEvent(event, entry));
-    if (event is PointerDownEvent) return _onPointerDown(event);
-    if (event is PointerUpEvent) return _onPointerUp(event);
-    super.handleEvent(event, entry);
+    if (track != null) visitor(track!);
   }
 
   @override
@@ -562,18 +610,21 @@ class RenderScrollBar extends RenderBox with ListenerNotifier<ScrollBarValueList
     double numLegalRealValues = maxLegalRealValue - start + 1;
     double extentPercentage = extent / (end - start);
 
+    track!.layout(constraints);
+    track!.parentData!.visible = true;
+
     if (orientation == Axis.horizontal) {
       upButton!.layout(BoxConstraints.tightFor(height: size.height), parentUsesSize: true);
-      parentDataFor(upButton!).visible = true;
-      parentDataFor(upButton!).offset = Offset.zero;
+      upButton!.parentData!.visible = true;
+      upButton!.parentData!.offset = Offset.zero;
 
       downButton!.layout(BoxConstraints.tightFor(height: size.height), parentUsesSize: true);
-      parentDataFor(downButton!).visible = true;
-      parentDataFor(downButton!).offset = Offset(size.width - downButton!.size.width, 0);
+      downButton!.parentData!.visible = true;
+      downButton!.parentData!.offset = Offset(size.width - downButton!.size.width, 0);
 
       if (size.width < upButton!.size.width + downButton!.size.width) {
-        parentDataFor(upButton!).visible = false;
-        parentDataFor(downButton!).visible = false;
+        upButton!.parentData!.visible = false;
+        downButton!.parentData!.visible = false;
       }
 
       if (enabled) {
@@ -593,29 +644,29 @@ class RenderScrollBar extends RenderBox with ListenerNotifier<ScrollBarValueList
         if (handleWidth > availableWidth) {
           // If we can't fit the handle, we hide it
           handle!.layout(BoxConstraints.tight(Size.zero), parentUsesSize: true);
-          parentDataFor(handle!).visible = false;
+          handle!.parentData!.visible = false;
         } else {
           handle!.layout(BoxConstraints.tightFor(width: handleWidth, height: size.height - 2),
               parentUsesSize: true);
-          parentDataFor(handle!).visible = true;
-          parentDataFor(handle!).offset = Offset(handleX, 1);
+          handle!.parentData!.visible = true;
+          handle!.parentData!.offset = Offset(handleX, 1);
         }
       } else {
         handle!.layout(BoxConstraints.tight(Size.zero), parentUsesSize: true);
-        parentDataFor(handle!).visible = false;
+        handle!.parentData!.visible = false;
       }
     } else {
       upButton!.layout(BoxConstraints.tightFor(width: size.width), parentUsesSize: true);
-      parentDataFor(upButton!).visible = true;
-      parentDataFor(upButton!).offset = Offset.zero;
+      upButton!.parentData!.visible = true;
+      upButton!.parentData!.offset = Offset.zero;
 
       downButton!.layout(BoxConstraints.tightFor(width: size.width), parentUsesSize: true);
-      parentDataFor(downButton!).visible = true;
-      parentDataFor(downButton!).offset = Offset(0, size.height - downButton!.size.height);
+      downButton!.parentData!.visible = true;
+      downButton!.parentData!.offset = Offset(0, size.height - downButton!.size.height);
 
       if (size.height < upButton!.size.height + downButton!.size.height) {
-        parentDataFor(upButton!).visible = false;
-        parentDataFor(downButton!).visible = false;
+        upButton!.parentData!.visible = false;
+        downButton!.parentData!.visible = false;
       }
 
       if (enabled) {
@@ -635,16 +686,16 @@ class RenderScrollBar extends RenderBox with ListenerNotifier<ScrollBarValueList
         if (handleHeight > availableHeight) {
           // If we can't fit the handle, we hide it
           handle!.layout(BoxConstraints.tight(Size.zero), parentUsesSize: true);
-          parentDataFor(handle!).visible = false;
+          handle!.parentData!.visible = false;
         } else {
           handle!.layout(BoxConstraints.tightFor(width: size.width - 2, height: handleHeight),
               parentUsesSize: true);
-          parentDataFor(handle!).visible = true;
-          parentDataFor(handle!).offset = Offset(1, handleY);
+          handle!.parentData!.visible = true;
+          handle!.parentData!.offset = Offset(1, handleY);
         }
       } else {
         handle!.layout(BoxConstraints.tight(Size.zero), parentUsesSize: true);
-        parentDataFor(handle!).visible = false;
+        handle!.parentData!.visible = false;
       }
     }
 
@@ -655,53 +706,7 @@ class RenderScrollBar extends RenderBox with ListenerNotifier<ScrollBarValueList
 
   @override
   void paint(PaintingContext context, Offset offset) {
-    // Paint the track background.
-    Paint bgPaint = Paint()..style = PaintingStyle.fill;
-    Paint borderPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1
-      ..color = const Color(0xff999999);
-    List<Color> colors = <Color>[const Color(0xffc5c3bc), const Color(0xffdedcd4)];
-    switch (orientation) {
-      case Axis.horizontal:
-        bgPaint.shader = ui.Gradient.linear(
-          offset + Offset(0, 1.5),
-          offset + Offset(0, size.height - 1.5),
-          colors,
-        );
-        context.canvas.drawRect(offset & size, bgPaint);
-        context.canvas.drawLine(
-          offset + Offset(upButton!.size.width, 0.5),
-          offset + Offset(size.width - downButton!.size.width, 0.5),
-          borderPaint,
-        );
-        context.canvas.drawLine(
-          offset + Offset(upButton!.size.width, size.height - 0.5),
-          offset + Offset(size.width - downButton!.size.width, size.height - 0.5),
-          borderPaint,
-        );
-        break;
-      case Axis.vertical:
-        bgPaint.shader = ui.Gradient.linear(
-          offset + Offset(1.5, 0),
-          offset + Offset(size.width - 1.5, 0),
-          colors,
-        );
-        context.canvas.drawRect(offset & size, bgPaint);
-        context.canvas.drawLine(
-          offset + Offset(0.5, upButton!.size.height),
-          offset + Offset(0.5, size.height - downButton!.size.height),
-          borderPaint,
-        );
-        context.canvas.drawLine(
-          offset + Offset(size.width - 0.5, upButton!.size.height),
-          offset + Offset(size.width - 0.5, size.height - downButton!.size.height),
-          borderPaint,
-        );
-        break;
-    }
-
-    for (RenderBox child in <RenderBox>[upButton!, downButton!, handle!]) {
+    for (RenderBox child in <RenderBox>[track!, upButton!, downButton!, handle!]) {
       final _ScrollBarParentData childParentData = child.parentData as _ScrollBarParentData;
       if (childParentData.visible) {
         context.paintChild(child, childParentData.offset + offset);
@@ -710,51 +715,8 @@ class RenderScrollBar extends RenderBox with ListenerNotifier<ScrollBarValueList
   }
 
   @override
-  bool hitTest(BoxHitTestResult result, {required ui.Offset position}) {
-    assert(() {
-      if (!hasSize) {
-        if (debugNeedsLayout) {
-          throw FlutterError.fromParts(<DiagnosticsNode>[
-            ErrorSummary('Cannot hit test a render box that has never been laid out.'),
-            describeForError('The hitTest() method was called on this RenderBox'),
-            ErrorDescription("Unfortunately, this object's geometry is not known at this time, "
-                'probably because it has never been laid out. '
-                'This means it cannot be accurately hit-tested.'),
-            ErrorHint('If you are trying '
-                'to perform a hit test during the layout phase itself, make sure '
-                "you only hit test nodes that have completed layout (e.g. the node's "
-                'children, after their layout() method has been called).'),
-          ]);
-        }
-        throw FlutterError.fromParts(<DiagnosticsNode>[
-          ErrorSummary('Cannot hit test a render box with no size.'),
-          describeForError('The hitTest() method was called on this RenderBox'),
-          ErrorDescription('Although this node is not marked as needing layout, '
-              'its size is not set.'),
-          ErrorHint('A RenderBox object must have an '
-              'explicit size before it can be hit-tested. Make sure '
-              'that the RenderBox in question sets its size during layout.'),
-        ]);
-      }
-      return true;
-    }());
-    if (size.contains(position)) {
-      if (hitTestChildren(result, position: position)) {
-        // Intentionally don't add a hit test entry for the scroll bar if one
-        // of the children was hit.  i.e. the children "consume" the hit
-        // before it reaches the scroll bar track.
-        return true;
-      } else if (hitTestSelf(position)) {
-        result.add(BoxHitTestEntry(this, position));
-        return true;
-      }
-    }
-    return false;
-  }
-
-  @override
   bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
-    for (RenderBox child in <RenderBox>[upButton!, downButton!, handle!]) {
+    for (RenderBox child in <RenderBox>[upButton!, downButton!, handle!, track!]) {
       final _ScrollBarParentData childParentData = child.parentData as _ScrollBarParentData;
       final bool isHit = result.addWithPaintOffset(
         offset: childParentData.offset,
@@ -771,9 +733,6 @@ class RenderScrollBar extends RenderBox with ListenerNotifier<ScrollBarValueList
 
     return false;
   }
-
-  @override
-  bool hitTestSelf(ui.Offset position) => true;
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -794,9 +753,11 @@ class RenderScrollBar extends RenderBox with ListenerNotifier<ScrollBarValueList
     void add(RenderBox? child, String name) {
       if (child != null) result.add(child.toDiagnosticsNode(name: name));
     }
+
     add(upButton, 'upButton');
     add(downButton, 'downButton');
     add(handle, 'handle');
+    add(track, 'track');
     return result;
   }
 }
@@ -900,6 +861,9 @@ class _RenderScrollBarButton extends RenderBox
 
   @override
   RenderScrollBar? get parent => super.parent as RenderScrollBar?;
+
+  @override
+  _ScrollBarParentData? get parentData => super.parentData as _ScrollBarParentData?;
 
   @override
   RenderMouseRegion get child => super.child as RenderMouseRegion;
@@ -1017,7 +981,7 @@ class _RenderScrollBarHandle extends RenderBox
   RenderScrollBar? get parent => super.parent as RenderScrollBar?;
 
   @override
-  BoxParentData? get parentData => super.parentData as BoxParentData?;
+  _ScrollBarParentData? get parentData => super.parentData as _ScrollBarParentData?;
 
   @override
   void handleEvent(PointerEvent event, BoxHitTestEntry entry) {
@@ -1057,6 +1021,109 @@ class _RenderScrollBarHandle extends RenderBox
     }
 
     context.paintChild(child!, offset);
+  }
+}
+
+class _RenderScrollBarTrack extends RenderBox {
+  _RenderScrollBarTrack({required this.orientation});
+
+  final Axis orientation;
+  late TapGestureRecognizer _tap;
+
+  void _handleTapDown(TapDownDetails details) {
+    parent._handleTrackTapDown(details.localPosition + parentData!.offset);
+  }
+
+  void _handleTapCancel() {
+    parent._handleTrackTapCancel();
+  }
+
+  void _handleTapUp(TapUpDetails details) {
+    parent._handleTrackTapUp();
+  }
+
+  @override
+  RenderScrollBar get parent => super.parent as RenderScrollBar;
+
+  @override
+  _ScrollBarParentData? get parentData => super.parentData as _ScrollBarParentData?;
+
+  @override
+  void attach(PipelineOwner owner) {
+    super.attach(owner);
+    _tap = TapGestureRecognizer(debugOwner: this)
+      ..onTapDown = _handleTapDown
+      ..onTapCancel = _handleTapCancel
+      ..onTapUp = _handleTapUp;
+  }
+
+  @override
+  void detach() {
+    _tap.dispose();
+    super.detach();
+  }
+
+  @override
+  void handleEvent(PointerEvent event, covariant BoxHitTestEntry entry) {
+    if (event is PointerDownEvent) return _tap.addPointer(event);
+    super.handleEvent(event, entry);
+  }
+
+  @override
+  bool hitTestSelf(ui.Offset position) => true;
+
+  @override
+  bool get sizedByParent => true;
+
+  @override
+  Size computeDryLayout(BoxConstraints constraints) => constraints.smallest;
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    final Paint bgPaint = Paint()..style = PaintingStyle.fill;
+    final Paint borderPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..color = const Color(0xff999999);
+    const List<Color> colors = <Color>[Color(0xffc5c3bc), Color(0xffdedcd4)];
+    switch (orientation) {
+      case Axis.horizontal:
+        bgPaint.shader = ui.Gradient.linear(
+          offset + Offset(0, 1.5),
+          offset + Offset(0, size.height - 1.5),
+          colors,
+        );
+        context.canvas.drawRect(offset & size, bgPaint);
+        context.canvas.drawLine(
+          offset + Offset(0, 0.5),
+          offset + Offset(size.width, 0.5),
+          borderPaint,
+        );
+        context.canvas.drawLine(
+          offset + Offset(0, size.height - 0.5),
+          offset + Offset(size.width, size.height - 0.5),
+          borderPaint,
+        );
+        break;
+      case Axis.vertical:
+        bgPaint.shader = ui.Gradient.linear(
+          offset + Offset(1.5, 0),
+          offset + Offset(size.width - 1.5, 0),
+          colors,
+        );
+        context.canvas.drawRect(offset & size, bgPaint);
+        context.canvas.drawLine(
+          offset + Offset(0.5, 0),
+          offset + Offset(0.5, size.height),
+          borderPaint,
+        );
+        context.canvas.drawLine(
+          offset + Offset(size.width - 0.5, 0),
+          offset + Offset(size.width - 0.5, size.height),
+          borderPaint,
+        );
+        break;
+    }
   }
 }
 
