@@ -792,6 +792,12 @@ class _RenderScrollBarButton extends RenderBox implements MouseTrackerAnnotation
 
   final Axis orientation;
   final int direction;
+  // TODO: use LongPressGestureRecognizer once it supports onLongPressDown and
+  // TODO: onLongPressCancel. Doing do will avoid the current problem of the
+  // TODO: tap and pan gestures both remaining in the arena in limbo and the
+  // TODO: pan gesture winning if the user drags the pointer after having held
+  // TODO: it down for 400+ms.
+  late final TapGestureRecognizer _tap;
 
   static const double _length = 15;
 
@@ -830,19 +836,17 @@ class _RenderScrollBarButton extends RenderBox implements MouseTrackerAnnotation
     pressed = false;
   }
 
-  void _onPointerDown(PointerDownEvent event) {
-    if (event.buttons & kPrimaryMouseButton != 0) {
-      parent!.automaticScroller.start(direction, _ScrollType.unit, -1);
-      pressed = true;
-    }
+  void _handleTapDown(TapDownDetails details) {
+    parent!.automaticScroller.start(direction, _ScrollType.unit);
+    pressed = true;
   }
 
-  void _onPointerUp(PointerUpEvent event) {
+  void _handleTapCancel() {
     parent!.automaticScroller.stop();
     pressed = false;
   }
 
-  void _onPointerCancel(PointerCancelEvent event) {
+  void _handleTapUp(TapUpDetails details) {
     parent!.automaticScroller.stop();
     pressed = false;
   }
@@ -866,13 +870,25 @@ class _RenderScrollBarButton extends RenderBox implements MouseTrackerAnnotation
   bool get validForMouseTracker => true;
 
   @override
+  void attach(PipelineOwner owner) {
+    super.attach(owner);
+    _tap = TapGestureRecognizer(debugOwner: this)
+      ..onTapDown = _handleTapDown
+      ..onTapCancel = _handleTapCancel
+      ..onTapUp = _handleTapUp;
+  }
+
+  @override
+  void detach() {
+    _tap.dispose();
+    super.detach();
+  }
+
+  @override
   void handleEvent(PointerEvent event, BoxHitTestEntry entry) {
     assert(debugHandleEvent(event, entry));
     if (!enabled) return;
-    if (event is PointerDownEvent) return _onPointerDown(event);
-    if (event is PointerUpEvent) return _onPointerUp(event);
-    if (event is PointerCancelEvent) return _onPointerCancel(event);
-    super.handleEvent(event, entry);
+    if (event is PointerDownEvent) return _tap.addPointer(event);
   }
 
   @override
@@ -915,6 +931,7 @@ class _RenderScrollBarHandle extends RenderBox implements MouseTrackerAnnotation
   _RenderScrollBarHandle({required this.orientation});
 
   final Axis orientation;
+  late final PanGestureRecognizer _pan;
 
   bool _highlighted = false;
   bool get highlighted => _highlighted;
@@ -934,33 +951,39 @@ class _RenderScrollBarHandle extends RenderBox implements MouseTrackerAnnotation
 
   double? _dragOffset;
 
-  void _onPointerDown(PointerDownEvent event) {
-    if (event.buttons & kPrimaryMouseButton != 0) {
-      _dragOffset = orientation == Axis.horizontal
-          ? event.position.dx - parentData!.offset.dx + parent!._upButtonSize.width - 1
-          : event.position.dy - parentData!.offset.dy + parent!._upButtonSize.height - 1;
-    }
+  void _handlePanDown(DragDownDetails details) {
+    _dragOffset = orientation == Axis.horizontal
+        ? details.localPosition.dx - parentData!.offset.dx + parent!._upButtonSize.width - 1
+        : details.localPosition.dy - parentData!.offset.dy + parent!._upButtonSize.height - 1;
   }
 
-  void _onPointerUp(PointerUpEvent event) {
-    _dragOffset = null;
-    markNeedsPaint();
+  void _handlePanCancel() {
+    _resetPan();
   }
 
-  void _onPointerMove(PointerMoveEvent event) {
+  void _handlePanUpdate(DragUpdateDetails details) {
     if (_dragOffset != null) {
       // Calculate the new scroll bar value
       double pixelValue;
       if (orientation == Axis.horizontal) {
-        pixelValue = event.position.dx - _dragOffset!;
+        pixelValue = details.localPosition.dx - _dragOffset!;
       } else {
-        pixelValue = event.position.dy - _dragOffset!;
+        pixelValue = details.localPosition.dy - _dragOffset!;
       }
 
       double scrollBarValue = (pixelValue / parent!._pixelValueRatio);
       scrollBarValue = math.min(math.max(scrollBarValue, 0), parent!.end - parent!.extent);
       parent!.value = scrollBarValue;
     }
+  }
+
+  void _handlePanEnd(DragEndDetails details) {
+    _resetPan();
+  }
+
+  void _resetPan() {
+    _dragOffset = null;
+    markNeedsPaint();
   }
 
   @override
@@ -982,12 +1005,25 @@ class _RenderScrollBarHandle extends RenderBox implements MouseTrackerAnnotation
   bool get validForMouseTracker => true;
 
   @override
+  void attach(PipelineOwner owner) {
+    super.attach(owner);
+    _pan = PanGestureRecognizer(debugOwner: this)
+      ..onDown = _handlePanDown
+      ..onCancel = _handlePanCancel
+      ..onUpdate = _handlePanUpdate
+      ..onEnd = _handlePanEnd;
+  }
+
+  @override
+  void detach() {
+    _pan.dispose();
+    super.detach();
+  }
+
+  @override
   void handleEvent(PointerEvent event, BoxHitTestEntry entry) {
     assert(debugHandleEvent(event, entry));
-    if (event is PointerDownEvent) return _onPointerDown(event);
-    if (event is PointerUpEvent) return _onPointerUp(event);
-    if (event is PointerMoveEvent) return _onPointerMove(event);
-    super.handleEvent(event, entry);
+    if (event is PointerDownEvent) return _pan.addPointer(event);
   }
 
   @override
@@ -1056,8 +1092,8 @@ class _RenderScrollBarTrack extends RenderBox {
 
   @override
   void handleEvent(PointerEvent event, covariant BoxHitTestEntry entry) {
+    assert(debugHandleEvent(event, entry));
     if (event is PointerDownEvent) return _tap.addPointer(event);
-    super.handleEvent(event, entry);
   }
 
   @override
@@ -1366,9 +1402,6 @@ class _AutomaticScroller {
 
   final RenderScrollBar scrollBar;
 
-  late int direction;
-  late _ScrollType incrementType;
-  late double stopValue;
   Timer? scheduledScrollTimer;
 
   static const Duration _delay = Duration(milliseconds: 400);
@@ -1392,24 +1425,20 @@ class _AutomaticScroller {
   /// @exception IllegalStateException
   /// If automatic scrolling of any scroll bar is already in progress.
   /// Only one scroll bar may be automatically scrolled at one time
-  void start(int direction, _ScrollType incrementType, double stopValue) {
+  void start(int direction, _ScrollType incrementType, [double? stopValue]) {
     if (scheduledScrollTimer != null) {
       throw StateError('Already running');
     }
 
-    this.direction = direction;
-    this.incrementType = incrementType;
-    this.stopValue = stopValue;
-
     // Wait a timeout period, then begin rapidly scrolling
     scheduledScrollTimer = Timer(_delay, () {
       scheduledScrollTimer = Timer.periodic(_interval, (Timer timer) {
-        scroll();
+        scroll(direction, incrementType, stopValue);
       });
     });
 
     // We initially scroll once to register that we've started
-    scroll();
+    scroll(direction, incrementType, stopValue);
   }
 
   /// Stops any automatic scrolling in progress.
@@ -1420,7 +1449,7 @@ class _AutomaticScroller {
     }
   }
 
-  void scroll() {
+  void scroll(int direction, _ScrollType incrementType, [double? stopValue]) {
     double start = scrollBar.start;
     double end = scrollBar.end;
     double extent = scrollBar.extent;
@@ -1438,7 +1467,7 @@ class _AutomaticScroller {
       double newValue = math.max(value + adjustment, start);
       scrollBar.value = newValue;
 
-      if (stopValue != -1 && newValue < stopValue) {
+      if (stopValue != null && newValue < stopValue) {
         // We've reached the explicit stop value
         stop();
       }
@@ -1451,7 +1480,7 @@ class _AutomaticScroller {
       double newValue = math.min(value + adjustment, end - extent);
       scrollBar.value = newValue;
 
-      if (stopValue != -1 && newValue > stopValue) {
+      if (stopValue != null && newValue > stopValue) {
         // We've reached the explicit stop value
         stop();
       }
