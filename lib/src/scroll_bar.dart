@@ -492,51 +492,43 @@ class RenderScrollBar extends RenderBox with ListenerNotifier<ScrollBarValueList
   @override
   ScrollBarConstraints get constraints => super.constraints as ScrollBarConstraints;
 
-  void _handleTrackTapDown(Offset position) {
-    if (handle!.parentData!.visible) {
-      // Begin automatic block scrolling. Calculate the direction of
-      // the scroll by checking to see if the user pressed the pointer
-      // in the area "before" the handle or "after" it.
-      final int direction;
-      final double realStopValue;
+  _AutomaticScrollerParameters? _getTrackScrollParameters(Offset position) {
+    if (!handle!.parentData!.visible) {
+      return null;
+    }
 
-      if (orientation == Axis.horizontal) {
-        direction = position.dx < handle!.parentData!.offset.dx ? -1 : 1;
-        double pixelStopValue = position.dx - _upButtonSize.width + 1;
+    // Calculate the direction of the scroll by checking to see if the user
+    // pressed the pointer in the area "before" the handle or "after" it.
+    final int direction;
+    final double realStopValue;
 
-        if (direction == 1) {
-          // If we're scrolling down, account for the width of the
-          // handle in our pixel stop value so that we stop as soon
-          // as the *bottom* of the handle reaches our click point
-          pixelStopValue -= _handleSize.width;
-        }
+    if (orientation == Axis.horizontal) {
+      direction = position.dx < handle!.parentData!.offset.dx ? -1 : 1;
+      double pixelStopValue = position.dx - _upButtonSize.width + 1;
 
-        realStopValue = pixelStopValue / _pixelValueRatio;
-      } else {
-        direction = position.dy < handle!.parentData!.offset.dy ? -1 : 1;
-        double pixelStopValue = position.dy - _upButtonSize.height + 1;
-
-        if (direction == 1) {
-          // If we're scrolling down, account for the height of the
-          // handle in our pixel stop value so that we stop as soon
-          // as the *bottom* of the handle reaches our click point
-          pixelStopValue -= _handleSize.height;
-        }
-
-        realStopValue = pixelStopValue / _pixelValueRatio;
+      if (direction == 1) {
+        // If we're scrolling down, account for the width of the
+        // handle in our pixel stop value so that we stop as soon
+        // as the *bottom* of the handle reaches our click point
+        pixelStopValue -= _handleSize.width;
       }
 
-      // Start the automatic scroller
-      automaticScroller.start(direction, _ScrollType.block, realStopValue);
+      realStopValue = pixelStopValue / _pixelValueRatio;
+    } else {
+      direction = position.dy < handle!.parentData!.offset.dy ? -1 : 1;
+      double pixelStopValue = position.dy - _upButtonSize.height + 1;
+
+      if (direction == 1) {
+        // If we're scrolling down, account for the height of the
+        // handle in our pixel stop value so that we stop as soon
+        // as the *bottom* of the handle reaches our click point
+        pixelStopValue -= _handleSize.height;
+      }
+
+      realStopValue = pixelStopValue / _pixelValueRatio;
     }
-  }
 
-  void _handleTrackTapCancel() {
-    automaticScroller.stop();
-  }
-
-  void _handleTrackTapUp() {
-    automaticScroller.stop();
+    return _AutomaticScrollerParameters(direction, realStopValue);
   }
 
   @override
@@ -792,12 +784,7 @@ class _RenderScrollBarButton extends RenderBox implements MouseTrackerAnnotation
 
   final Axis orientation;
   final int direction;
-  // TODO: use LongPressGestureRecognizer once it supports onLongPressDown and
-  // TODO: onLongPressCancel. Doing do will avoid the current problem of the
-  // TODO: tap and pan gestures both remaining in the arena in limbo and the
-  // TODO: pan gesture winning if the user drags the pointer after having held
-  // TODO: it down for 400+ms.
-  late final TapGestureRecognizer _tap;
+  late final LongPressGestureRecognizer _longPress;
 
   static const double _length = 15;
 
@@ -836,17 +823,21 @@ class _RenderScrollBarButton extends RenderBox implements MouseTrackerAnnotation
     pressed = false;
   }
 
-  void _handleTapDown(TapDownDetails details) {
-    parent!.automaticScroller.start(direction, _ScrollType.unit);
+  void _handleLongPressDown(LongPressDownDetails details) {
+    parent!.automaticScroller.scroll(direction, _ScrollType.unit);
     pressed = true;
   }
 
-  void _handleTapCancel() {
+  void _handleLongPressCancel() {
     parent!.automaticScroller.stop();
     pressed = false;
   }
 
-  void _handleTapUp(TapUpDetails details) {
+  void _handleLongPressStart(LongPressStartDetails details) {
+    parent!.automaticScroller.start(direction, _ScrollType.unit);
+  }
+
+  void _handleLongPressEnd(LongPressEndDetails details) {
     parent!.automaticScroller.stop();
     pressed = false;
   }
@@ -858,7 +849,7 @@ class _RenderScrollBarButton extends RenderBox implements MouseTrackerAnnotation
   _ScrollBarParentData? get parentData => super.parentData as _ScrollBarParentData?;
 
   @override
-  MouseCursor get cursor => _enabled ? SystemMouseCursors.click : MouseCursor.defer;
+  MouseCursor get cursor => MouseCursor.defer;
 
   @override
   PointerEnterEventListener? get onEnter => _onEnter;
@@ -872,15 +863,16 @@ class _RenderScrollBarButton extends RenderBox implements MouseTrackerAnnotation
   @override
   void attach(PipelineOwner owner) {
     super.attach(owner);
-    _tap = TapGestureRecognizer(debugOwner: this)
-      ..onTapDown = _handleTapDown
-      ..onTapCancel = _handleTapCancel
-      ..onTapUp = _handleTapUp;
+    _longPress = LongPressGestureRecognizer(debugOwner: this, duration: _AutomaticScroller._delay)
+      ..onLongPressDown = _handleLongPressDown
+      ..onLongPressCancel = _handleLongPressCancel
+      ..onLongPressStart = _handleLongPressStart
+      ..onLongPressEnd = _handleLongPressEnd;
   }
 
   @override
   void detach() {
-    _tap.dispose();
+    _longPress.dispose();
     super.detach();
   }
 
@@ -888,7 +880,7 @@ class _RenderScrollBarButton extends RenderBox implements MouseTrackerAnnotation
   void handleEvent(PointerEvent event, BoxHitTestEntry entry) {
     assert(debugHandleEvent(event, entry));
     if (!enabled) return;
-    if (event is PointerDownEvent) return _tap.addPointer(event);
+    if (event is PointerDownEvent) return _longPress.addPointer(event);
   }
 
   @override
@@ -1051,22 +1043,39 @@ class _RenderScrollBarHandle extends RenderBox implements MouseTrackerAnnotation
   }
 }
 
-class _RenderScrollBarTrack extends RenderBox {
+class _RenderScrollBarTrack extends RenderBox implements MouseTrackerAnnotation {
   _RenderScrollBarTrack({required this.orientation});
 
   final Axis orientation;
-  late TapGestureRecognizer _tap;
+  late final LongPressGestureRecognizer _longPress;
 
-  void _handleTapDown(TapDownDetails details) {
-    parent._handleTrackTapDown(details.localPosition + parentData!.offset);
+  _AutomaticScrollerParameters? _scroll;
+
+  void _handleLongPressDown(LongPressDownDetails details) {
+    _scroll = parent._getTrackScrollParameters(details.localPosition + parentData!.offset);
+    if (_scroll != null) {
+      parent.automaticScroller.scroll(_scroll!.direction, _ScrollType.block);
+    }
   }
 
-  void _handleTapCancel() {
-    parent._handleTrackTapCancel();
+  void _handleLongPressCancel() {
+    parent.automaticScroller.stop();
+    _scroll = null;
   }
 
-  void _handleTapUp(TapUpDetails details) {
-    parent._handleTrackTapUp();
+  void _handleLongPressStart(LongPressStartDetails details) {
+    if (_scroll != null) {
+      parent.automaticScroller.start(_scroll!.direction, _ScrollType.block, _scroll!.stopValue);
+    }
+  }
+
+  void _handleLongPressEnd(LongPressEndDetails details) {
+    parent.automaticScroller.stop();
+    _scroll = null;
+  }
+
+  void _handleExit(PointerExitEvent event) {
+    parent.automaticScroller.stop();
   }
 
   @override
@@ -1076,24 +1085,37 @@ class _RenderScrollBarTrack extends RenderBox {
   _ScrollBarParentData? get parentData => super.parentData as _ScrollBarParentData?;
 
   @override
+  MouseCursor get cursor => MouseCursor.defer;
+
+  @override
+  PointerEnterEventListener? get onEnter => null;
+
+  @override
+  PointerExitEventListener? get onExit => _handleExit;
+
+  @override
+  bool get validForMouseTracker => true;
+
+  @override
   void attach(PipelineOwner owner) {
     super.attach(owner);
-    _tap = TapGestureRecognizer(debugOwner: this)
-      ..onTapDown = _handleTapDown
-      ..onTapCancel = _handleTapCancel
-      ..onTapUp = _handleTapUp;
+    _longPress = LongPressGestureRecognizer(debugOwner: this, duration: _AutomaticScroller._delay)
+      ..onLongPressDown = _handleLongPressDown
+      ..onLongPressCancel = _handleLongPressCancel
+      ..onLongPressStart = _handleLongPressStart
+      ..onLongPressEnd = _handleLongPressEnd;
   }
 
   @override
   void detach() {
-    _tap.dispose();
+    _longPress.dispose();
     super.detach();
   }
 
   @override
   void handleEvent(PointerEvent event, covariant BoxHitTestEntry entry) {
     assert(debugHandleEvent(event, entry));
-    if (event is PointerDownEvent) return _tap.addPointer(event);
+    if (event is PointerDownEvent) return _longPress.addPointer(event);
   }
 
   @override
@@ -1395,6 +1417,14 @@ class _HandlePainter extends CustomPainter {
   }
 }
 
+@immutable
+class _AutomaticScrollerParameters {
+  const _AutomaticScrollerParameters(this.direction, this.stopValue);
+
+  final int direction;
+  final double stopValue;
+}
+
 class _AutomaticScroller {
   _AutomaticScroller({
     required this.scrollBar,
@@ -1430,11 +1460,8 @@ class _AutomaticScroller {
       throw StateError('Already running');
     }
 
-    // Wait a timeout period, then begin rapidly scrolling
-    scheduledScrollTimer = Timer(_delay, () {
-      scheduledScrollTimer = Timer.periodic(_interval, (Timer timer) {
-        scroll(direction, incrementType, stopValue);
-      });
+    scheduledScrollTimer = Timer.periodic(_interval, (Timer timer) {
+      scroll(direction, incrementType, stopValue);
     });
 
     // We initially scroll once to register that we've started
