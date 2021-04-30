@@ -13,10 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import 'dart:ui' show window;
-
-// Needed because chicago.TextInput still depends on Material
-import 'package:flutter/material.dart' show DefaultMaterialLocalizations, Material;
 import 'package:flutter/widgets.dart';
 import 'package:chicago/chicago.dart';
 
@@ -32,11 +28,7 @@ import 'src/splitters.dart';
 import 'src/tables.dart';
 
 void main() {
-  runApp(
-    const NavigatorListener(
-      child: KitchenSink(),
-    ),
-  );
+  runApp(KitchenSink());
 }
 
 class KitchenSink extends StatelessWidget {
@@ -44,81 +36,46 @@ class KitchenSink extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return WidgetsApp(
+    return ChicagoApp(
       title: 'Chicago "Kitchen Sink" Demo',
-      color: Color(0xffffffff),
-      localizationsDelegates: [DefaultMaterialLocalizations.delegate],
-      home: Container(),
-      builder: (BuildContext context, Widget? navigator) {
-        return Padding(
-          padding: MediaQuery.of(context).viewInsets,
-          child: DefaultTextStyle(
-            style: TextStyle(
-              fontFamily: 'Dialog',
-              fontSize: 14,
-              color: Color(0xff000000),
-            ),
-            child: SafeArea(
-              child: Material(
-                child: MediaQuery(
-                  data: MediaQueryData.fromWindow(window),
-                  child: Directionality(
-                    textDirection: TextDirection.ltr,
-                    child: Navigator(
-                      observers: [NavigatorListener.of(context).observer],
-                      onGenerateRoute: (RouteSettings settings) {
-                        return PageRouteBuilder<void>(
-                          settings: settings,
-                          pageBuilder: (BuildContext context, Animation<double> _, Animation<double> __) {
-                            return ColoredBox(
-                              color: const Color(0xffdddcd5),
-                              child: Padding(
-                                padding: const EdgeInsets.all(8),
-                                child: BorderPane(
-                                  borderColor: const Color(0xff999999),
-                                  backgroundColor: const Color(0xfff7f5ee),
-                                  child: AssetImagePrecache(
-                                    paths: const <String>[
-                                      'assets/anchor.png',
-                                      'assets/bell.png',
-                                      'assets/clock.png',
-                                      'assets/cup.png',
-                                      'assets/flag_red.png',
-                                      'assets/house.png',
-                                      'assets/star.png',
-                                    ],
-                                    loadingIndicator: Container(),
-                                    child: ScrollPane(
-                                      view: BoxPane(
-                                        padding: const EdgeInsets.all(6),
-                                        children: const <Widget>[
-                                          ButtonsDemo(),
-                                          ListsDemo(),
-                                          CalendarsDemo(),
-                                          NavigationDemo(),
-                                          SplittersDemo(),
-                                          ActivityIndicatorsDemo(),
-                                          SpinnersDemo(),
-                                          TablesDemo(),
-                                          AlertsDemo(),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    ),
-                  ),
+      home: ColoredBox(
+        color: const Color(0xffdddcd5),
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: BorderPane(
+            borderColor: const Color(0xff999999),
+            backgroundColor: const Color(0xfff7f5ee),
+            child: AssetImagePrecache(
+              paths: const <String>[
+                'assets/anchor.png',
+                'assets/bell.png',
+                'assets/clock.png',
+                'assets/cup.png',
+                'assets/flag_red.png',
+                'assets/house.png',
+                'assets/star.png',
+              ],
+              loadingIndicator: Container(),
+              child: ScrollPane(
+                view: BoxPane(
+                  padding: const EdgeInsets.all(6),
+                  children: const <Widget>[
+                    ButtonsDemo(),
+                    ListsDemo(),
+                    CalendarsDemo(),
+                    NavigationDemo(),
+                    SplittersDemo(),
+                    ActivityIndicatorsDemo(),
+                    SpinnersDemo(),
+                    TablesDemo(),
+                    AlertsDemo(),
+                  ],
                 ),
               ),
             ),
           ),
-        );
-      }
+        ),
+      ),
     );
   }
 }

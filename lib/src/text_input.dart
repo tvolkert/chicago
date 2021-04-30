@@ -13,13 +13,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
-
-import 'scroll_pane.dart';
 
 class TextInput extends StatefulWidget {
   const TextInput({
@@ -45,9 +41,8 @@ class TextInput extends StatefulWidget {
   _TextInputState createState() => _TextInputState();
 }
 
-class _TextInputState extends State<TextInput> with WidgetsBindingObserver {
+class _TextInputState extends State<TextInput> {
   FocusNode? _focusNode;
-  bool _scrollToVisibleScheduled = false;
 
   static const InputBorder _inputBorder = OutlineInputBorder(
     borderSide: BorderSide(color: Color(0xff999999)),
@@ -59,27 +54,8 @@ class _TextInputState extends State<TextInput> with WidgetsBindingObserver {
   FocusNode get focusNode => widget.focusNode ?? _focusNode!;
 
   @override
-  void didChangeMetrics() {
-    if (focusNode.hasFocus) {
-      final ScrollPaneState? scrollPane = ScrollPane.of(context);
-      if (scrollPane != null && !_scrollToVisibleScheduled) {
-        _scrollToVisibleScheduled = true;
-        SchedulerBinding.instance!.addPostFrameCallback((Duration timeStamp) {
-          _scrollToVisibleScheduled = false;
-          if (mounted) {
-            final RenderBox renderObject = context.findRenderObject() as RenderBox;
-            final Rect rect = Offset.zero & renderObject.size;
-            scrollPane.scrollToVisible(rect, context: context);
-          }
-        });
-      }
-    }
-  }
-
-  @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance!.addObserver(this);
     if (widget.focusNode == null) {
       _focusNode = FocusNode();
     }
@@ -109,7 +85,6 @@ class _TextInputState extends State<TextInput> with WidgetsBindingObserver {
 
   @override
   void dispose() {
-    WidgetsBinding.instance!.removeObserver(this);
     _focusNode?.dispose();
     _focusNode = null;
     super.dispose();
