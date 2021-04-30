@@ -547,11 +547,11 @@ class RenderScrollBar extends RenderBox with ListenerNotifier<ScrollBarValueList
 
   @override
   void detach() {
+    super.detach();
     upButton?.detach();
     downButton?.detach();
     handle?.detach();
     track?.detach();
-    super.detach();
   }
 
   @override
