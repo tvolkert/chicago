@@ -1325,7 +1325,7 @@ class RenderTableView extends RenderSegment
   }
 
   void _onDoubleTap(Offset position) {
-    if (_editorController != null) {
+    if (_editorController != null && !_editorController!.isEditing) {
       final TableCellOffset? cellOffset = metrics.getCellAt(position);
       if (cellOffset != null && !_isRowDisabled(cellOffset.rowIndex)) {
         _editorController!.start(cellOffset.rowIndex, cellOffset.columnIndex);
