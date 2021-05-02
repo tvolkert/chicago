@@ -79,8 +79,8 @@ class _SortableTableDemoState extends State<SortableTableDemo> {
   late TableViewMetricsController _metricsController;
   late ScrollPaneController _scrollController;
 
-  static TableColumnController _createTableColumn(String key, String name) {
-    return TableColumnController(
+  static TableColumn _createTableColumn(String key, String name) {
+    return TableColumn(
       key: key,
       width: ConstrainedTableColumnWidth(width: 48),
       headerBuilder: (
@@ -108,8 +108,8 @@ class _SortableTableDemoState extends State<SortableTableDemo> {
     );
   }
 
-  static TableColumnController _createFlexTableColumn() {
-    return TableColumnController(
+  static TableColumn _createFlexTableColumn() {
+    return TableColumn(
       key: 'flex',
       headerBuilder: (
         BuildContext context,
@@ -353,19 +353,19 @@ class _CustomTableDemoState extends State<CustomTableDemo> {
               rowHeight: 19,
               length: 6,
               columns: [
-                TableColumnController(
+                TableColumn(
                   key: 'flag',
                   width: FixedTableColumnWidth(20),
                   headerBuilder: _buildIsCheckedHeader,
                   cellBuilder: _buildIsCheckedCell,
                 ),
-                TableColumnController(
+                TableColumn(
                   key: 'icon',
                   width: ConstrainedTableColumnWidth(width: 50),
                   headerBuilder: _buildIconHeader,
                   cellBuilder: _buildIconCell,
                 ),
-                TableColumnController(
+                TableColumn(
                   key: 'name',
                   width: FlexTableColumnWidth(),
                   headerBuilder: _buildNameHeader,
@@ -557,19 +557,19 @@ class _EditableTableDemoState extends State<EditableTableDemo> {
               rowHeight: 23,
               length: _items.length,
               columns: [
-                TableColumnController(
+                TableColumn(
                   key: 'type',
                   width: ConstrainedTableColumnWidth(width: 100),
                   headerBuilder: _buildTypeHeader,
                   cellBuilder: _buildTypeCell,
                 ),
-                TableColumnController(
+                TableColumn(
                   key: 'name',
                   width: ConstrainedTableColumnWidth(width: 100),
                   headerBuilder: _buildNameHeader,
                   cellBuilder: _buildNameCell,
                 ),
-                TableColumnController(
+                TableColumn(
                   key: 'flex',
                   width: FlexTableColumnWidth(),
                   headerBuilder: _buildFlexHeader,

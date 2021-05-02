@@ -49,8 +49,8 @@ typedef TableViewLayoutCallback = void Function({
 
 typedef TableViewPrototypeCellBuilder = Widget? Function(int columnIndex);
 
-abstract class TableColumn with Diagnosticable {
-  const TableColumn();
+abstract class AbstractTableColumn with Diagnosticable {
+  const AbstractTableColumn();
 
   TableColumnWidth get width;
 
@@ -68,11 +68,11 @@ abstract class TableColumn with Diagnosticable {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (runtimeType != other.runtimeType) return false;
-    return other is TableColumn && width == other.width;
+    return other is AbstractTableColumn && width == other.width;
   }
 }
 
-class BasicTableColumn extends TableColumn {
+class BasicTableColumn extends AbstractTableColumn {
   const BasicTableColumn({
     this.width = const FlexTableColumnWidth(),
     required this.cellBuilder,
@@ -616,11 +616,11 @@ class BasicTableViewElement extends RenderObjectElement with TableViewElementMix
 }
 
 mixin RenderTableViewMixin on RenderSegment {
-  List<TableColumn> get columns;
-  set columns(covariant List<TableColumn> value);
+  List<AbstractTableColumn> get columns;
+  set columns(covariant List<AbstractTableColumn> value);
 
   @protected
-  List<TableColumn>? get rawColumns;
+  List<AbstractTableColumn>? get rawColumns;
 
   double? _rowHeight;
   double get rowHeight => _rowHeight!;
@@ -826,7 +826,7 @@ mixin RenderTableViewMixin on RenderSegment {
   @override
   double computeMinIntrinsicWidth(double height) {
     return columns
-        .map<TableColumnWidth>((TableColumn column) => column.width)
+        .map<TableColumnWidth>((AbstractTableColumn column) => column.width)
         .where((TableColumnWidth width) => !width.isFlex)
         .map<double>((TableColumnWidth width) => width.width)
         .map<double>((double w) => roundColumnWidthsToWholePixel ? w.roundToDouble() : w)
@@ -1163,10 +1163,10 @@ class TableViewMetricsResolver implements TableViewMetrics {
 
   /// The columns of the table view.
   ///
-  /// Each column's [TableColumn.width] specification is the source (when
+  /// Each column's [AbstractTableColumn.width] specification is the source (when
   /// combined with [constraints]) of the resolved column widths in
   /// [columnWidth].
-  final List<TableColumn> columns;
+  final List<AbstractTableColumn> columns;
 
   /// The [BoxConstraints] against which the width specifications of the
   /// [columns] were resolved.
@@ -1184,7 +1184,7 @@ class TableViewMetricsResolver implements TableViewMetrics {
   final List<Range> columnBounds;
 
   static TableViewMetricsResolver of(
-    List<TableColumn> columns,
+    List<AbstractTableColumn> columns,
     double rowHeight,
     int length,
     BoxConstraints constraints, {
@@ -1194,11 +1194,11 @@ class TableViewMetricsResolver implements TableViewMetrics {
     double totalFlexWidth = 0;
     double totalFixedWidth = 0;
     final List<double> resolvedWidths = List<double>.filled(columns.length, 0);
-    final Map<int, TableColumn> flexColumns = <int, TableColumn>{};
+    final Map<int, AbstractTableColumn> flexColumns = <int, AbstractTableColumn>{};
 
     // Reserve space for the fixed-width columns first.
     for (int i = 0; i < columns.length; i++) {
-      final TableColumn column = columns[i];
+      final AbstractTableColumn column = columns[i];
       if (column.width.isFlex) {
         final FlexTableColumnWidth widthSpecification = column.width as FlexTableColumnWidth;
         totalFlexWidth += widthSpecification.width;
@@ -1248,7 +1248,7 @@ class TableViewMetricsResolver implements TableViewMetrics {
         flexAllocation = constraints.minWidth - totalFixedWidth;
       }
       if (flexAllocation > 0) {
-        for (MapEntry<int, TableColumn> flexColumn in flexColumns.entries) {
+        for (MapEntry<int, AbstractTableColumn> flexColumn in flexColumns.entries) {
           final FlexTableColumnWidth widthSpecification =
               flexColumn.value.width as FlexTableColumnWidth;
           final double allocationPercentage = widthSpecification.width / totalFlexWidth;
