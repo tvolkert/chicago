@@ -10,7 +10,7 @@ This library is still under very active development. It also relies on very new
 features of Flutter and is likely to only work against Flutter on the master
 channel.
 
-Specifically, *this library is known to NOT work against Flutter 2.2*, as it
+Specifically, **this library is known to NOT work against Flutter 2.2**, as it
 relies on commits that have not yet made it to the stable channel.
 
 ## Example
