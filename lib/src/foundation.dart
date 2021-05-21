@@ -85,8 +85,8 @@ bool isActivateKey(LogicalKeyboardKey key) {
   final Iterable<LogicalKeyboardKey> activateKeys = WidgetsApp.defaultShortcuts.entries
       .where((MapEntry<ShortcutActivator, Intent> entry) => entry.value is ActivateIntent)
       .map<ShortcutActivator>((MapEntry<ShortcutActivator, Intent> entry) => entry.key)
-      .where((ShortcutActivator activator) => activator.triggers.length == 1)
-      .map<LogicalKeyboardKey>((ShortcutActivator activator) => activator.triggers.single);
+      .where((ShortcutActivator activator) => activator.triggers?.length == 1)
+      .map<LogicalKeyboardKey>((ShortcutActivator activator) => activator.triggers!.single);
   return activateKeys.contains(key);
 }
 
