@@ -740,7 +740,7 @@ class _PopupListState<T> extends State<_PopupList<T>> {
   late double _popupWidth;
   late double _itemHeight;
 
-  void _handleTap() {
+  void _handleSelectedIndexChanged() {
     Navigator.of(context).pop(_selectionController.selectedIndex);
   }
 
@@ -767,6 +767,7 @@ class _PopupListState<T> extends State<_PopupList<T>> {
     super.initState();
     _selectionController = ListViewSelectionController();
     _selectionController.selectedIndex = widget.selectionController.selectedIndex;
+    _selectionController.addListener(_handleSelectedIndexChanged);
   }
 
   @override
@@ -783,6 +784,7 @@ class _PopupListState<T> extends State<_PopupList<T>> {
 
   @override
   void dispose() {
+    _selectionController.removeListener(_handleSelectedIndexChanged);
     _selectionController.dispose();
     super.dispose();
   }
@@ -802,27 +804,24 @@ class _PopupListState<T> extends State<_PopupList<T>> {
       builder: (BuildContext context, Widget? child) {
         return Opacity(
           opacity: opacity.evaluate(widget.route.animation!),
-          child: GestureDetector(
-            onTap: _handleTap,
-            child: ClipRect(
-              clipper: const _ShadowClipper(shadow),
-              child: DecoratedBox(
-                decoration: const BoxDecoration(
-                  color: Color(0xffffffff),
-                  border: Border.fromBorderSide(BorderSide(color: Color(0xff999999))),
-                  boxShadow: [shadow],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(1),
-                  child: SizedBox(
-                    width: _popupWidth,
-                    child: ScrollableListView(
-                      itemHeight: _itemHeight,
-                      length: widget.length,
-                      itemBuilder: widget.itemBuilder,
-                      selectionController: _selectionController,
-                      // itemDisabledController: disabledItemFilter, TODO is this needed?
-                    ),
+          child: ClipRect(
+            clipper: const _ShadowClipper(shadow),
+            child: DecoratedBox(
+              decoration: const BoxDecoration(
+                color: Color(0xffffffff),
+                border: Border.fromBorderSide(BorderSide(color: Color(0xff999999))),
+                boxShadow: [shadow],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(1),
+                child: SizedBox(
+                  width: _popupWidth,
+                  child: ScrollableListView(
+                    itemHeight: _itemHeight,
+                    length: widget.length,
+                    itemBuilder: widget.itemBuilder,
+                    selectionController: _selectionController,
+                    // itemDisabledController: disabledItemFilter, TODO is this needed?
                   ),
                 ),
               ),
