@@ -1,3 +1,7 @@
+#### 0.1.0-dev
+
+* Update to work with Flutter dev channel (`2.3.0-12.1.pre`)
+
 #### 0.0.2-dev
 
 * Performance improvements
