@@ -1,8 +1,10 @@
 # Chicago widget library
 
 The Chicago widget set is a retro 32-bit desktop design language for Flutter.
-It was discussed in the "Building a desktop design language with Flutter"
+It was discussed in the [Building a desktop design language with Flutter][]
 session in Google I/O 2021.
+
+[Building a desktop design language with Flutter]: https://www.youtube.com/watch?v=z6PpxO7R0gM
 
 ## Disclaimer
 
