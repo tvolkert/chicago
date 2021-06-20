@@ -1550,9 +1550,12 @@ class _TableViewHeaderEnvelopeState extends State<TableViewHeaderEnvelope> {
                       assert(widget.column.width is ConstrainedTableColumnWidth);
                       final ConstrainedTableColumnWidth width =
                           widget.column.width as ConstrainedTableColumnWidth;
-                      widget.column.width = width.copyWith(
-                        width: width.width + details.primaryDelta!,
-                      );
+                      final mergeWidth = width.width + details.primaryDelta!;
+                      if (mergeWidth > _kResizeHandleTargetPixels) {
+                        widget.column.width = width.copyWith(
+                          width: mergeWidth,
+                        );
+                      }
                     },
                   ),
                 ),
