@@ -345,17 +345,13 @@ class RenderListView extends RenderBasicListView
   ListViewSelectionController? get selectionController => _selectionController;
   set selectionController(ListViewSelectionController? value) {
     if (_selectionController == value) return;
-    if (_selectionController != null) {
-      if (attached) {
-        _selectionController!._detach();
-      }
+    if (attached && _selectionController != null) {
+      _selectionController!._detach();
       _selectionController!.removeListener(_handleSelectionChanged);
     }
     _selectionController = value;
-    if (_selectionController != null) {
-      if (attached) {
-        _selectionController!._attach(this);
-      }
+    if (attached && _selectionController != null) {
+      _selectionController!._attach(this);
       _selectionController!.addListener(_handleSelectionChanged);
     }
     highlightedItem = null;
@@ -365,16 +361,15 @@ class RenderListView extends RenderBasicListView
   ListViewItemDisablerController? _itemDisabledController;
   ListViewItemDisablerController? get itemDisabledController => _itemDisabledController;
   set itemDisabledController(ListViewItemDisablerController? value) {
-    if (value != _itemDisabledController) {
-      if (_itemDisabledController != null) {
-        _itemDisabledController!.removeListener(_itemDisablerListener);
-      }
-      _itemDisabledController = value;
-      if (_itemDisabledController != null) {
-        _itemDisabledController!.addListener(_itemDisablerListener);
-      }
-      markNeedsBuild();
+    if (_itemDisabledController == value) return;
+    if (attached && _itemDisabledController != null) {
+      _itemDisabledController!.removeListener(_itemDisablerListener);
     }
+    _itemDisabledController = value;
+    if (attached && _itemDisabledController != null) {
+      _itemDisabledController!.addListener(_itemDisablerListener);
+    }
+    markNeedsBuild();
   }
 
   bool _isItemDisabled(int index) => _itemDisabledController?.isItemDisabled(index) ?? false;
@@ -510,7 +505,11 @@ class RenderListView extends RenderBasicListView
       ..onTapCancel = _handleTapCancel
       ..onTap = _handleTap;
     if (_selectionController != null) {
+      _selectionController!.addListener(_handleSelectionChanged);
       _selectionController!._attach(this);
+    }
+    if (_itemDisabledController != null) {
+      _itemDisabledController!.addListener(_itemDisablerListener);
     }
   }
 
@@ -519,6 +518,10 @@ class RenderListView extends RenderBasicListView
     _tap.dispose();
     if (_selectionController != null) {
       _selectionController!._detach();
+      _selectionController!.removeListener(_handleSelectionChanged);
+    }
+    if (_itemDisabledController != null) {
+      _itemDisabledController!.removeListener(_itemDisablerListener);
     }
     super.detach();
   }
