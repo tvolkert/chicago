@@ -59,4 +59,14 @@ void main() {
     );
     controller.selectedIndex = 0;
   });
+
+  group('ListViewSelectionController', () {
+    test('selectedItems', () {
+      final ListViewSelectionController controller = ListViewSelectionController(
+        selectMode: SelectMode.multi,
+      );
+      controller.selectedRanges = <Span>[Span(5, 2), Span.single(10)];
+      expect(controller.selectedItems, <int>[2, 3, 4, 5, 10]);
+    });
+  });
 }

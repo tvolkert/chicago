@@ -20,7 +20,8 @@ import 'foundation.dart';
 
 /// Class representing a range of integer values. The range includes all
 /// values in the interval `[start, end]`. Values may be negative, and the
-/// value of [start] may be less than or equal to the value of [end].
+/// value of [start] may be less than, equal to, or greater than the value
+/// of [end].
 class Span {
   const Span(this.start, this.end);
 
@@ -70,7 +71,7 @@ class Span {
   }
 
   /// Returns a span with the same range as this span but in which [start] is
-  /// guaranteed to be less than [end].
+  /// guaranteed to be less than or equal to [end].
   Span normalize() => Span(math.min(start, end), math.max(start, end));
 
   @override
