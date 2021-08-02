@@ -127,6 +127,13 @@ class ListViewSelectionController with ChangeNotifier {
 
   int get lastSelectedIndex => _selectedRanges.isNotEmpty ? _selectedRanges.last.end : -1;
 
+  Iterable<int> get selectedItems sync* {
+    for (Span range in selectedRanges) {
+      // ListSelection guarantees that `range` is already normalized.
+      yield* Iterable<int>.generate(range.length, (int index) => range.start + index);
+    }
+  }
+
   bool addSelectedIndex(int index) {
     final List<Span> addedRanges = addSelectedRange(index, index);
     return addedRanges.isNotEmpty;
