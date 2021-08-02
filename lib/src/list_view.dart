@@ -13,6 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
@@ -119,8 +120,10 @@ class ListViewSelectionController with ChangeNotifier {
     for (Span range in ranges) {
       selectedRanges.addRange(range.start, range.end);
     }
-    _selectedRanges = selectedRanges;
-    notifyListeners();
+    if (!const IterableEquality<Span>().equals(_selectedRanges.data, selectedRanges.data)) {
+      _selectedRanges = selectedRanges;
+      notifyListeners();
+    }
   }
 
   int get firstSelectedIndex => _selectedRanges.isNotEmpty ? _selectedRanges.first.start : -1;
@@ -142,7 +145,9 @@ class ListViewSelectionController with ChangeNotifier {
   List<Span> addSelectedRange(int start, int end) {
     assert(selectMode == SelectMode.multi);
     final List<Span> addedRanges = _selectedRanges.addRange(start, end);
-    notifyListeners();
+    if (addedRanges.isNotEmpty) {
+      notifyListeners();
+    }
     return addedRanges;
   }
 
@@ -154,7 +159,9 @@ class ListViewSelectionController with ChangeNotifier {
   List<Span> removeSelectedRange(int start, int end) {
     assert(selectMode == SelectMode.multi);
     final List<Span> removedRanges = _selectedRanges.removeRange(start, end);
-    notifyListeners();
+    if (removedRanges.isNotEmpty) {
+      notifyListeners();
+    }
     return removedRanges;
   }
 
