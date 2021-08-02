@@ -148,7 +148,7 @@ class ListViewSelectionController with ChangeNotifier {
   Iterable<int> get selectedItems sync* {
     for (Span range in selectedRanges) {
       // ListSelection guarantees that `range` is already normalized.
-      yield* List<int>.generate(range.length, (int index) => range.start + index);
+      yield* Iterable<int>.generate(range.length, (int index) => range.start + index);
     }
   }
 
