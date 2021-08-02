@@ -275,17 +275,23 @@ class _RenderRevealBox extends RenderProxyBox {
 
   @override
   void paint(PaintingContext context, Offset offset) {
-    _clipRectLayer = context.pushClipRect(
+    _clipRectLayer.layer = context.pushClipRect(
       needsCompositing,
       offset,
       Offset.zero & size,
       super.paint,
       clipBehavior: Clip.hardEdge,
-      oldLayer: _clipRectLayer,
+      oldLayer: _clipRectLayer.layer,
     );
   }
 
-  ClipRectLayer? _clipRectLayer;
+  @override
+  void dispose() {
+    _clipRectLayer.layer = null;
+    super.dispose();
+  }
+
+  final LayerHandle<ClipRectLayer> _clipRectLayer = LayerHandle<ClipRectLayer>();
 }
 
 class _ArrowPainter extends CustomPainter {
