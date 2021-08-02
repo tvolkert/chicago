@@ -120,12 +120,8 @@ class ListViewSelectionController with ChangeNotifier {
     for (Span range in ranges) {
       selectedRanges.addRange(range.start, range.end);
     }
-    final bool selectionChanged = !const IterableEquality<Span>().equals(
-      _selectedRanges.data,
-      selectedRanges.data,
-    );
-    _selectedRanges = selectedRanges;
-    if (selectionChanged) {
+    if (!const IterableEquality<Span>().equals(_selectedRanges.data, selectedRanges.data)) {
+      _selectedRanges = selectedRanges;
       notifyListeners();
     }
   }
