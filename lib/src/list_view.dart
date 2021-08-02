@@ -67,23 +67,6 @@ class ListViewSelectionController with ChangeNotifier {
   final SelectMode selectMode;
 
   ListSelection _selectedRanges = ListSelection();
-  RenderListView? _renderObject;
-
-  /// True if this controller is associated with a list view.
-  ///
-  /// A selection controller may only be associated with one list view at a
-  /// time.
-  bool get isAttached => _renderObject != null;
-
-  void _attach(RenderListView renderObject) {
-    assert(!isAttached);
-    _renderObject = renderObject;
-  }
-
-  void _detach() {
-    assert(isAttached);
-    _renderObject = null;
-  }
 
   int get selectedIndex {
     assert(selectMode == SelectMode.single);
@@ -134,7 +117,6 @@ class ListViewSelectionController with ChangeNotifier {
 
     final ListSelection selectedRanges = ListSelection();
     for (Span range in ranges) {
-      assert(range.start >= 0 && (!isAttached || range.end < _renderObject!.length));
       selectedRanges.addRange(range.start, range.end);
     }
     _selectedRanges = selectedRanges;
@@ -152,7 +134,6 @@ class ListViewSelectionController with ChangeNotifier {
 
   List<Span> addSelectedRange(int start, int end) {
     assert(selectMode == SelectMode.multi);
-    assert(start >= 0 && (!isAttached || end < _renderObject!.length));
     final List<Span> addedRanges = _selectedRanges.addRange(start, end);
     notifyListeners();
     return addedRanges;
@@ -165,15 +146,9 @@ class ListViewSelectionController with ChangeNotifier {
 
   List<Span> removeSelectedRange(int start, int end) {
     assert(selectMode == SelectMode.multi);
-    assert(start >= 0 && (!isAttached || end < _renderObject!.length));
     final List<Span> removedRanges = _selectedRanges.removeRange(start, end);
     notifyListeners();
     return removedRanges;
-  }
-
-  void selectAll() {
-    assert(isAttached);
-    selectedRange = Span(0, _renderObject!.length - 1);
   }
 
   void clearSelection() {
@@ -184,7 +159,6 @@ class ListViewSelectionController with ChangeNotifier {
   }
 
   bool isItemSelected(int index) {
-    assert(index >= 0 && isAttached && index < _renderObject!.length);
     return _selectedRanges.containsIndex(index);
   }
 }
@@ -346,12 +320,10 @@ class RenderListView extends RenderBasicListView
   set selectionController(ListViewSelectionController? value) {
     if (_selectionController == value) return;
     if (attached && _selectionController != null) {
-      _selectionController!._detach();
       _selectionController!.removeListener(_handleSelectionChanged);
     }
     _selectionController = value;
     if (attached && _selectionController != null) {
-      _selectionController!._attach(this);
       _selectionController!.addListener(_handleSelectionChanged);
     }
     highlightedItem = null;
@@ -506,7 +478,6 @@ class RenderListView extends RenderBasicListView
       ..onTap = _handleTap;
     if (_selectionController != null) {
       _selectionController!.addListener(_handleSelectionChanged);
-      _selectionController!._attach(this);
     }
     if (_itemDisabledController != null) {
       _itemDisabledController!.addListener(_itemDisablerListener);
@@ -517,7 +488,6 @@ class RenderListView extends RenderBasicListView
   void detach() {
     _tap.dispose();
     if (_selectionController != null) {
-      _selectionController!._detach();
       _selectionController!.removeListener(_handleSelectionChanged);
     }
     if (_itemDisabledController != null) {
