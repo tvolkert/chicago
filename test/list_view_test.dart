@@ -68,5 +68,51 @@ void main() {
       controller.selectedRanges = <Span>[Span(5, 2), Span.single(10)];
       expect(controller.selectedItems, <int>[2, 3, 4, 5, 10]);
     });
+
+    test('setSelectedRanges only notifies if selection changes', () {
+      final ListViewSelectionController controller = ListViewSelectionController(
+        selectMode: SelectMode.multi,
+      );
+      int notifications = 0;
+      controller.addListener(() => notifications++);
+      controller.selectedRanges = const <Span>[];
+      expect(notifications, 0);
+      controller.selectedRanges = const <Span>[Span(0, 3), Span(5, 6)];
+      expect(notifications, 1);
+      controller.selectedRanges = const <Span>[Span(0, 3), Span(5, 6)];
+      expect(notifications, 1);
+    });
+
+    test('addSelectedRange only notifies if range not already selected', () {
+      final ListViewSelectionController controller = ListViewSelectionController(
+        selectMode: SelectMode.multi,
+      );
+      int notifications = 0;
+      controller.addListener(() => notifications++);
+      controller.addSelectedRange(0, 3);
+      expect(notifications, 1);
+      controller.addSelectedRange(1, 2);
+      expect(notifications, 1);
+    });
+
+    test('removeSelectedRange only notifies if range already selected', () {
+      final ListViewSelectionController controller = ListViewSelectionController(
+        selectMode: SelectMode.multi,
+      );
+      int notifications = 0;
+      controller.addListener(() => notifications++);
+      controller.removeSelectedRange(0, 3);
+      expect(notifications, 0);
+    });
+
+    test('clearSelection only notifies if range already selected', () {
+      final ListViewSelectionController controller = ListViewSelectionController(
+        selectMode: SelectMode.multi,
+      );
+      int notifications = 0;
+      controller.addListener(() => notifications++);
+      controller.clearSelection();
+      expect(notifications, 0);
+    });
   });
 }
