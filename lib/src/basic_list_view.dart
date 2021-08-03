@@ -269,6 +269,13 @@ mixin ListViewElementMixin on RenderObjectElement {
   RenderBasicListView get renderObject => super.renderObject as RenderBasicListView;
 
   @override
+  @protected
+  void reassemble() {
+    super.reassemble();
+    renderObject.markNeedsBuild();
+  }
+
+  @override
   void update(covariant RenderObjectWidget newWidget) {
     assert(widget != newWidget);
     super.update(newWidget);
