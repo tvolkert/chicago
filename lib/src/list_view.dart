@@ -296,6 +296,14 @@ class ListViewElement extends RenderObjectElement with ListViewElementMixin {
   RenderListView get renderObject => super.renderObject as RenderListView;
 
   @override
+  void update(ListView newWidget) {
+    if (widget.itemBuilder != newWidget.itemBuilder) {
+      renderObject.markNeedsBuild();
+    }
+    super.update(newWidget);
+  }
+
+  @override
   @protected
   Widget renderItem(int index) {
     return widget.itemBuilder(
@@ -473,6 +481,13 @@ class RenderListView extends RenderBasicListView
 
   @override
   bool get validForMouseTracker => true;
+
+  // Overridden to grant file-level visibility to this method.
+  @override
+  @protected
+  void markNeedsBuild() {
+    super.markNeedsBuild();
+  }
 
   @override
   void handleEvent(PointerEvent event, BoxHitTestEntry entry) {
