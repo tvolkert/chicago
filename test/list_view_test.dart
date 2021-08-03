@@ -60,6 +60,35 @@ void main() {
     controller.selectedIndex = 0;
   });
 
+  // Regression test for https://github.com/tvolkert/chicago/issues/6
+  testWidgets('updating itemBuilder invokes new builder when widget is rebuilt', (WidgetTester tester) async {
+    ListItemBuilder builder(String text) {
+      return (BuildContext ctx, int index, bool isSelected, bool isHighlighted, bool isDisabled) {
+        return Directionality(
+          textDirection: TextDirection.ltr,
+          child: Text(text),
+        );
+      };
+    }
+
+    await tester.pumpWidget(
+      ScrollableListView(
+        itemHeight: 20,
+        length: 1,
+        itemBuilder: builder('one'),
+      ),
+    );
+    expect(find.text('one'), findsOneWidget);
+    await tester.pumpWidget(
+      ScrollableListView(
+        itemHeight: 20,
+        length: 1,
+        itemBuilder: builder('two'),
+      ),
+    );
+    expect(find.text('two'), findsOneWidget);
+  });
+
   group('ListViewSelectionController', () {
     test('selectedItems', () {
       final ListViewSelectionController controller = ListViewSelectionController(
