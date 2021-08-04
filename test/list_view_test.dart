@@ -89,6 +89,29 @@ void main() {
     expect(find.text('two'), findsOneWidget);
   });
 
+  testWidgets('Reassemble triggers itemBuilder', (WidgetTester tester) async {
+    int buildCount = 0;
+    Widget build(BuildContext c, int index, bool isSelected, bool isHighlighted, bool isDisabled) {
+      buildCount++;
+      return Directionality(
+        textDirection: TextDirection.ltr,
+        child: Text('text'),
+      );
+    }
+
+    await tester.pumpWidget(
+      ScrollableListView(
+        itemHeight: 20,
+        length: 1,
+        itemBuilder: build,
+      ),
+    );
+    expect(buildCount, 1);
+    tester.binding.buildOwner!.reassemble(tester.binding.renderViewElement!, null);
+    await tester.pump();
+    expect(buildCount, 2);
+  });
+
   group('ListViewSelectionController', () {
     test('selectedItems', () {
       final ListViewSelectionController controller = ListViewSelectionController(
