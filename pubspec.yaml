@@ -1,5 +1,5 @@
 name: chicago
-version: 0.1.0-dev
+version: 0.2.0-dev
 repository: https://github.com/tvolkert/chicago
 
 description:
@@ -8,7 +8,7 @@ description:
 
 environment:
   sdk: ">=2.12.0 <3.0.0"
-  flutter: ">=2.3.0-12.1.pre"
+  flutter: ">=2.5.0"
 
 dependencies:
   flutter:

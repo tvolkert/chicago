@@ -923,23 +923,18 @@ class RenderTableView extends RenderSegment
 
   late TableViewEditorListener _editorListener;
   late TableViewRowDisablerListener _rowDisablerListener;
-  TapGestureRecognizer? _tap;
-  DoubleTapGestureRecognizer? _doubleTap;
+  SerialTapGestureRecognizer? _serialTap;
 
-  void _initTap() {
-    if (isSelectionEnabled) {
-      _tap = TapGestureRecognizer(debugOwner: this)
-        ..onTapUp = _handleTapUp;
+  void _initSerialTap() {
+    if (isSelectionEnabled || isEditingEnabled || onDoubleTapRow != null) {
+      _serialTap = SerialTapGestureRecognizer()
+        ..onSerialTapUp = _handleSerialTapUp;
     }
   }
 
-  void _initDoubleTap() {
-    if (isEditingEnabled || onDoubleTapRow != null) {
-      _doubleTap = DoubleTapGestureRecognizer(debugOwner: this)
-        ..onDoubleTapDown = _handleDoubleTapDown
-        ..onDoubleTapCancel = _handleDoubleTapCancel
-        ..onDoubleTap = _handleDoubleTap;
-    }
+  void _disposeSerialTap() {
+    _serialTap?.dispose();
+    _serialTap = null;
   }
 
   Set<int> _sortedColumns = <int>{};
@@ -996,11 +991,12 @@ class RenderTableView extends RenderSegment
   TableViewSelectionController? get selectionController => _selectionController;
   set selectionController(TableViewSelectionController? value) {
     if (_selectionController == value) return;
+    if (attached) {
+      _disposeSerialTap();
+    }
     if (_selectionController != null) {
       if (attached) {
         _selectionController!.detach();
-        _tap?.dispose();
-        _tap = null;
       }
       _selectionController!.removeListener(_handleSelectionChanged);
     }
@@ -1008,9 +1004,11 @@ class RenderTableView extends RenderSegment
     if (_selectionController != null) {
       if (attached) {
         _selectionController!.attach(this);
-        _initTap();
       }
       _selectionController!.addListener(_handleSelectionChanged);
+    }
+    if (attached) {
+      _initSerialTap();
     }
     markNeedsBuild();
   }
@@ -1025,12 +1023,13 @@ class RenderTableView extends RenderSegment
   TableViewEditorController? get editorController => _editorController;
   set editorController(TableViewEditorController? value) {
     if (_editorController == value) return;
+    if (attached) {
+      _disposeSerialTap();
+    }
     if (_editorController != null) {
       _cancelEditIfNecessary();
       if (attached) {
         _editorController!.detach();
-        _doubleTap?.dispose();
-        _doubleTap = null;
       }
       _editorController!.removeListener(_editorListener);
     }
@@ -1042,7 +1041,7 @@ class RenderTableView extends RenderSegment
       _editorController!.addListener(_editorListener);
     }
     if (attached) {
-      _initDoubleTap();
+      _initSerialTap();
     }
     markNeedsBuild();
   }
@@ -1086,9 +1085,8 @@ class RenderTableView extends RenderSegment
     if (value == _onDoubleTapRow) return;
     _onDoubleTapRow = value;
     if (attached) {
-      _doubleTap?.dispose();
-      _doubleTap = null;
-      _initDoubleTap();
+      _disposeSerialTap();
+      _initSerialTap();
     }
   }
 
@@ -1121,6 +1119,7 @@ class RenderTableView extends RenderSegment
     assert(controller == _editorController);
     assert(_cellsBeingEdited == null);
     assert(_navigatorListenerRegistration == null);
+    _disposeSerialTap();
     _cellsBeingEdited = controller.cellsBeingEdited;
     markCellsDirty(_cellsBeingEdited!);
     GestureBinding.instance!.pointerRouter.addGlobalRoute(_handleGlobalPointerEvent);
@@ -1162,6 +1161,7 @@ class RenderTableView extends RenderSegment
     assert(controller == _editorController);
     assert(_cellsBeingEdited != null);
     assert(_navigatorListenerRegistration != null);
+    _initSerialTap();
     _navigatorListenerRegistration!.dispose();
     _navigatorListenerRegistration = null;
     markCellsDirty(_cellsBeingEdited!);
@@ -1234,11 +1234,19 @@ class RenderTableView extends RenderSegment
 
   int _selectIndex = -1;
 
-  void _handleTapUp(TapUpDetails details) {
+  void _handleSerialTapUp(SerialTapUpDetails details) {
+    if (details.count == 1) {
+      _handleTap(details.localPosition);
+    } else if (details.count == 2) {
+      _handleDoubleTap(details.localPosition);
+    }
+  }
+
+  void _handleTap(Offset localPosition) {
     final TableViewSelectionController? selectionController = this.selectionController;
     final SelectMode selectMode = selectionController?.selectMode ?? SelectMode.none;
     if (selectionController != null && selectMode != SelectMode.none) {
-      final int rowIndex = metrics.getRowAt(details.localPosition.dy);
+      final int rowIndex = metrics.getRowAt(localPosition.dy);
       if (rowIndex >= 0 && rowIndex < length && !_isRowDisabled(rowIndex)) {
         final Set<LogicalKeyboardKey> keys = RawKeyboard.instance.keysPressed;
 
@@ -1273,39 +1281,27 @@ class RenderTableView extends RenderSegment
     }
   }
 
+  void _handleDoubleTap(Offset localPosition) {
+    if (isEditingEnabled && !isEditing) {
+      final TableCellOffset? cellOffset = metrics.getCellAt(localPosition);
+      if (cellOffset != null && !_isRowDisabled(cellOffset.rowIndex)) {
+        _editorController!.start(cellOffset.rowIndex, cellOffset.columnIndex);
+      }
+    }
+    if (onDoubleTapRow != null) {
+      final int row = metrics.getRowAt(localPosition.dy);
+      if (row >= 0) {
+        onDoubleTapRow!(row);
+      }
+    }
+  }
+
   void _onPointerUp(PointerUpEvent event) {
     if (_selectIndex != -1 &&
         selectionController!.firstSelectedIndex != selectionController!.lastSelectedIndex) {
       selectionController!.selectedIndex = _selectIndex;
     }
     _selectIndex = -1;
-  }
-
-  Offset? _doubleTapPosition;
-
-  void _handleDoubleTapDown(TapDownDetails details) {
-    _doubleTapPosition = details.localPosition;
-  }
-
-  void _handleDoubleTapCancel() {
-    _doubleTapPosition = null;
-  }
-
-  void _handleDoubleTap() {
-    assert(_doubleTapPosition != null);
-    if (isEditingEnabled && !isEditing) {
-      final TableCellOffset? cellOffset = metrics.getCellAt(_doubleTapPosition!);
-      if (cellOffset != null && !_isRowDisabled(cellOffset.rowIndex)) {
-        _editorController!.start(cellOffset.rowIndex, cellOffset.columnIndex);
-      }
-    }
-    if (onDoubleTapRow != null) {
-      final int row = metrics.getRowAt(_doubleTapPosition!.dy);
-      if (row >= 0) {
-        onDoubleTapRow!(row);
-      }
-    }
-    _doubleTapPosition = null;
   }
 
   @override
@@ -1324,8 +1320,7 @@ class RenderTableView extends RenderSegment
   void handleEvent(PointerEvent event, BoxHitTestEntry entry) {
     assert(debugHandleEvent(event, entry));
     if (event is PointerDownEvent) {
-      _tap?.addPointer(event);
-      _doubleTap?.addPointer(event);
+      _serialTap?.addPointer(event);
     } else if (event is PointerHoverEvent) {
       return _onPointerHover(event);
     } else if (event is PointerScrollEvent) {
@@ -1341,8 +1336,7 @@ class RenderTableView extends RenderSegment
   @override
   void attach(PipelineOwner owner) {
     super.attach(owner);
-    _initTap();
-    _initDoubleTap();
+    _initSerialTap();
     if (_selectionController != null) {
       _selectionController!.attach(this);
     }
@@ -1353,13 +1347,16 @@ class RenderTableView extends RenderSegment
 
   @override
   void detach() {
-    _tap?.dispose();
-    _doubleTap?.dispose();
+    _disposeSerialTap();
     if (_selectionController != null) {
       _selectionController!.detach();
     }
     if (_editorController != null) {
       _editorController!.detach();
+    }
+    if (_cellsBeingEdited != null) {
+      assert(_editorController != null);
+      _handleEditFinished(_editorController!, TableViewEditOutcome.canceled);
     }
     super.detach();
   }
