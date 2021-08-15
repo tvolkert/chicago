@@ -399,19 +399,6 @@ class TablePane extends MultiChildRenderObjectWidget {
     return result;
   }
 
-  static Element? _childAt(Element parent, int index) {
-    Element? result;
-    int i = -1;
-    parent.visitChildren((Element element) {
-      i++;
-      if (i == index) {
-        assert(result == null);
-        result = element;
-      }
-    });
-    return result;
-  }
-
   static IndexedOffset? offsetOf(BuildContext context) {
     TableRowElement? row;
     Element? rawCell;
@@ -447,25 +434,19 @@ class TablePane extends MultiChildRenderObjectWidget {
     }
   }
 
-  static BuildContext? cellAt(BuildContext context, IndexedOffset offset) {
-    TablePaneElement? tablePane;
+  static TablePaneElement? of(BuildContext context) {
     if (context is TablePaneElement) {
-      tablePane = context;
-    } else {
-      context.visitAncestorElements((Element element) {
-        if (element is TablePaneElement) {
-          tablePane = element;
-          return false;
-        }
-        return true;
-      });
+      return context;
     }
-    if (tablePane != null) {
-      final Element? rawRow = _childAt(tablePane!, offset.rowIndex);
-      if (rawRow != null) {
-        return _childAt(rawRow, offset.columnIndex);
+    TablePaneElement? tablePane;
+    context.visitAncestorElements((Element element) {
+      if (element is TablePaneElement) {
+        tablePane = element;
+        return false;
       }
-    }
+      return true;
+    });
+    return tablePane;
   }
 }
 

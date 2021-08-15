@@ -164,7 +164,7 @@ void main() {
     expect(TablePane.offsetOf(tester.element(find.byType(Directionality))), isNull);
   });
 
-  testWidgets('cellAt works for basic table structure', (WidgetTester tester) async {
+  testWidgets('TablePane.of works for basic table structure', (WidgetTester tester) async {
     await tester.pumpWidget(
       Directionality(
         textDirection: TextDirection.ltr,
@@ -182,12 +182,12 @@ void main() {
     );
 
     expect(
-      TablePane.cellAt(tester.element(find.byType(TablePane)), IndexedOffset(1, 1)),
-      same(tester.element(find.text('1,1'))),
+      TablePane.of(tester.element(find.byType(TablePane))),
+      same(tester.element(find.byType(TablePane))),
     );
     expect(
-      TablePane.cellAt(tester.element(find.text('0,0')), IndexedOffset(1, 1)),
-      same(tester.element(find.text('1,1'))),
+      TablePane.of(tester.element(find.text('0,0'))),
+      same(tester.element(find.byType(TablePane))),
     );
   });
 }
