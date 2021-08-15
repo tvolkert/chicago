@@ -99,4 +99,95 @@ void main() {
     expect(renderObject.size.width, 400);
     expect(renderObject.metrics.columnWidths, [200, 200]);
   });
+
+  testWidgets('indexOf works for basic table structure', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: TablePane(
+          columns: const <TablePaneColumn>[
+            TablePaneColumn(width: FixedTablePaneColumnWidth(100)),
+            TablePaneColumn(width: FixedTablePaneColumnWidth(100)),
+          ],
+          children: [
+            TableRow(children: const [Text('0,0'), Text('0,1')]),
+            TableRow(children: const [Text('1,0'), Text('1,1')]),
+          ],
+        ),
+      ),
+    );
+
+    expect(TablePane.offsetOf(tester.element(find.text('0,0'))), IndexedOffset(0, 0));
+    expect(TablePane.offsetOf(tester.element(find.text('0,1'))), IndexedOffset(0, 1));
+    expect(TablePane.offsetOf(tester.element(find.text('1,0'))), IndexedOffset(1, 0));
+    expect(TablePane.offsetOf(tester.element(find.text('1,1'))), IndexedOffset(1, 1));
+    expect(TablePane.offsetOf(tester.element(find.byType(Directionality))), isNull);
+  });
+
+  testWidgets('indexOf works for complex table structure', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: TablePane(
+          columns: const <TablePaneColumn>[
+            TablePaneColumn(width: FixedTablePaneColumnWidth(100)),
+            TablePaneColumn(width: FixedTablePaneColumnWidth(100)),
+          ],
+          children: [
+            MediaQuery(
+              data: MediaQueryData(),
+              child: TableRow(
+                children: const [
+                  SizedBox.square(dimension: 50, child: Text('0,0')),
+                  SizedBox.square(dimension: 50, child: Text('0,1')),
+                ],
+              ),
+            ),
+            MediaQuery(
+              data: MediaQueryData(),
+              child: TableRow(
+                children: const [
+                  SizedBox.square(dimension: 50, child: Text('1,0')),
+                  SizedBox.square(dimension: 50, child: Text('1,1')),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    expect(TablePane.offsetOf(tester.element(find.text('0,0'))), IndexedOffset(0, 0));
+    expect(TablePane.offsetOf(tester.element(find.text('0,1'))), IndexedOffset(0, 1));
+    expect(TablePane.offsetOf(tester.element(find.text('1,0'))), IndexedOffset(1, 0));
+    expect(TablePane.offsetOf(tester.element(find.text('1,1'))), IndexedOffset(1, 1));
+    expect(TablePane.offsetOf(tester.element(find.byType(Directionality))), isNull);
+  });
+
+  testWidgets('cellAt works for basic table structure', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: TablePane(
+          columns: const <TablePaneColumn>[
+            TablePaneColumn(width: FixedTablePaneColumnWidth(100)),
+            TablePaneColumn(width: FixedTablePaneColumnWidth(100)),
+          ],
+          children: [
+            TableRow(children: const [Text('0,0'), Text('0,1')]),
+            TableRow(children: const [Text('1,0'), Text('1,1')]),
+          ],
+        ),
+      ),
+    );
+
+    expect(
+      TablePane.cellAt(tester.element(find.byType(TablePane)), IndexedOffset(1, 1)),
+      same(tester.element(find.text('1,1'))),
+    );
+    expect(
+      TablePane.cellAt(tester.element(find.text('0,0')), IndexedOffset(1, 1)),
+      same(tester.element(find.text('1,1'))),
+    );
+  });
 }

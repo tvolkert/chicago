@@ -21,6 +21,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 import 'foundation.dart';
+import 'indexed_offset.dart';
 
 void main() {
   runApp(
@@ -357,6 +358,9 @@ class TablePane extends MultiChildRenderObjectWidget {
   List<Widget> get children => super.children;
 
   @override
+  TablePaneElement createElement() => TablePaneElement(this);
+
+  @override
   RenderObject createRenderObject(BuildContext context) {
     return RenderTablePane(
       columns: columns,
@@ -382,6 +386,91 @@ class TablePane extends MultiChildRenderObjectWidget {
       ..verticalRelativeSize = verticalRelativeSize
       ..metricsController = metricsController;
   }
+
+  static int _indexOf(Element child, Element parent) {
+    int i = -1, result = -1;
+    parent.visitChildren((Element element) {
+      i++;
+      if (element == child) {
+        assert(result == -1);
+        result = i;
+      }
+    });
+    return result;
+  }
+
+  static Element? _childAt(Element parent, int index) {
+    Element? result;
+    int i = -1;
+    parent.visitChildren((Element element) {
+      i++;
+      if (i == index) {
+        assert(result == null);
+        result = element;
+      }
+    });
+    return result;
+  }
+
+  static IndexedOffset? offsetOf(BuildContext context) {
+    TableRowElement? row;
+    Element? rawCell;
+    context.visitAncestorElements((Element element) {
+      if (element is TableRowElement) {
+        row = element;
+        rawCell ??= context as Element;
+        return false;
+      }
+      rawCell = element;
+      return true;
+    });
+    if (row != null) {
+      assert(rawCell != null);
+      final int columnIndex = _indexOf(rawCell!, row!);
+      assert(columnIndex >= 0);
+      TablePaneElement? tablePane;
+      Element? rawRow;
+      row!.visitAncestorElements((Element element) {
+        if (element is TablePaneElement) {
+          tablePane = element;
+          rawRow ??= row;
+          return false;
+        }
+        rawRow = element;
+        return true;
+      });
+      assert(tablePane != null);
+      assert(rawRow != null);
+      final int rowIndex = _indexOf(rawRow!, tablePane!);
+      assert(rowIndex >= 0);
+      return IndexedOffset(rowIndex, columnIndex);
+    }
+  }
+
+  static BuildContext? cellAt(BuildContext context, IndexedOffset offset) {
+    TablePaneElement? tablePane;
+    if (context is TablePaneElement) {
+      tablePane = context;
+    } else {
+      context.visitAncestorElements((Element element) {
+        if (element is TablePaneElement) {
+          tablePane = element;
+          return false;
+        }
+        return true;
+      });
+    }
+    if (tablePane != null) {
+      final Element? rawRow = _childAt(tablePane!, offset.rowIndex);
+      if (rawRow != null) {
+        return _childAt(rawRow, offset.columnIndex);
+      }
+    }
+  }
+}
+
+class TablePaneElement extends MultiChildRenderObjectElement {
+  TablePaneElement(TablePane widget) : super(widget);
 }
 
 class TableRow extends MultiChildRenderObjectWidget {
@@ -399,6 +488,9 @@ class TableRow extends MultiChildRenderObjectWidget {
   List<Widget> get children => super.children;
 
   @override
+  TableRowElement createElement() => TableRowElement(this);
+
+  @override
   RenderObject createRenderObject(BuildContext context) {
     return RenderTableRow(
       height: height,
@@ -412,6 +504,10 @@ class TableRow extends MultiChildRenderObjectWidget {
       ..height = height
       ..backgroundColor = backgroundColor;
   }
+}
+
+class TableRowElement extends MultiChildRenderObjectElement {
+  TableRowElement(TableRow widget) : super(widget);
 }
 
 /// [ParentData] used by [RenderTablePane].

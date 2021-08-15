@@ -26,6 +26,7 @@ export 'src/colors.dart';
 export 'src/form_pane.dart';
 export 'src/foundation.dart';
 export 'src/hover_builder.dart';
+export 'src/indexed_offset.dart';
 export 'src/link_button.dart';
 export 'src/list_button.dart';
 export 'src/list_view.dart' hide main;
