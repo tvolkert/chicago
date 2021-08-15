@@ -94,7 +94,7 @@ class _TextInputState extends State<TextInput> {
   Widget build(BuildContext context) {
     Widget result = TextField(
       controller: widget.controller,
-      focusNode: focusNode,
+      focusNode: widget.onKeyEvent == null ? focusNode : null,
       cursorWidth: 1,
       obscureText: widget.obscureText,
       enabled: widget.enabled,
