@@ -38,6 +38,7 @@ const Color _defaultDisabledBorderColor = Color(0xff999999);
 const EdgeInsets _defaultPadding = EdgeInsets.symmetric(horizontal: 4, vertical: 4);
 const bool _defaultIsToolbar = false;
 const bool _defaultShowTooltip = true;
+const bool _defaultIsFocusable = true;
 
 class PushButton<T extends Object> extends StatefulWidget {
   const PushButton({
@@ -57,6 +58,7 @@ class PushButton<T extends Object> extends StatefulWidget {
     this.disabledBorderColor = _defaultDisabledBorderColor,
     this.padding = _defaultPadding,
     this.focusIndicatorPadding = const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+    this.isFocusable = _defaultIsFocusable,
     this.autofocus = false,
     this.showTooltip = _defaultShowTooltip,
   }) : super(key: key);
@@ -76,6 +78,7 @@ class PushButton<T extends Object> extends StatefulWidget {
   final Color disabledBorderColor;
   final EdgeInsets padding;
   final EdgeInsets focusIndicatorPadding;
+  final bool isFocusable;
   final bool autofocus;
   final bool showTooltip;
 
@@ -263,6 +266,8 @@ class _PushButtonState<T extends Object> extends State<PushButton<T>> {
         ActivateIntent: _ActivatePushButtonAction<T>(this),
       },
       child: Focus(
+        canRequestFocus: isEnabled && widget.isFocusable,
+        descendantsAreFocusable: isEnabled && widget.isFocusable,
         focusNode: focusNode,
         onKey: _handleKey,
         onFocusChange: _handleFocusChange,
@@ -478,6 +483,7 @@ class ActionPushButton<I extends Intent> extends ActionTracker<I> {
     this.borderColor = _defaultBorderColor,
     this.padding = _defaultPadding,
     this.showTooltip = _defaultShowTooltip,
+    this.isFocusable = _defaultIsFocusable,
   }) : super(key: key, intent: intent);
 
   final String? icon;
@@ -490,6 +496,7 @@ class ActionPushButton<I extends Intent> extends ActionTracker<I> {
   final Color borderColor;
   final EdgeInsets padding;
   final bool showTooltip;
+  final bool isFocusable;
 
   @override
   _ActionPushButtonState<I> createState() => _ActionPushButtonState<I>();
@@ -511,6 +518,7 @@ class _ActionPushButtonState<I extends Intent> extends State<ActionPushButton<I>
       borderColor: widget.borderColor,
       padding: widget.padding,
       showTooltip: widget.showTooltip,
+      isFocusable: widget.isFocusable,
     );
   }
 }
