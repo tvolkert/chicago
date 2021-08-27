@@ -161,39 +161,39 @@ class _RawRollupState extends AnimatedWidgetBaseState<RawRollup> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        GestureDetector(
-          onTap: widget.onToggleExpanded,
-          child: Actions(
-            actions: <Type, Action<Intent>>{
-              ActivateIntent: _ActivateRollupAction(this),
-            },
-            child: Semantics(
-              label: widget.semanticLabel ?? 'Rollup widget',
-              focusable: true,
-              focused: _isFocused,
-              child: Focus(
-                focusNode: widget.focusNode,
-                onFocusChange: _handleFocusChange,
-                child: FocusIndicator(
-                  isFocused: _isFocused,
-                  insets: EdgeInsets.fromLTRB(-3, 0, -3, -1),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      MouseRegion(
-                        cursor: SystemMouseCursors.click,
-                        child: Transform.rotate(
+        MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            onTap: widget.onToggleExpanded,
+            child: Actions(
+              actions: <Type, Action<Intent>>{
+                ActivateIntent: _ActivateRollupAction(this),
+              },
+              child: Semantics(
+                label: widget.semanticLabel ?? 'Rollup widget',
+                focusable: true,
+                focused: _isFocused,
+                child: Focus(
+                  focusNode: widget.focusNode,
+                  onFocusChange: _handleFocusChange,
+                  child: FocusIndicator(
+                    isFocused: _isFocused,
+                    insets: EdgeInsets.fromLTRB(-3, 0, -3, -1),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Transform.rotate(
                           angle: _arrowRotationTween?.evaluate(animation) ?? 0.0,
                           child: CustomPaint(
                             size: Size.square(_arrowWidth),
                             painter: _ArrowPainter(),
                           ),
                         ),
-                      ),
-                      SizedBox(width: 4),
-                      widget.heading,
-                    ],
+                        SizedBox(width: 4),
+                        widget.heading,
+                      ],
+                    ),
                   ),
                 ),
               ),
