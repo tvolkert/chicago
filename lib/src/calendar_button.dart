@@ -19,36 +19,50 @@ import 'package:flutter/widgets.dart';
 import 'calendar.dart';
 import 'foundation.dart';
 
+const _kPrototypeDate = CalendarDate(2000, 11, 30);
+
 class CalendarButton extends StatefulWidget {
   const CalendarButton({
     Key? key,
     this.format = CalendarDateFormat.medium,
     this.initialSelectedDate,
+    this.initialMonth,
+    this.initialYear,
     this.selectionController,
     this.disabledDateFilter,
     this.onDateChanged,
+    this.width = CalendarButtonWidth.expand,
     this.isEnabled = true,
   }) : super(key: key);
 
   final CalendarDateFormat format;
   final CalendarDate? initialSelectedDate;
+  final int? initialMonth;
+  final int? initialYear;
   final CalendarSelectionController? selectionController;
   final Predicate<CalendarDate>? disabledDateFilter;
-  final ValueChanged<CalendarDate>? onDateChanged;
+  final ValueChanged<CalendarDate?>? onDateChanged;
+  final CalendarButtonWidth width;
   final bool isEnabled;
 
   @override
   _CalendarButtonState createState() => _CalendarButtonState();
 }
 
+/// Enum that specifies how a [CalendarButton] will calculate its width.
+enum CalendarButtonWidth {
+  expand,
+
+  shrinkWrap,
+}
+
 class _CalendarButtonState extends State<CalendarButton> {
   CalendarSelectionController? _selectionController;
-  late CalendarDate _selectedDate;
+  CalendarDate? _selectedDate;
   bool _pressed = false;
 
   void _handleSelectedDateChanged() {
-    assert(selectionController.value != null);
-    CalendarDate selectedDate = selectionController.value!;
+    CalendarDate? selectedDate = selectionController.value;
     if (widget.onDateChanged != null) {
       widget.onDateChanged!(selectedDate);
     }
@@ -80,7 +94,9 @@ class _CalendarButtonState extends State<CalendarButton> {
     );
     final _PopupCalendarRoute<CalendarDate> popupCalendarRoute = _PopupCalendarRoute<CalendarDate>(
       position: RelativeRect.fromRect(buttonPosition & button.size, Offset.zero & overlay.size),
-      selectedDate: selectionController.value!,
+      initialMonth: widget.initialMonth,
+      initialYear: widget.initialYear,
+      selectedDate: selectionController.value,
       disabledDateFilter: widget.disabledDateFilter,
       showMenuContext: context,
     );
@@ -178,6 +194,16 @@ class _CalendarButtonState extends State<CalendarButton> {
       decoration = _disabledDecoration;
     }
 
+    final CalendarDate date = _selectedDate ?? _kPrototypeDate;
+    Widget content = Text(
+      widget.format.format(date),
+      maxLines: 1,
+      softWrap: false,
+    );
+    if (_selectedDate == null) {
+      content = Opacity(opacity: 0, child: content);
+    }
+
     Widget result = DecoratedBox(
       decoration: decoration,
       child: LayoutBuilder(
@@ -186,14 +212,10 @@ class _CalendarButtonState extends State<CalendarButton> {
             padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
             child: Padding(
               padding: EdgeInsets.only(bottom: 1),
-              child: Text(
-                widget.format.format(_selectedDate),
-                maxLines: 1,
-                softWrap: false,
-              ),
+              child: content,
             ),
           );
-          if (constraints.hasBoundedWidth) {
+          if (widget.width == CalendarButtonWidth.expand && constraints.hasBoundedWidth) {
             contentArea = Expanded(child: contentArea);
           }
           return Row(
@@ -255,13 +277,17 @@ class _CalendarButtonState extends State<CalendarButton> {
 class _PopupCalendarRoute<T> extends PopupRoute<T> {
   _PopupCalendarRoute({
     required this.position,
+    required this.initialMonth,
+    required this.initialYear,
     required this.selectedDate,
     required this.disabledDateFilter,
     required this.showMenuContext,
   });
 
   final RelativeRect position;
-  final CalendarDate selectedDate;
+  final int? initialMonth;
+  final int? initialYear;
+  final CalendarDate? selectedDate;
   final Predicate<CalendarDate>? disabledDateFilter;
   final BuildContext showMenuContext;
 
@@ -293,6 +319,8 @@ class _PopupCalendarRoute<T> extends PopupRoute<T> {
           showMenuContext,
           _PopupCalendar<T>(
             route: this,
+            initialMonth: initialMonth,
+            initialYear: initialYear,
             selectedDate: selectedDate,
             disabledDateFilter: disabledDateFilter,
           ),
@@ -332,12 +360,16 @@ class _PopupCalendarRouteLayout extends SingleChildLayoutDelegate {
 
 class _PopupCalendar<T> extends StatefulWidget {
   const _PopupCalendar({
+    required this.initialMonth,
+    required this.initialYear,
     required this.selectedDate,
     required this.disabledDateFilter,
     required this.route,
   });
 
-  final CalendarDate selectedDate;
+  final int? initialMonth;
+  final int? initialYear;
+  final CalendarDate? selectedDate;
   final Predicate<CalendarDate>? disabledDateFilter;
   final _PopupCalendarRoute<T> route;
 
@@ -376,6 +408,7 @@ class _PopupCalendarState<T> extends State<_PopupCalendar<T>> {
     );
 
     final CurveTween opacity = CurveTween(curve: Curves.linear);
+    final CalendarDate today = CalendarDate.today();
 
     return AnimatedBuilder(
       animation: widget.route.animation!,
@@ -390,8 +423,8 @@ class _PopupCalendarState<T> extends State<_PopupCalendar<T>> {
                 boxShadow: [shadow],
               ),
               child: Calendar(
-                initialMonth: widget.selectedDate.month,
-                initialYear: widget.selectedDate.year,
+                initialMonth: widget.initialMonth ?? widget.selectedDate?.month ?? today.month,
+                initialYear: widget.initialYear ?? widget.selectedDate?.year ?? today.year,
                 selectionController: _selectionController,
                 disabledDateFilter: widget.disabledDateFilter,
                 onDateChanged: _handleDateSelected,
