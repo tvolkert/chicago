@@ -135,6 +135,9 @@ class ListButton<T> extends StatefulWidget {
     if (isSelected) {
       style = style.copyWith(color: const Color(0xffffffff));
     }
+    if (isDisabled) {
+      style = style.copyWith(color: const Color(0xff999999));
+    }
     return ConstrainedBox(
       constraints: BoxConstraints(minWidth: 75),
       child: Padding(
@@ -737,6 +740,7 @@ class _PopupList<T> extends StatefulWidget {
 
 class _PopupListState<T> extends State<_PopupList<T>> {
   late ListViewSelectionController _selectionController;
+  ListViewItemDisablerController? _itemDisabledController;
   late double _popupWidth;
   late double _itemHeight;
 
@@ -762,12 +766,18 @@ class _PopupListState<T> extends State<_PopupList<T>> {
     _itemHeight = maxHeight;
   }
 
+  ListViewItemDisablerController? _createItemDisabledController() {
+    return widget.disabledItemFilter == null
+        ? null : ListViewItemDisablerController(filter: widget.disabledItemFilter);
+  }
+
   @override
   void initState() {
     super.initState();
     _selectionController = ListViewSelectionController();
     _selectionController.selectedIndex = widget.selectionController.selectedIndex;
     _selectionController.addListener(_handleSelectedIndexChanged);
+    _itemDisabledController = _createItemDisabledController();
   }
 
   @override
@@ -780,6 +790,7 @@ class _PopupListState<T> extends State<_PopupList<T>> {
   void didUpdateWidget(covariant _PopupList<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
     _updateListViewMetrics();
+    _itemDisabledController = _createItemDisabledController();
   }
 
   @override
@@ -821,7 +832,7 @@ class _PopupListState<T> extends State<_PopupList<T>> {
                     length: widget.length,
                     itemBuilder: widget.itemBuilder,
                     selectionController: _selectionController,
-                    // itemDisabledController: disabledItemFilter, TODO is this needed?
+                    itemDisabledController: _itemDisabledController,
                   ),
                 ),
               ),
