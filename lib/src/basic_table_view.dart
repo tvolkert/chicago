@@ -247,6 +247,25 @@ abstract class TableCellRange with Diagnosticable {
     return contains(cellOffset.rowIndex, cellOffset.columnIndex);
   }
 
+  /// The collection of rows contained in this cell range.
+  ///
+  /// If a row appears in this iterable, it does _not_ necessarily follow that
+  /// all cells in the row are contained in this cell range. Put another way,
+  /// if only one cell in a row is contained in this cell range, the row will
+  /// still be returned here.
+  ///
+  /// Each row will only appear once in the returned iterable, even if multiple
+  /// cells within that row are contained in this cell range.
+  Iterable<int> get rows {
+    final Set<int> visitedRows = <int>{};
+    visitCells((int rowIndex, int columnIndex) {
+      if (!visitedRows.contains(rowIndex)) {
+        visitedRows.add(rowIndex);
+      }
+    });
+    return visitedRows;
+  }
+
   TableCellRange where(bool test(int rowIndex, int columnIndex)) {
     return ProxyTableCellRange((TableCellVisitor visitor) {
       visitCells((int rowIndex, int columnIndex) {
@@ -280,6 +299,11 @@ class SingleCellRange extends TableCellRange {
   @override
   bool contains(int rowIndex, int columnIndex) {
     return rowIndex == this.rowIndex && columnIndex == this.columnIndex;
+  }
+
+  @override
+  Iterable<int> get rows {
+    return <int>[rowIndex];
   }
 }
 
@@ -316,6 +340,11 @@ class TableCellRect extends TableCellRange {
   }
 
   @override
+  Iterable<int> get rows {
+    return List<int>.generate(bottom - top + 1, (int i) => top + i);
+  }
+
+  @override
   @protected
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
@@ -334,6 +363,9 @@ class EmptyTableCellRange extends TableCellRange {
 
   @override
   bool contains(int rowIndex, int columnIndex) => false;
+
+  @override
+  Iterable<int> get rows => <int>[];
 }
 
 class ProxyTableCellRange extends TableCellRange {
