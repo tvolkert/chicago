@@ -258,11 +258,11 @@ class TableViewEditorController with ListenerNotifier<TableViewEditorListener> {
     });
 
     if (vote == Vote.approve) {
-      _rowIndex = null;
-      _columnIndex = null;
       notifyListeners((TableViewEditorListener listener) {
         listener.onEditFinished(this, TableViewEditOutcome.saved);
       });
+      _rowIndex = null;
+      _columnIndex = null;
       return true;
     } else {
       return false;
@@ -273,11 +273,11 @@ class TableViewEditorController with ListenerNotifier<TableViewEditorListener> {
   void cancel() {
     assert(isEditing);
     assert(isAttached);
-    _rowIndex = null;
-    _columnIndex = null;
     notifyListeners((TableViewEditorListener listener) {
       listener.onEditFinished(this, TableViewEditOutcome.canceled);
     });
+    _rowIndex = null;
+    _columnIndex = null;
   }
 }
 
