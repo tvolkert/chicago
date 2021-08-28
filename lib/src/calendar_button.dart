@@ -145,7 +145,7 @@ class _CalendarButtonState extends State<CalendarButton> {
     if (widget.selectionController == null) {
       _selectionController = CalendarSelectionController();
     }
-    selectionController.value ??= widget.initialSelectedDate ?? CalendarDate.today();
+    selectionController.value ??= widget.initialSelectedDate;
     selectionController.addListener(_handleSelectedDateChanged);
     _handleSelectedDateChanged(); // to set the initial value of _selectedDate
   }
