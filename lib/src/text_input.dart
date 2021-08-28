@@ -15,13 +15,18 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+
+import 'foundation.dart';
 
 class TextInput extends StatefulWidget {
   const TextInput({
     Key? key,
     this.controller,
     this.onKeyEvent,
+    this.onTextUpdated,
+    this.validator,
     this.focusNode,
     this.backgroundColor = const Color(0xffffffff),
     this.obscureText = false,
@@ -31,6 +36,8 @@ class TextInput extends StatefulWidget {
 
   final TextEditingController? controller;
   final ValueChanged<RawKeyEvent>? onKeyEvent;
+  final ValueChanged<String>? onTextUpdated;
+  final Predicate<String>? validator;
   final FocusNode? focusNode;
   final Color backgroundColor;
   final bool obscureText;
@@ -43,6 +50,8 @@ class TextInput extends StatefulWidget {
 
 class _TextInputState extends State<TextInput> {
   FocusNode? _focusNode;
+  TextEditingController? _controller;
+  late TextEditingValue _lastValidValue;
 
   static const InputBorder _inputBorder = OutlineInputBorder(
     borderSide: BorderSide(color: Color(0xff999999)),
@@ -53,12 +62,35 @@ class _TextInputState extends State<TextInput> {
 
   FocusNode get focusNode => widget.focusNode ?? _focusNode!;
 
+  TextEditingController get controller => widget.controller ?? _controller!;
+
+  void _handleEdit() {
+    final String text = controller.text;
+    if (text == _lastValidValue.text) {
+      _lastValidValue = controller.value;
+    } else if (widget.validator == null) {
+      _lastValidValue = controller.value;
+      if (widget.onTextUpdated != null) widget.onTextUpdated!(text);
+    } else if (widget.validator!(text)) {
+      _lastValidValue = controller.value;
+      if (widget.onTextUpdated != null) widget.onTextUpdated!(text);
+    } else {
+      controller.value = _lastValidValue;
+      SystemSound.play(SystemSoundType.alert);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     if (widget.focusNode == null) {
       _focusNode = FocusNode();
     }
+    if (widget.controller == null) {
+      _controller = TextEditingController();
+    }
+    controller.addListener(_handleEdit);
+    _lastValidValue = controller.value;
     if (widget.autofocus) {
       SchedulerBinding.instance!.addPostFrameCallback((Duration timeStamp) {
         if (mounted) {
@@ -81,19 +113,37 @@ class _TextInputState extends State<TextInput> {
         _focusNode = null;
       }
     }
+    if (widget.controller != oldWidget.controller) {
+      if (widget.controller == null) {
+        assert(_controller == null);
+        oldWidget.controller!.removeListener(_handleEdit);
+        _controller = TextEditingController();
+        _controller!.addListener(_handleEdit);
+      } else if (oldWidget.controller == null) {
+        assert(_controller != null);
+        _controller!.removeListener(_handleEdit);
+        _controller!.dispose();
+        _controller = null;
+        widget.controller!.addListener(_handleEdit);
+      } else {
+        oldWidget.controller!.removeListener(_handleEdit);
+        widget.controller!.addListener(_handleEdit);
+      }
+    }
   }
 
   @override
   void dispose() {
     _focusNode?.dispose();
-    _focusNode = null;
+    _controller?.removeListener(_handleEdit);
+    _controller?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     Widget result = TextField(
-      controller: widget.controller,
+      controller: controller,
       focusNode: widget.onKeyEvent == null ? focusNode : null,
       cursorWidth: 1,
       obscureText: widget.obscureText,
