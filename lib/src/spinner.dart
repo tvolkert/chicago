@@ -122,20 +122,24 @@ class Spinner extends StatefulWidget {
   final String? semanticLabel;
 
   static Widget defaultItemBuilder(BuildContext context, String value) {
-    final TextStyle style = DefaultTextStyle.of(context).style;
-    final TextDirection textDirection = Directionality.of(context);
-    return Padding(
-      padding: EdgeInsets.all(2),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          value,
-          maxLines: 1,
-          softWrap: false,
-          textDirection: textDirection,
-          style: style,
-        ),
-      ),
+    return Builder(
+      builder: (BuildContext context) {
+        final TextStyle style = DefaultTextStyle.of(context).style;
+        final TextDirection textDirection = Directionality.of(context);
+        return Padding(
+          padding: EdgeInsets.all(2),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              maxLines: 1,
+              softWrap: false,
+              textDirection: textDirection,
+              style: style,
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -193,6 +197,7 @@ class _SpinnerState extends State<Spinner> {
   }
 
   KeyEventResult _handleKey(FocusNode node, RawKeyEvent event) {
+    assert(widget.isEnabled);
     if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
       if (event is RawKeyDownEvent) {
         _worker.start(-1);
@@ -278,14 +283,14 @@ class _SpinnerState extends State<Spinner> {
       );
     }
     content = GestureDetector(
-      onTap: _requestFocus,
+      onTap: widget.isEnabled ? _requestFocus : null,
       child: Focus(
         focusNode: _focusNode,
-        onKey: _handleKey,
+        onKey: widget.isEnabled ? _handleKey : null,
         onFocusChange: _handleFocusChange,
         child: Semantics(
           enabled: widget.isEnabled,
-          focusable: true,
+          focusable: widget.isEnabled,
           focused: _focusNode!.hasFocus,
           label: widget.semanticLabel ?? 'Spinner',
           onIncrease: () => _worker.spin(1),
@@ -312,11 +317,13 @@ class _SpinnerState extends State<Spinner> {
         worker: _worker,
         direction: 1,
         onTapDown: _requestFocus,
+        isEnabled: widget.isEnabled,
       ),
       downButton: _SpinnerButton(
         worker: _worker,
         direction: -1,
         onTapDown: _requestFocus,
+        isEnabled: widget.isEnabled,
       ),
     );
   }
@@ -328,11 +335,13 @@ class _SpinnerButton extends StatefulWidget {
     required this.worker,
     required this.direction,
     required this.onTapDown,
+    required this.isEnabled,
   }) : super(key: key);
 
   final _Worker worker;
   final int direction;
   final VoidCallback onTapDown;
+  final bool isEnabled;
 
   @override
   _SpinnerButtonState createState() => _SpinnerButtonState();
@@ -357,22 +366,30 @@ class _SpinnerButtonState extends State<_SpinnerButton> {
     widget.worker.stop();
   }
 
+  Widget _buildButton(bool hover) {
+    return CustomPaint(
+      size: const Size.fromWidth(11),
+      painter: _SpinnerButtonPainter(
+        direction: widget.direction,
+        isHover: hover,
+        isPressed: _pressed,
+        isEnabled: widget.isEnabled,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (!widget.isEnabled) {
+      return _buildButton(false);
+    }
     return GestureDetector(
       onTapDown: _handleTapDown,
       onTapUp: _handleTapUp,
       onTapCancel: _handleTapCancel,
       child: HoverBuilder(
         builder: (BuildContext context, bool hover) {
-          return CustomPaint(
-            size: const Size.fromWidth(11),
-            painter: _SpinnerButtonPainter(
-              direction: widget.direction,
-              isHover: hover,
-              isPressed: _pressed,
-            ),
-          );
+          return _buildButton(hover);
         },
       ),
     );
@@ -384,11 +401,13 @@ class _SpinnerButtonPainter extends CustomPainter {
     required this.direction,
     required this.isHover,
     required this.isPressed,
+    required this.isEnabled,
   });
 
   final int direction;
   final bool isHover;
   final bool isPressed;
+  final bool isEnabled;
 
   @override
   void paint(ui.Canvas canvas, ui.Size size) {
@@ -408,14 +427,14 @@ class _SpinnerButtonPainter extends CustomPainter {
         ..moveTo(0, 4)
         ..lineTo(2.5, 1)
         ..lineTo(5, 4);
-      ui.Paint paint = ui.Paint()..color = const Color(0xff000000);
+      ui.Paint paint = ui.Paint()..color = isEnabled ? const Color(0xff000000) : const Color(0xff999999);
       canvas.drawPath(path, paint);
     } else {
       ui.Path path = ui.Path()
         ..moveTo(0, 1)
         ..lineTo(2.5, 4)
         ..lineTo(5, 1);
-      ui.Paint paint = ui.Paint()..color = const Color(0xff000000);
+      ui.Paint paint = ui.Paint()..color = isEnabled ? const Color(0xff000000) : const Color(0xff999999);
       canvas.drawPath(path, paint);
     }
   }
