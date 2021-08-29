@@ -503,8 +503,12 @@ class ScrollPaneState extends State<ScrollPane> with SingleTickerProviderStateMi
   /// The controller for this scroll pane's offset.
   ScrollPaneController get controller => widget.controller ?? _controller!;
 
-  /// Recursively scrolls an area to be visible in this scroll pane and all
-  /// ancestor scroll panes.
+  /// Scrolls an area to be visible.
+  ///
+  /// If the `propagate` flag is set to true (the default), this will
+  /// recursively scroll the area in this scroll pane _and all ancestor scroll
+  /// panes_. If the `propagate` flag is false, this will only scroll the area
+  /// to visible in _this_ scroll pane.
   ///
   /// If the area is not able to be made entirely visible, then this will
   /// scroll to reveal as much of the area as possible.
@@ -515,7 +519,7 @@ class ScrollPaneState extends State<ScrollPane> with SingleTickerProviderStateMi
   /// of the scroll pane that defines the coordinate space of `rect`. If this
   /// argument is not specified, `rect` will be interpreted as in the
   /// coordinate space of the scroll pane itself.
-  void scrollToVisible(Rect rect, {BuildContext? context}) {
+  void scrollToVisible(Rect rect, {BuildContext? context, bool propagate = true}) {
     context ??= this.context;
     final RenderObject? childRenderObject = context.findRenderObject();
     final RenderObject? renderScrollPane = this.context.findRenderObject();
@@ -527,8 +531,10 @@ class ScrollPaneState extends State<ScrollPane> with SingleTickerProviderStateMi
       scrollToRect = scrollToRect.shift(controller.scrollOffset);
     }
     controller.scrollToVisible(scrollToRect);
-    final Rect adjustedRect = scrollToRect.shift(controller.scrollOffset * -1);
-    ScrollPane.of(this.context)?.scrollToVisible(adjustedRect, context: this.context);
+    if (propagate) {
+      final Rect adjustedRect = scrollToRect.shift(controller.scrollOffset * -1);
+      ScrollPane.of(this.context)?.scrollToVisible(adjustedRect, context: this.context);
+    }
   }
 
   @override
