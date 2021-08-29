@@ -670,6 +670,8 @@ class _RenderForm extends RenderBox {
     );
     if (stretch) {
       fieldConstraints = fieldConstraints.tighten(width: fieldConstraints.maxWidth);
+    } else {
+      fieldConstraints = fieldConstraints.copyWith(minWidth: 0);
     }
 
     double rowY = 0;
