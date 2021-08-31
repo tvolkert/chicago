@@ -257,6 +257,7 @@ class _SpinnerState extends State<Spinner> {
       _worker = _Worker(widget, controller);
     }
     _focusNode!.canRequestFocus = widget.isEnabled;
+    _worker = _Worker(widget, controller);
     _index = _boundsCheckIndex();
     _updateContentWidth();
   }
