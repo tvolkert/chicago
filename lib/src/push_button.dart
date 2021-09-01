@@ -473,6 +473,7 @@ class ActionPushButton<I extends Intent> extends ActionTracker<I> {
   const ActionPushButton({
     Key? key,
     required I intent,
+    ValueChanged<Object?>? onActionInvoked,
     this.icon,
     this.label,
     this.axis = _defaultAxis,
@@ -484,7 +485,7 @@ class ActionPushButton<I extends Intent> extends ActionTracker<I> {
     this.padding = _defaultPadding,
     this.showTooltip = _defaultShowTooltip,
     this.isFocusable = _defaultIsFocusable,
-  }) : super(key: key, intent: intent);
+  }) : super(key: key, intent: intent, onActionInvoked: onActionInvoked);
 
   final String? icon;
   final String? label;

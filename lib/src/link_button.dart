@@ -105,9 +105,10 @@ class ActionLinkButton<I extends Intent> extends ActionTracker<I> {
   const ActionLinkButton({
     Key? key,
     required I intent,
+    ValueChanged<Object?>? onActionInvoked,
     this.image,
     required this.text,
-  }) : super(key: key, intent: intent);
+  }) : super(key: key, intent: intent, onActionInvoked: onActionInvoked);
 
   final ImageProvider? image;
   final String text;

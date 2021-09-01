@@ -17,9 +17,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 abstract class ActionTracker<I extends Intent> extends StatefulWidget {
-  const ActionTracker({Key? key, required this.intent}) : super(key: key);
+  const ActionTracker({
+    Key? key,
+    required this.intent,
+    this.onActionInvoked,
+  }) : super(key: key);
 
   final I intent;
+  final ValueChanged<Object?>? onActionInvoked;
 
   @override
   @protected
@@ -64,7 +69,10 @@ mixin ActionTrackerStateMixin<I extends Intent, T extends ActionTracker<I>> on S
     assert(_action != null);
     assert(_enabled);
     assert(_action!.isEnabled(widget.intent));
-    Actions.of(context).invokeAction(_action!, widget.intent, context);
+    final Object? result = Actions.of(context).invokeAction(_action!, widget.intent, context);
+    if (widget.onActionInvoked != null) {
+      widget.onActionInvoked!(result);
+    }
   }
 
   @override
