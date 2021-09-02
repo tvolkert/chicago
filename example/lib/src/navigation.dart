@@ -44,14 +44,9 @@ class NavigationDemo extends StatelessWidget {
   }
 }
 
-class TabsDemo extends StatefulWidget {
+class TabsDemo extends StatelessWidget {
   const TabsDemo({Key? key}) : super(key: key);
 
-  @override
-  _TabsDemoState createState() => _TabsDemoState();
-}
-
-class _TabsDemoState extends State<TabsDemo> {
   @override
   Widget build(BuildContext context) {
     return BorderPane(
