@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 class Tab {
@@ -32,7 +30,7 @@ class TabPane extends StatefulWidget {
     Key? key,
     this.initialSelectedIndex = 0,
     required this.tabs,
-  })  : super(key: key);
+  }) : super(key: key);
 
   final int initialSelectedIndex;
   final List<Tab> tabs;
@@ -57,7 +55,7 @@ class _TabPaneState extends State<TabPane> {
       final Tab tab = widget.tabs[i];
       if (i == selectedIndex) {
         tabs.add(
-          Ink(
+          DecoratedBox(
             decoration: const BoxDecoration(
               color: Color(0xfff7f5ee),
               border: Border(
@@ -88,7 +86,7 @@ class _TabPaneState extends State<TabPane> {
                   selectedIndex = i;
                 });
               },
-              child: Ink(
+              child: DecoratedBox(
                 decoration: const BoxDecoration(
                   color: Color(0xffc4c3bc),
                   border: Border(
@@ -113,7 +111,7 @@ class _TabPaneState extends State<TabPane> {
         );
       }
       tabs.add(
-        Ink(
+        DecoratedBox(
           decoration: const BoxDecoration(
             border: Border(
               bottom: BorderSide(width: 1, color: Color(0xff999999)),
@@ -125,7 +123,7 @@ class _TabPaneState extends State<TabPane> {
     }
     tabs.add(
       Expanded(
-        child: Ink(
+        child: DecoratedBox(
           decoration: const BoxDecoration(
             border: Border(
               bottom: BorderSide(width: 1, color: Color(0xff999999)),
@@ -144,7 +142,7 @@ class _TabPaneState extends State<TabPane> {
           children: tabs,
         ),
         Expanded(
-          child: Ink(
+          child: DecoratedBox(
             decoration: const BoxDecoration(
               border: Border(
                 left: BorderSide(width: 1, color: Color(0xff999999)),

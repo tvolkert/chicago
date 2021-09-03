@@ -30,8 +30,8 @@ class NavigationDemo extends StatelessWidget {
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: const [
-            // TabsDemo(),
-            // SizedBox(width: 12),
+            TabsDemo(),
+            SizedBox(width: 12),
             // ExpandersDemo(),
             // SizedBox(width: 12),
             // AccordionDemo(),
@@ -40,6 +40,80 @@ class NavigationDemo extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+class TabsDemo extends StatelessWidget {
+  const TabsDemo({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return BorderPane(
+      borderColor: Color(0xff999999),
+      backgroundColor: const Color(0xffffffff),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(4, 2, 4, 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            BoldText('Tab Pane'),
+            SizedBox(height: 4),
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: 400,
+                maxHeight: 100,
+              ),
+              child: TabPane(
+                tabs: [
+                  Tab(
+                    label: 'Pomegranate',
+                    builder: (BuildContext context) {
+                      return Center(
+                          child: ColoredText('Red', Color(0xffff0000)));
+                    },
+                  ),
+                  Tab(
+                    label: 'Mango',
+                    builder: (BuildContext context) {
+                      return Center(
+                          child: ColoredText('Orange', Color(0xffffa500)));
+                    },
+                  ),
+                  Tab(
+                    label: 'Banana',
+                    builder: (BuildContext context) {
+                      return Center(
+                          child: ColoredText('Yellow', Color(0xffffff00)));
+                    },
+                  ),
+                  Tab(
+                    label: 'Lime',
+                    builder: (BuildContext context) {
+                      return Center(
+                          child: ColoredText('Green', Color(0xff00ff00)));
+                    },
+                  ),
+                  Tab(
+                    label: 'Blueberry',
+                    builder: (BuildContext context) {
+                      return Center(
+                          child: ColoredText('Blue', Color(0xff0000ff)));
+                    },
+                  ),
+                  Tab(
+                    label: 'Plum',
+                    builder: (BuildContext context) {
+                      return Center(
+                          child: ColoredText('Purple', Color(0xff800080)));
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
