@@ -93,6 +93,7 @@ class _SortableTableDemoState extends State<SortableTableDemo> {
         BuildContext context,
         int rowIndex,
         int columnIndex,
+        bool hasFocus,
         bool rowSelected,
         bool rowHighlighted,
         bool isEditing,
@@ -100,7 +101,7 @@ class _SortableTableDemoState extends State<SortableTableDemo> {
       ) {
         final int? value = tableData[rowIndex][key];
         TextStyle style = DefaultTextStyle.of(context).style;
-        if (rowSelected) {
+        if (hasFocus && rowSelected) {
           style = style.copyWith(color: Color(0xffffffff));
         }
         return Text('$value', style: style);
@@ -121,6 +122,7 @@ class _SortableTableDemoState extends State<SortableTableDemo> {
         BuildContext context,
         int rowIndex,
         int columnIndex,
+        bool hasFocus,
         bool rowSelected,
         bool rowHighlighted,
         bool isEditing,
@@ -253,6 +255,7 @@ class _CustomTableDemoState extends State<CustomTableDemo> {
     BuildContext context,
     int rowIndex,
     int columnIndex,
+    bool hasFocus,
     bool rowSelected,
     bool rowHighlighted,
     bool isEditing,
@@ -283,6 +286,7 @@ class _CustomTableDemoState extends State<CustomTableDemo> {
     BuildContext context,
     int rowIndex,
     int columnIndex,
+    bool hasFocus,
     bool rowSelected,
     bool rowHighlighted,
     bool isEditing,
@@ -304,13 +308,14 @@ class _CustomTableDemoState extends State<CustomTableDemo> {
     BuildContext context,
     int rowIndex,
     int columnIndex,
+    bool hasFocus,
     bool rowSelected,
     bool rowHighlighted,
     bool isEditing,
     bool isRowDisabled,
   ) {
     final _CustomItem item = _items[rowIndex];
-    return rowSelected ? WhiteText(item.name) : Text(item.name);
+    return hasFocus && rowSelected ? WhiteText(item.name) : Text(item.name);
   }
 
   @override
@@ -420,6 +425,7 @@ class _EditableTableDemoState extends State<EditableTableDemo> {
     BuildContext context,
     int rowIndex,
     int columnIndex,
+    bool hasFocus,
     bool rowSelected,
     bool rowHighlighted,
     bool isEditing,
@@ -434,7 +440,7 @@ class _EditableTableDemoState extends State<EditableTableDemo> {
       final String text = _items[rowIndex].animal;
       return Padding(
         padding: EdgeInsets.all(2),
-        child: rowSelected ? WhiteText(text) : Text(text),
+        child: hasFocus && rowSelected ? WhiteText(text) : Text(text),
       );
     }
   }
@@ -450,6 +456,7 @@ class _EditableTableDemoState extends State<EditableTableDemo> {
     BuildContext context,
     int rowIndex,
     int columnIndex,
+    bool hasFocus,
     bool rowSelected,
     bool rowHighlighted,
     bool isEditing,
@@ -463,7 +470,7 @@ class _EditableTableDemoState extends State<EditableTableDemo> {
       final String text = _items[rowIndex].name;
       return Padding(
         padding: EdgeInsets.all(2),
-        child: rowSelected ? WhiteText(text) : Text(text),
+        child: hasFocus && rowSelected ? WhiteText(text) : Text(text),
       );
     }
   }
@@ -479,6 +486,7 @@ class _EditableTableDemoState extends State<EditableTableDemo> {
     BuildContext context,
     int rowIndex,
     int columnIndex,
+    bool hasFocus,
     bool rowSelected,
     bool rowHighlighted,
     bool isEditing,

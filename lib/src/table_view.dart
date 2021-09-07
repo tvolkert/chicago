@@ -71,6 +71,7 @@ typedef TableCellBuilder = Widget Function(
   BuildContext context,
   int rowIndex,
   int columnIndex,
+  bool hasFocus,
   bool isRowSelected,
   bool isRowHighlighted,
   bool isEditing,
@@ -694,6 +695,7 @@ class ScrollableTableView extends StatelessWidget {
     this.roundColumnWidthsToWholePixel = false,
     this.includeHeader = true,
     this.onDoubleTapRow,
+    this.focusNode,
   }) : super(key: key);
 
   final double rowHeight;
@@ -709,6 +711,7 @@ class ScrollableTableView extends StatelessWidget {
   final bool roundColumnWidthsToWholePixel;
   final bool includeHeader;
   final RowDoubleTapHandler? onDoubleTapRow;
+  final FocusNode? focusNode;
 
   @override
   Widget build(BuildContext context) {
@@ -734,6 +737,7 @@ class ScrollableTableView extends StatelessWidget {
       rowDisabledController: rowDisabledController,
       platform: platform,
       onDoubleTapRow: onDoubleTapRow,
+      focusNode: focusNode,
     );
 
     return ScrollPane(
@@ -755,7 +759,7 @@ typedef ObserveNavigator = NavigatorListenerRegistration Function({
   VoidCallback? onStopUserGesture,
 });
 
-class TableView extends RenderObjectWidget {
+class TableView extends StatefulWidget {
   const TableView({
     Key? key,
     required this.rowHeight,
@@ -769,11 +773,104 @@ class TableView extends RenderObjectWidget {
     this.roundColumnWidthsToWholePixel = false,
     this.platform,
     this.onDoubleTapRow,
+    this.focusNode,
   }) : super(key: key);
 
   final double rowHeight;
   final int length;
   final List<TableColumn> columns;
+  final TableViewMetricsController? metricsController;
+  final TableViewSelectionController? selectionController;
+  final TableViewEditorController? editorController;
+  final TableViewSortController? sortController;
+  final TableViewRowDisablerController? rowDisabledController;
+  final bool roundColumnWidthsToWholePixel;
+  final TargetPlatform? platform;
+  final RowDoubleTapHandler? onDoubleTapRow;
+  final FocusNode? focusNode;
+
+  @override
+  State<TableView> createState() => _TableViewState();
+}
+
+class _TableViewState extends State<TableView> {
+  FocusNode? _focusNode;
+
+  FocusNode get focusNode => widget.focusNode ?? _focusNode!;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.focusNode == null) {
+      _focusNode = FocusNode();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant TableView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.focusNode != oldWidget.focusNode) {
+      if (oldWidget.focusNode == null) {
+        assert(_focusNode != null);
+        _focusNode!.dispose();
+        _focusNode = null;
+      } else if (widget.focusNode == null) {
+        assert(_focusNode == null);
+        _focusNode = FocusNode();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _focusNode?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Focus(
+      debugLabel: 'chicago.TableView',
+      focusNode: focusNode,
+      child: RawTableView(
+        length: widget.length,
+        rowHeight: widget.rowHeight,
+        columns: widget.columns,
+        roundColumnWidthsToWholePixel: widget.roundColumnWidthsToWholePixel,
+        metricsController: widget.metricsController,
+        selectionController: widget.selectionController,
+        sortController: widget.sortController,
+        editorController: widget.editorController,
+        rowDisabledController: widget.rowDisabledController,
+        platform: widget.platform,
+        onDoubleTapRow: widget.onDoubleTapRow,
+        focusNode: focusNode,
+      ),
+    );
+  }
+}
+
+class RawTableView extends RenderObjectWidget {
+  const RawTableView({
+    Key? key,
+    required this.rowHeight,
+    required this.length,
+    required this.columns,
+    required this.focusNode,
+    this.metricsController,
+    this.selectionController,
+    this.editorController,
+    this.sortController,
+    this.rowDisabledController,
+    this.roundColumnWidthsToWholePixel = false,
+    this.platform,
+    this.onDoubleTapRow,
+  }) : super(key: key);
+
+  final double rowHeight;
+  final int length;
+  final List<TableColumn> columns;
+  final FocusNode focusNode;
   final TableViewMetricsController? metricsController;
   final TableViewSelectionController? selectionController;
   final TableViewEditorController? editorController;
@@ -793,6 +890,7 @@ class TableView extends RenderObjectWidget {
       rowHeight: rowHeight,
       length: length,
       columns: columns,
+      focusNode: focusNode,
       roundColumnWidthsToWholePixel: roundColumnWidthsToWholePixel,
       metricsController: metricsController,
       selectionController: selectionController,
@@ -811,6 +909,7 @@ class TableView extends RenderObjectWidget {
       ..rowHeight = rowHeight
       ..length = length
       ..columns = columns
+      ..focusNode = focusNode
       ..roundColumnWidthsToWholePixel = roundColumnWidthsToWholePixel
       ..metricsController = metricsController
       ..selectionController = selectionController
@@ -824,10 +923,10 @@ class TableView extends RenderObjectWidget {
 
 @visibleForTesting
 class TableViewElement extends RenderObjectElement with TableViewElementMixin {
-  TableViewElement(TableView tableView) : super(tableView);
+  TableViewElement(RawTableView tableView) : super(tableView);
 
   @override
-  TableView get widget => super.widget as TableView;
+  RawTableView get widget => super.widget as RawTableView;
 
   @override
   RenderTableView get renderObject => super.renderObject as RenderTableView;
@@ -840,6 +939,7 @@ class TableViewElement extends RenderObjectElement with TableViewElementMixin {
       this,
       rowIndex,
       columnIndex,
+      widget.focusNode.hasFocus,
       widget.selectionController?.isRowSelected(rowIndex) ?? false,
       renderObject.highlightedRow == rowIndex,
       widget.editorController?.isEditingCell(rowIndex, columnIndex) ?? false,
@@ -891,6 +991,7 @@ class RenderTableView extends RenderSegment
     required double rowHeight,
     required int length,
     required List<TableColumn> columns,
+    required FocusNode focusNode,
     bool roundColumnWidthsToWholePixel = false,
     TableViewMetricsController? metricsController,
     TableViewSelectionController? selectionController,
@@ -911,6 +1012,7 @@ class RenderTableView extends RenderSegment
     this.rowHeight = rowHeight;
     this.length = length;
     this.columns = columns;
+    this.focusNode = focusNode;
     this.roundColumnWidthsToWholePixel = roundColumnWidthsToWholePixel;
     this.metricsController = metricsController;
     this.selectionController = selectionController;
@@ -981,6 +1083,20 @@ class RenderTableView extends RenderSegment
       _resetSortedColumns();
       _cancelEditIfNecessary();
     }
+  }
+
+  FocusNode? _focusNode;
+  FocusNode get focusNode => _focusNode!;
+  set focusNode(FocusNode value) {
+    if (_focusNode == value) return;
+    if (_focusNode != null && attached) {
+      _focusNode!.removeListener(_handleFocusChange);
+    }
+    _focusNode = value;
+    if (attached) {
+      value.addListener(_handleFocusChange);
+    }
+    markNeedsBuild();
   }
 
   bool get isSelectionEnabled {
@@ -1115,6 +1231,10 @@ class RenderTableView extends RenderSegment
   NavigatorListenerRegistration? _navigatorListenerRegistration;
   int _routesPushedDuringEdit = 0;
 
+  void _handleFocusChange() {
+    markNeedsBuild();
+  }
+
   void _handleEditStarted(TableViewEditorController controller) {
     assert(controller == _editorController);
     assert(_cellsBeingEdited == null);
@@ -1248,6 +1368,7 @@ class RenderTableView extends RenderSegment
     if (selectionController != null && selectMode != SelectMode.none) {
       final int rowIndex = metrics.getRowAt(localPosition.dy);
       if (rowIndex >= 0 && rowIndex < length && !_isRowDisabled(rowIndex)) {
+        focusNode.requestFocus();
         final Set<LogicalKeyboardKey> keys = RawKeyboard.instance.keysPressed;
 
         if (isShiftKeyPressed() && selectMode == SelectMode.multi) {
@@ -1343,6 +1464,7 @@ class RenderTableView extends RenderSegment
     if (_editorController != null) {
       _editorController!.attach(this);
     }
+    focusNode.addListener(_handleFocusChange);
   }
 
   @override
@@ -1358,6 +1480,7 @@ class RenderTableView extends RenderSegment
       assert(_editorController != null);
       _handleEditFinished(_editorController!, TableViewEditOutcome.canceled);
     }
+    focusNode.removeListener(_handleFocusChange);
     super.detach();
   }
 
@@ -1382,7 +1505,7 @@ class RenderTableView extends RenderSegment
     if (selectionController != null && selectionController!.selectedRanges.isNotEmpty) {
       final Paint paint = Paint()
         ..style = PaintingStyle.fill
-        ..color = const Color(0xff14538b);
+        ..color = focusNode.hasFocus ? const Color(0xff14538b) : const Color(0xffc4c3bc);
       for (Span range in selectionController!.selectedRanges) {
         Rect bounds = metrics.getRowBounds(range.start);
         bounds = bounds.expandToInclude(metrics.getRowBounds(range.end));
