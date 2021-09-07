@@ -1,4 +1,5 @@
 // Licensed to the Apache Software Foundation (ASF) under one or more
+// Licensed to the Apache Software Foundation (ASF) under one or more
 // contributor license agreements.  See the NOTICE file distributed with
 // this work for additional information regarding copyright ownership.
 // The ASF licenses this file to you under the Apache License,
@@ -48,6 +49,16 @@ class _Worker {
     // Wait a timeout period, then begin rapidly spinning
     _timer = Timer(_delay, () {
       _timer = Timer.periodic(_period, (Timer timer) {
+        assert(() {
+          if (controller._debugDisposed) {
+            stop();
+            throw FlutterError(
+              'A ${controller.runtimeType} was used after being disposed.\n'
+              'Once you have called dispose() on an object, it can no longer be used.',
+            );
+          }
+          return true;
+        }());
         spin(direction);
       });
     });
@@ -91,6 +102,15 @@ class SpinnerController extends ChangeNotifier {
   SpinnerController();
 
   SpinnerController._withIndex(this._index);
+
+  bool _debugDisposed = false;
+  void dispose() {
+    assert(() {
+      _debugDisposed = true;
+      return true;
+    }());
+    super.dispose();
+  }
 
   int _index = -1;
   int get selectedIndex => _index;
