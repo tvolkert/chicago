@@ -70,9 +70,29 @@ class Span {
     return Span(math.min(start, span.start), math.max(end, span.end));
   }
 
+  /// Whether [start] is less than or equal to [end].
+  ///
+  /// See also:
+  ///  * [normalize], which returns a new span that is guaranteed to be
+  ///    normalized.
+  bool get isNormalized => start <= end;
+
   /// Returns a span with the same range as this span but in which [start] is
   /// guaranteed to be less than or equal to [end].
   Span normalize() => Span(math.min(start, end), math.max(start, end));
+
+  /// Returns this span's range as an iterable collection of integers.
+  ///
+  /// If this span's [start] is less than its [end], the returned iterable will
+  /// produce increasing values. If its [start] is greater than its [end], the
+  /// returned iterable will produce decreasing values.
+  Iterable<int> asIterable() => Iterable<int>.generate(length, (int index) {
+    if (end >= start) {
+      return start + index;
+    } else {
+      return start - index;
+    }
+  });
 
   @override
   bool operator ==(Object other) {
