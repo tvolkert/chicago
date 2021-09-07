@@ -297,9 +297,10 @@ class ListViewElement extends RenderObjectElement with ListViewElementMixin {
 
   @override
   void update(ListView newWidget) {
-    if (widget.itemBuilder != newWidget.itemBuilder) {
-      renderObject.markNeedsBuild();
-    }
+    // We call `markNeedsBuild()` on the render object even if the itemBuilder
+    // hasn't changed because the item builder might produce a different widget
+    // even though the builder itself hasn't changed.
+    renderObject.markNeedsBuild();
     super.update(newWidget);
   }
 
