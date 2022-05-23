@@ -79,7 +79,7 @@ class NavigatorListenerRegistration {
 /// }
 /// ```
 class NavigatorListener extends StatefulWidget {
-  const NavigatorListener({Key? key, required this.child}) : super(key: key);
+  const NavigatorListener({super.key, required this.child});
 
   /// The widget below this widget in the tree.
   ///
@@ -87,7 +87,7 @@ class NavigatorListener extends StatefulWidget {
   final Widget child;
 
   @override
-  _NavigatorListenerState createState() => _NavigatorListenerState();
+  State<NavigatorListener> createState() => _NavigatorListenerState();
 
   /// The controller from the closest instance of this class that encloses the
   /// given context.
@@ -169,14 +169,15 @@ class _NavigatorListenerState extends State<NavigatorListener>
 class _Scope extends InheritedWidget {
   const _Scope({
     required this.navigatorListenerState,
-    required Widget child,
-  }) : super(child: child);
+    required super.child,
+  });
 
   final _NavigatorListenerState navigatorListenerState;
 
   @override
   bool updateShouldNotify(_Scope old) {
-    return navigatorListenerState.observer != old.navigatorListenerState.observer;
+    return navigatorListenerState.observer !=
+        old.navigatorListenerState.observer;
   }
 }
 
@@ -212,7 +213,8 @@ class _AggregateObserver extends NavigatorObserver {
   }
 
   @override
-  void didStartUserGesture(Route<dynamic> route, Route<dynamic>? previousRoute) {
+  void didStartUserGesture(
+      Route<dynamic> route, Route<dynamic>? previousRoute) {
     for (NavigatorObserver proxy in proxies) {
       proxy.didStartUserGesture(route, previousRoute);
     }
@@ -272,7 +274,8 @@ class _ProxyObserver extends NavigatorObserver {
   }
 
   @override
-  void didStartUserGesture(Route<dynamic> route, Route<dynamic>? previousRoute) {
+  void didStartUserGesture(
+      Route<dynamic> route, Route<dynamic>? previousRoute) {
     if (onStartUserGesture != null) {
       onStartUserGesture!(route, previousRoute);
     }

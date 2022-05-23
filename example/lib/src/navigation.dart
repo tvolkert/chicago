@@ -186,11 +186,17 @@ class _RollupDemoState extends State<RollupDemo> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Checkbox(trailing: Text('Circle')),
-                    Checkbox(trailing: Text('Ellipse'), controller: _ellipseController),
-                    Checkbox(trailing: Text('Square'), controller: _squareController),
+                    Checkbox(
+                        trailing: Text('Ellipse'),
+                        controller: _ellipseController),
+                    Checkbox(
+                        trailing: Text('Square'),
+                        controller: _squareController),
                     const Checkbox(trailing: Text('Rectangle')),
                     const Checkbox(trailing: Text('Hexagon')),
-                    Checkbox(trailing: Text('Octagon'), controller: _octagonController),
+                    Checkbox(
+                        trailing: Text('Octagon'),
+                        controller: _octagonController),
                   ],
                 );
               },

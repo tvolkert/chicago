@@ -20,12 +20,14 @@ import 'package:flutter/widgets.dart';
 
 import 'text.dart';
 
-typedef TableRowComparator = int Function(Map<String, int> row1, Map<String, int> row2);
+typedef TableRowComparator = int Function(
+    Map<String, int> row1, Map<String, int> row2);
 
 final math.Random rand = math.Random();
 const int tableLength = 10000;
 
-final List<Map<String, int>> tableData = List<Map<String, int>>.generate(tableLength, (int index) {
+final List<Map<String, int>> tableData =
+    List<Map<String, int>>.generate(tableLength, (int index) {
   return <String, int>{
     'i': index,
     'a': rand.nextInt(20),
@@ -167,14 +169,17 @@ class _SortableTableDemoState extends State<SortableTableDemo> {
           selectedItem = tableData[_selectionController.selectedIndex];
         }
 
-        final TableRowComparator comparator = _getTableRowComparator(sortKey, direction);
+        final TableRowComparator comparator =
+            _getTableRowComparator(sortKey, direction);
         tableData.sort(comparator);
 
         if (selectedItem != null) {
-          int selectedIndex = binarySearch(tableData, selectedItem, compare: comparator);
+          int selectedIndex =
+              binarySearch(tableData, selectedItem, compare: comparator);
           assert(selectedIndex >= 0);
           _selectionController.selectedIndex = selectedIndex;
-          final Rect rowBounds = _metricsController.metrics.getRowBounds(selectedIndex);
+          final Rect rowBounds =
+              _metricsController.metrics.getRowBounds(selectedIndex);
           _scrollController.scrollToVisible(rowBounds);
         }
       },
@@ -527,7 +532,8 @@ class _EditableTableDemoState extends State<EditableTableDemo> {
         TableViewEditOutcome outcome,
       ) {
         if (outcome == TableViewEditOutcome.saved) {
-          final String animal = editableTableListButtonOptions[_listButtonController.selectedIndex];
+          final String animal = editableTableListButtonOptions[
+              _listButtonController.selectedIndex];
           final String name = _textController.text;
           setState(() {
             _items[editingRowIndex] = _EditableItem(animal, name);

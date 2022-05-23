@@ -211,8 +211,9 @@ class _MultiSelectListDemoState extends State<MultiSelectListDemo> {
   @override
   void initState() {
     super.initState();
-    _selectionController = ListViewSelectionController(selectMode: SelectMode.multi)
-      ..selectedRanges = [Span(0, 0), Span(2, 3)];
+    _selectionController =
+        ListViewSelectionController(selectMode: SelectMode.multi)
+          ..selectedRanges = [Span(0, 0), Span(2, 3)];
   }
 
   @override
@@ -387,9 +388,12 @@ class _ListButtonsDemoState extends State<ListButtonsDemo> {
   @override
   void initState() {
     super.initState();
-    _basicSelectionController = ListViewSelectionController()..selectedIndex = 0;
-    _imageSelectionController = ListViewSelectionController()..selectedIndex = 2;
-    _colorSelectionController = ListViewSelectionController()..selectedIndex = 0;
+    _basicSelectionController = ListViewSelectionController()
+      ..selectedIndex = 0;
+    _imageSelectionController = ListViewSelectionController()
+      ..selectedIndex = 2;
+    _colorSelectionController = ListViewSelectionController()
+      ..selectedIndex = 0;
   }
 
   @override
@@ -420,10 +424,12 @@ class _ListButtonsDemoState extends State<ListButtonsDemo> {
               child: ListButton<String>(
                 items: ['anchor', 'bell', 'clock', 'cup', 'house', 'star'],
                 selectionController: _imageSelectionController,
-                builder: (BuildContext context, String? item, bool isForMeasurementOnly) {
+                builder: (BuildContext context, String? item,
+                    bool isForMeasurementOnly) {
                   final String asset = item as String;
                   final String path = 'assets/$asset.png';
-                  final String label = asset[0].toUpperCase() + asset.substring(1);
+                  final String label =
+                      asset[0].toUpperCase() + asset.substring(1);
                   return Padding(
                     padding: EdgeInsets.all(1),
                     child: Row(
@@ -447,7 +453,8 @@ class _ListButtonsDemoState extends State<ListButtonsDemo> {
                   bool isDisabled,
                 ) {
                   final String path = 'assets/$item.png';
-                  final String label = item[0].toUpperCase() + item.substring(1);
+                  final String label =
+                      item[0].toUpperCase() + item.substring(1);
                   return Padding(
                     padding: const EdgeInsets.all(5),
                     child: Row(
@@ -478,8 +485,10 @@ class _ListButtonsDemoState extends State<ListButtonsDemo> {
                   _ColorItem(Color(0xff4b0082), 'Indigo'),
                   _ColorItem(Color(0xff8f008f), 'Violet'),
                 ],
-                builder: (BuildContext context, _ColorItem? item, bool isForMeasurementOnly) {
-                  return _buildColorItem(item!, isSelected: false, includeName: false);
+                builder: (BuildContext context, _ColorItem? item,
+                    bool isForMeasurementOnly) {
+                  return _buildColorItem(item!,
+                      isSelected: false, includeName: false);
                 },
                 itemBuilder: (
                   BuildContext context,

@@ -18,7 +18,9 @@ import 'package:flutter/widgets.dart' hide TableCell, TableRow;
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('Relative-width column with colspan will be allocated enough to fit intrinsic width', (WidgetTester tester) async {
+  testWidgets(
+      'Relative-width column with colspan will be allocated enough to fit intrinsic width',
+      (WidgetTester tester) async {
     await tester.pumpWidget(Row(
       textDirection: TextDirection.ltr,
       children: [
@@ -29,8 +31,8 @@ void main() {
           ],
           children: [
             TableRow(
-              children: [
-                const TableCell(
+              children: const [
+                TableCell(
                   columnSpan: 2,
                   child: SizedBox(width: 100, height: 10),
                 ),
@@ -42,12 +44,15 @@ void main() {
       ],
     ));
 
-    RenderTablePane renderObject = tester.renderObject<RenderTablePane>(find.byType(TablePane));
+    RenderTablePane renderObject =
+        tester.renderObject<RenderTablePane>(find.byType(TablePane));
     expect(renderObject.size.width, 100);
     expect(renderObject.metrics.columnWidths, [50, 50]);
   });
 
-  testWidgets('Relative-width column with colspan that exceeds width constraint will be sized down', (WidgetTester tester) async {
+  testWidgets(
+      'Relative-width column with colspan that exceeds width constraint will be sized down',
+      (WidgetTester tester) async {
     await tester.pumpWidget(TablePane(
       columns: const <TablePaneColumn>[
         TablePaneColumn(width: RelativeTablePaneColumnWidth()),
@@ -55,8 +60,8 @@ void main() {
       ],
       children: [
         TableRow(
-          children: [
-            const TableCell(
+          children: const [
+            TableCell(
               columnSpan: 2,
               child: SizedBox(width: 1000, height: 10),
             ),
@@ -66,7 +71,8 @@ void main() {
       ],
     ));
 
-    RenderTablePane renderObject = tester.renderObject<RenderTablePane>(find.byType(TablePane));
+    RenderTablePane renderObject =
+        tester.renderObject<RenderTablePane>(find.byType(TablePane));
     expect(renderObject.size.width, 800);
     expect(renderObject.metrics.columnWidths, [400, 400]);
   });
@@ -74,7 +80,7 @@ void main() {
   testWidgets('todo', (WidgetTester tester) async {
     await tester.pumpWidget(Center(
       child: ConstrainedBox(
-        constraints: BoxConstraints(minWidth: 400),
+        constraints: const BoxConstraints(minWidth: 400),
         child: TablePane(
           columns: const <TablePaneColumn>[
             TablePaneColumn(width: RelativeTablePaneColumnWidth()),
@@ -82,8 +88,8 @@ void main() {
           ],
           children: [
             TableRow(
-              children: [
-                const TableCell(
+              children: const [
+                TableCell(
                   columnSpan: 2,
                   child: SizedBox(width: 100, height: 10),
                 ),
@@ -95,12 +101,14 @@ void main() {
       ),
     ));
 
-    RenderTablePane renderObject = tester.renderObject<RenderTablePane>(find.byType(TablePane));
+    RenderTablePane renderObject =
+        tester.renderObject<RenderTablePane>(find.byType(TablePane));
     expect(renderObject.size.width, 400);
     expect(renderObject.metrics.columnWidths, [200, 200]);
   });
 
-  testWidgets('indexOf works for basic table structure', (WidgetTester tester) async {
+  testWidgets('indexOf works for basic table structure',
+      (WidgetTester tester) async {
     await tester.pumpWidget(
       Directionality(
         textDirection: TextDirection.ltr,
@@ -117,14 +125,20 @@ void main() {
       ),
     );
 
-    expect(TablePane.offsetOf(tester.element(find.text('0,0'))), IndexedOffset(0, 0));
-    expect(TablePane.offsetOf(tester.element(find.text('0,1'))), IndexedOffset(0, 1));
-    expect(TablePane.offsetOf(tester.element(find.text('1,0'))), IndexedOffset(1, 0));
-    expect(TablePane.offsetOf(tester.element(find.text('1,1'))), IndexedOffset(1, 1));
-    expect(TablePane.offsetOf(tester.element(find.byType(Directionality))), isNull);
+    expect(TablePane.offsetOf(tester.element(find.text('0,0'))),
+        const IndexedOffset(0, 0));
+    expect(TablePane.offsetOf(tester.element(find.text('0,1'))),
+        const IndexedOffset(0, 1));
+    expect(TablePane.offsetOf(tester.element(find.text('1,0'))),
+        const IndexedOffset(1, 0));
+    expect(TablePane.offsetOf(tester.element(find.text('1,1'))),
+        const IndexedOffset(1, 1));
+    expect(TablePane.offsetOf(tester.element(find.byType(Directionality))),
+        isNull);
   });
 
-  testWidgets('indexOf works for complex table structure', (WidgetTester tester) async {
+  testWidgets('indexOf works for complex table structure',
+      (WidgetTester tester) async {
     await tester.pumpWidget(
       Directionality(
         textDirection: TextDirection.ltr,
@@ -135,7 +149,7 @@ void main() {
           ],
           children: [
             MediaQuery(
-              data: MediaQueryData(),
+              data: const MediaQueryData(),
               child: TableRow(
                 children: const [
                   SizedBox.square(dimension: 50, child: Text('0,0')),
@@ -144,7 +158,7 @@ void main() {
               ),
             ),
             MediaQuery(
-              data: MediaQueryData(),
+              data: const MediaQueryData(),
               child: TableRow(
                 children: const [
                   SizedBox.square(dimension: 50, child: Text('1,0')),
@@ -157,14 +171,20 @@ void main() {
       ),
     );
 
-    expect(TablePane.offsetOf(tester.element(find.text('0,0'))), IndexedOffset(0, 0));
-    expect(TablePane.offsetOf(tester.element(find.text('0,1'))), IndexedOffset(0, 1));
-    expect(TablePane.offsetOf(tester.element(find.text('1,0'))), IndexedOffset(1, 0));
-    expect(TablePane.offsetOf(tester.element(find.text('1,1'))), IndexedOffset(1, 1));
-    expect(TablePane.offsetOf(tester.element(find.byType(Directionality))), isNull);
+    expect(TablePane.offsetOf(tester.element(find.text('0,0'))),
+        const IndexedOffset(0, 0));
+    expect(TablePane.offsetOf(tester.element(find.text('0,1'))),
+        const IndexedOffset(0, 1));
+    expect(TablePane.offsetOf(tester.element(find.text('1,0'))),
+        const IndexedOffset(1, 0));
+    expect(TablePane.offsetOf(tester.element(find.text('1,1'))),
+        const IndexedOffset(1, 1));
+    expect(TablePane.offsetOf(tester.element(find.byType(Directionality))),
+        isNull);
   });
 
-  testWidgets('TablePane.of works for basic table structure', (WidgetTester tester) async {
+  testWidgets('TablePane.of works for basic table structure',
+      (WidgetTester tester) async {
     await tester.pumpWidget(
       Directionality(
         textDirection: TextDirection.ltr,

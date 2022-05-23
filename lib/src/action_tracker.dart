@@ -18,10 +18,10 @@ import 'package:flutter/widgets.dart';
 
 abstract class ActionTracker<I extends Intent> extends StatefulWidget {
   const ActionTracker({
-    Key? key,
+    super.key,
     required this.intent,
     this.onActionInvoked,
-  }) : super(key: key);
+  });
 
   final I intent;
   final ValueChanged<Object?>? onActionInvoked;
@@ -31,7 +31,8 @@ abstract class ActionTracker<I extends Intent> extends StatefulWidget {
   ActionTrackerStateMixin<I, ActionTracker<I>> createState();
 }
 
-mixin ActionTrackerStateMixin<I extends Intent, T extends ActionTracker<I>> on State<T> {
+mixin ActionTrackerStateMixin<I extends Intent, T extends ActionTracker<I>>
+    on State<T> {
   Action<I>? _action;
   bool _enabled = false;
 
@@ -45,7 +46,8 @@ mixin ActionTrackerStateMixin<I extends Intent, T extends ActionTracker<I>> on S
 
   void _detachFromAction() {
     if (_action != null) {
-      _action!.removeActionListener(_actionUpdated as void Function(Action<Intent>));
+      _action!.removeActionListener(
+          _actionUpdated as void Function(Action<Intent>));
       setState(() {
         _action = null;
         _enabled = false;
@@ -69,7 +71,8 @@ mixin ActionTrackerStateMixin<I extends Intent, T extends ActionTracker<I>> on S
     assert(_action != null);
     assert(_enabled);
     assert(_action!.isEnabled(widget.intent));
-    final Object? result = Actions.of(context).invokeAction(_action!, widget.intent, context);
+    final Object? result =
+        Actions.of(context).invokeAction(_action!, widget.intent, context);
     if (widget.onActionInvoked != null) {
       widget.onActionInvoked!(result);
     }
@@ -85,7 +88,8 @@ mixin ActionTrackerStateMixin<I extends Intent, T extends ActionTracker<I>> on S
 
   @override
   void dispose() {
-    _action?.removeActionListener(_actionUpdated as void Function(Action<Intent>));
+    _action
+        ?.removeActionListener(_actionUpdated as void Function(Action<Intent>));
     super.dispose();
   }
 }

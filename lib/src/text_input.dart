@@ -16,13 +16,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 
 import 'foundation.dart';
 
 class TextInput extends StatefulWidget {
   const TextInput({
-    Key? key,
+    super.key,
     this.controller,
     this.onKeyEvent,
     this.onTextUpdated,
@@ -32,7 +31,7 @@ class TextInput extends StatefulWidget {
     this.obscureText = false,
     this.autofocus = false,
     this.enabled = true,
-  }) : super(key: key);
+  });
 
   final TextEditingController? controller;
   final ValueChanged<RawKeyEvent>? onKeyEvent;
@@ -45,7 +44,7 @@ class TextInput extends StatefulWidget {
   final bool enabled;
 
   @override
-  _TextInputState createState() => _TextInputState();
+  State<TextInput> createState() => _TextInputState();
 }
 
 class _TextInputState extends State<TextInput> {
@@ -92,7 +91,7 @@ class _TextInputState extends State<TextInput> {
     controller.addListener(_handleEdit);
     _lastValidValue = controller.value;
     if (widget.autofocus) {
-      SchedulerBinding.instance!.addPostFrameCallback((Duration timeStamp) {
+      SchedulerBinding.instance.addPostFrameCallback((Duration timeStamp) {
         if (mounted) {
           focusNode.requestFocus();
         }
@@ -151,7 +150,8 @@ class _TextInputState extends State<TextInput> {
       cursorColor: const Color(0xff000000),
       style: const TextStyle(fontFamily: 'Verdana', fontSize: 11),
       decoration: InputDecoration(
-        fillColor: widget.enabled ? widget.backgroundColor : _disabledBackgroundColor,
+        fillColor:
+            widget.enabled ? widget.backgroundColor : _disabledBackgroundColor,
         hoverColor: widget.backgroundColor,
         filled: true,
         contentPadding: const EdgeInsets.fromLTRB(3, 13, 0, 4),

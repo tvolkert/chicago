@@ -27,16 +27,16 @@ class Tab {
 
 class TabPane extends StatefulWidget {
   const TabPane({
-    Key? key,
+    super.key,
     this.initialSelectedIndex = 0,
     required this.tabs,
-  }) : super(key: key);
+  });
 
   final int initialSelectedIndex;
   final List<Tab> tabs;
 
   @override
-  _TabPaneState createState() => _TabPaneState();
+  State<TabPane> createState() => _TabPaneState();
 }
 
 class _TabPaneState extends State<TabPane> {
@@ -111,25 +111,25 @@ class _TabPaneState extends State<TabPane> {
         );
       }
       tabs.add(
-        DecoratedBox(
-          decoration: const BoxDecoration(
+        const DecoratedBox(
+          decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(width: 1, color: Color(0xff999999)),
             ),
           ),
-          child: const SizedBox(width: 2),
+          child: SizedBox(width: 2),
         ),
       );
     }
     tabs.add(
-      Expanded(
+      const Expanded(
         child: DecoratedBox(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(width: 1, color: Color(0xff999999)),
             ),
           ),
-          child: const SizedBox(width: 4),
+          child: SizedBox(width: 4),
         ),
       ),
     );
@@ -149,7 +149,7 @@ class _TabPaneState extends State<TabPane> {
                 right: BorderSide(width: 1, color: Color(0xff999999)),
                 bottom: BorderSide(width: 1, color: Color(0xff999999)),
               ),
-              color: const Color(0xfff7f5ee),
+              color: Color(0xfff7f5ee),
             ),
             child: widget.tabs[selectedIndex].builder(context),
           ),

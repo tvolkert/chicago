@@ -28,7 +28,8 @@ class _AssetImagePrecacheState extends State<AssetImagePrecache> {
       // precacheImage() guarantees that the futures will not throw
       _futures = widget.paths
           .map<AssetImage>((String path) => AssetImage(path))
-          .map<Future<void>>((AssetImage image) => precacheImage(image, context));
+          .map<Future<void>>(
+              (AssetImage image) => precacheImage(image, context));
       Future.wait<void>(_futures!).then((void _) {
         setState(() {
           _futures = null;

@@ -14,8 +14,6 @@
 // limitations under the License.
 
 import 'package:chicago/src/colors.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 const double _checkboxSize = 14;
@@ -58,7 +56,8 @@ class CheckboxController extends ChangeNotifier {
   }
 
   bool get checked => _state == CheckboxState.checked;
-  set checked(bool value) => state = value ? CheckboxState.checked : CheckboxState.unchecked;
+  set checked(bool value) =>
+      state = value ? CheckboxState.checked : CheckboxState.unchecked;
 
   void toggleState() {
     if (canUserToggleMixed) {
@@ -81,13 +80,13 @@ class CheckboxController extends ChangeNotifier {
 
 class Checkbox extends StatefulWidget {
   const Checkbox({
-    Key? key,
+    super.key,
     this.controller,
     this.onChange,
     this.trailing,
     this.spacing = _defaultSpacing,
     this.isEnabled = true,
-  }) : super(key: key);
+  });
 
   /// The controller that governs the state of this checkbox.
   ///
@@ -124,7 +123,7 @@ class Checkbox extends StatefulWidget {
   final bool isEnabled;
 
   @override
-  _CheckboxState createState() => _CheckboxState();
+  State<Checkbox> createState() => _CheckboxState();
 }
 
 class _CheckboxState extends State<Checkbox> {
@@ -154,7 +153,8 @@ class _CheckboxState extends State<Checkbox> {
   void didUpdateWidget(covariant Checkbox oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.controller != oldWidget.controller) {
-      final CheckboxController oldController = _controller ?? oldWidget.controller!;
+      final CheckboxController oldController =
+          _controller ?? oldWidget.controller!;
       oldController.removeListener(_handleChanged);
       _controller?.dispose();
       _controller = null;
@@ -187,12 +187,12 @@ class _CheckboxState extends State<Checkbox> {
 
 class BasicCheckbox extends StatelessWidget {
   const BasicCheckbox({
-    Key? key,
+    super.key,
     this.state = CheckboxState.unchecked,
     this.onTap,
     this.trailing,
     this.spacing = _defaultSpacing,
-  }) : super(key: key);
+  });
 
   final CheckboxState state;
   final VoidCallback? onTap;
@@ -220,7 +220,8 @@ class BasicCheckbox extends StatelessWidget {
     final Decoration backgroundDecoration;
     if (isEnabled) {
       backgroundDecoration = BoxDecoration(
-        border: const Border.fromBorderSide(BorderSide(color: Color(0xff999999))),
+        border:
+            const Border.fromBorderSide(BorderSide(color: Color(0xff999999))),
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
@@ -297,15 +298,19 @@ class CheckPainter extends CustomPainter {
         double dy = (_checkboxSize - n) / 2;
         canvas.save();
         canvas.translate(0, (size.height - _checkboxSize) / 2);
-        canvas.drawLine(Offset(dx, (n - m) + dy), Offset(m + dx, n + dy), paint);
-        canvas.drawLine(Offset(m + dx, n + dy), Offset((m + n) + dx, dy), paint);
+        canvas.drawLine(
+            Offset(dx, (n - m) + dy), Offset(m + dx, n + dy), paint);
+        canvas.drawLine(
+            Offset(m + dx, n + dy), Offset((m + n) + dx, dy), paint);
         canvas.restore();
         break;
       case CheckboxState.mixed:
         paint
           ..style = PaintingStyle.fill
           ..isAntiAlias = false;
-        canvas.drawRect(Rect.fromLTWH(4, _checkboxSize / 2 - 1, _checkboxSize - 8, 2), paint);
+        canvas.drawRect(
+            const Rect.fromLTWH(4, _checkboxSize / 2 - 1, _checkboxSize - 8, 2),
+            paint);
         break;
       case CheckboxState.unchecked:
         // Nothing to paint.

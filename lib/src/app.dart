@@ -14,7 +14,8 @@
 // limitations under the License.
 
 // Needed because chicago.TextInput still depends on Material
-import 'package:flutter/material.dart' show DefaultMaterialLocalizations, Material;
+import 'package:flutter/material.dart'
+    show DefaultMaterialLocalizations, Material;
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
@@ -23,16 +24,16 @@ import 'scroll_pane.dart';
 
 class ChicagoApp extends StatefulWidget {
   const ChicagoApp({
-    Key? key,
+    super.key,
     this.title = 'Chicago App',
     this.home,
-  }) : super(key: key);
+  });
 
   final String title;
   final Widget? home;
 
   @override
-  _ChicagoAppState createState() => _ChicagoAppState();
+  State<ChicagoApp> createState() => _ChicagoAppState();
 }
 
 class _ChicagoAppState extends State<ChicagoApp> with WidgetsBindingObserver {
@@ -46,10 +47,11 @@ class _ChicagoAppState extends State<ChicagoApp> with WidgetsBindingObserver {
       final ScrollPaneState? scrollPane = ScrollPane.of(focusContext);
       if (scrollPane != null && !_scrollToVisibleScheduled) {
         _scrollToVisibleScheduled = true;
-        SchedulerBinding.instance!.addPostFrameCallback((Duration timeStamp) {
+        SchedulerBinding.instance.addPostFrameCallback((Duration timeStamp) {
           _scrollToVisibleScheduled = false;
           assert(mounted && scrollPane.mounted && focusNode.hasPrimaryFocus);
-          final RenderObject? focusRenderObject = focusContext.findRenderObject();
+          final RenderObject? focusRenderObject =
+              focusContext.findRenderObject();
           if (focusRenderObject is RenderBox) {
             final Rect focusRect = Offset.zero & focusRenderObject.size;
             scrollPane.scrollToVisible(focusRect, context: focusContext);
@@ -62,12 +64,12 @@ class _ChicagoAppState extends State<ChicagoApp> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance!.addObserver(this);
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance!.removeObserver(this);
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
@@ -76,27 +78,29 @@ class _ChicagoAppState extends State<ChicagoApp> with WidgetsBindingObserver {
     return NavigatorListener(
       child: WidgetsApp(
         title: widget.title,
-        color: Color(0xffffffff),
-        localizationsDelegates: [
+        color: const Color(0xffffffff),
+        localizationsDelegates: const [
           DefaultMaterialLocalizations.delegate, // TODO: Remove
         ],
         builder: (BuildContext context, Widget? navigator) {
           return Padding(
             padding: MediaQuery.of(context).viewInsets,
             child: DefaultTextStyle(
-              style: TextStyle(
+              style: const TextStyle(
                 fontFamily: 'Dialog',
                 fontSize: 14,
                 color: Color(0xff000000),
               ),
               child: SafeArea(
-                child: Material( // TODO: Remove
+                child: Material(
+                  // TODO: Remove
                   child: Navigator(
                     observers: [NavigatorListener.of(context).observer],
                     onGenerateRoute: (RouteSettings settings) {
                       return PageRouteBuilder<void>(
                         settings: settings,
-                        pageBuilder: (BuildContext _, Animation<double> __, Animation<double> ___) {
+                        pageBuilder: (BuildContext _, Animation<double> __,
+                            Animation<double> ___) {
                           return widget.home ?? Container();
                         },
                       );

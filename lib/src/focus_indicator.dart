@@ -19,12 +19,12 @@ import 'package:flutter/widgets.dart';
 
 class FocusIndicator extends StatelessWidget {
   const FocusIndicator({
-    Key? key,
+    super.key,
     required this.isFocused,
     this.insets = EdgeInsets.zero,
     this.color = const Color(0xff999999),
     this.child,
-  }) : super(key: key);
+  });
 
   final bool isFocused;
   final EdgeInsets insets;

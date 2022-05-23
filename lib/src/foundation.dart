@@ -82,11 +82,15 @@ bool isPlatformCommandKeyPressed([TargetPlatform? platform]) {
 }
 
 bool isActivateKey(LogicalKeyboardKey key) {
-  final Iterable<LogicalKeyboardKey> activateKeys = WidgetsApp.defaultShortcuts.entries
-      .where((MapEntry<ShortcutActivator, Intent> entry) => entry.value is ActivateIntent)
-      .map<ShortcutActivator>((MapEntry<ShortcutActivator, Intent> entry) => entry.key)
+  final Iterable<LogicalKeyboardKey> activateKeys = WidgetsApp
+      .defaultShortcuts.entries
+      .where((MapEntry<ShortcutActivator, Intent> entry) =>
+          entry.value is ActivateIntent)
+      .map<ShortcutActivator>(
+          (MapEntry<ShortcutActivator, Intent> entry) => entry.key)
       .where((ShortcutActivator activator) => activator.triggers?.length == 1)
-      .map<LogicalKeyboardKey>((ShortcutActivator activator) => activator.triggers!.single);
+      .map<LogicalKeyboardKey>(
+          (ShortcutActivator activator) => activator.triggers!.single);
   return activateKeys.contains(key);
 }
 
@@ -180,11 +184,13 @@ class MessageType {
   static const MessageType info = MessageType._('info');
 
   Widget toImage() {
-    return Image.asset('assets/message_type-$_assetKey-32x32.png', package: 'chicago');
+    return Image.asset('assets/message_type-$_assetKey-32x32.png',
+        package: 'chicago');
   }
 
   Widget toSmallImage() {
-    return Image.asset('assets/message_type-$_assetKey-16x16.png', package: 'chicago');
+    return Image.asset('assets/message_type-$_assetKey-16x16.png',
+        package: 'chicago');
   }
 }
 
@@ -230,7 +236,8 @@ class FakeSubscription<T> implements StreamSubscription<T> {
 }
 
 mixin RenderBoxWithChildDefaultsMixin on RenderObjectWithChildMixin<RenderBox> {
-  bool defaultHitTestChild(BoxHitTestResult result, {required ui.Offset position}) {
+  bool defaultHitTestChild(BoxHitTestResult result,
+      {required ui.Offset position}) {
     if (child == null) {
       return false;
     }

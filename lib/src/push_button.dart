@@ -15,13 +15,10 @@
 
 import 'dart:math' as math;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/painting.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 
 import 'action_tracker.dart';
 import 'colors.dart';
@@ -35,14 +32,15 @@ const Color _defaultBackgroundColor = Color(0xffdddcd5);
 const Color _defaultBorderColor = Color(0xff999999);
 const Color _defaultDisabledBackgroundColor = Color(0xffdddcd5);
 const Color _defaultDisabledBorderColor = Color(0xff999999);
-const EdgeInsets _defaultPadding = EdgeInsets.symmetric(horizontal: 4, vertical: 4);
+const EdgeInsets _defaultPadding =
+    EdgeInsets.symmetric(horizontal: 4, vertical: 4);
 const bool _defaultIsToolbar = false;
 const bool _defaultShowTooltip = true;
 const bool _defaultIsFocusable = true;
 
 class PushButton<T extends Object> extends StatefulWidget {
   const PushButton({
-    Key? key,
+    super.key,
     this.icon,
     this.label,
     this.axis = _defaultAxis,
@@ -57,11 +55,12 @@ class PushButton<T extends Object> extends StatefulWidget {
     this.disabledBackgroundColor = _defaultDisabledBackgroundColor,
     this.disabledBorderColor = _defaultDisabledBorderColor,
     this.padding = _defaultPadding,
-    this.focusIndicatorPadding = const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+    this.focusIndicatorPadding =
+        const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
     this.isFocusable = _defaultIsFocusable,
     this.autofocus = false,
     this.showTooltip = _defaultShowTooltip,
-  }) : super(key: key);
+  });
 
   final String? icon;
   final String? label;
@@ -83,7 +82,7 @@ class PushButton<T extends Object> extends StatefulWidget {
   final bool showTooltip;
 
   @override
-  _PushButtonState<T> createState() => _PushButtonState<T>();
+  State<PushButton<T>> createState() => _PushButtonState<T>();
 }
 
 class _ActivatePushButtonAction<T extends Object> extends ActivateAction {
@@ -143,11 +142,14 @@ class _PushButtonState<T extends Object> extends State<PushButton<T>> {
       menuActive = true;
     });
     final RenderBox button = context.findRenderObject() as RenderBox;
-    final RenderBox overlay = Overlay.of(context)!.context.findRenderObject() as RenderBox;
+    final RenderBox overlay =
+        Overlay.of(context)!.context.findRenderObject() as RenderBox;
     final RelativeRect position = RelativeRect.fromRect(
       Rect.fromPoints(
-        button.localToGlobal(button.size.bottomLeft(Offset.zero), ancestor: overlay),
-        button.localToGlobal(button.size.bottomRight(Offset.zero), ancestor: overlay),
+        button.localToGlobal(button.size.bottomLeft(Offset.zero),
+            ancestor: overlay),
+        button.localToGlobal(button.size.bottomRight(Offset.zero),
+            ancestor: overlay),
       ),
       Offset.zero & overlay.size,
     );
@@ -170,7 +172,7 @@ class _PushButtonState<T extends Object> extends State<PushButton<T>> {
 
   LinearGradient get highlightGradient {
     return LinearGradient(
-      begin: Alignment(0, 0.2),
+      begin: const Alignment(0, 0.2),
       end: Alignment.topCenter,
       colors: <Color>[widget.backgroundColor, brighten(widget.backgroundColor)],
     );
@@ -229,7 +231,9 @@ class _PushButtonState<T extends Object> extends State<PushButton<T>> {
           child: iconImage,
         );
       }
-      buttonData..add(iconImage)..add(SizedBox(width: 4, height: 4));
+      buttonData
+        ..add(iconImage)
+        ..add(const SizedBox(width: 4, height: 4));
     }
 
     if (widget.label != null) {
@@ -242,8 +246,9 @@ class _PushButtonState<T extends Object> extends State<PushButton<T>> {
       buttonData.add(Text(widget.label!, style: style));
     }
 
-    Widget button =
-        widget.axis == Axis.horizontal ? Row(children: buttonData) : Column(children: buttonData);
+    Widget button = widget.axis == Axis.horizontal
+        ? Row(children: buttonData)
+        : Column(children: buttonData);
 
     button = Center(
       child: Padding(
@@ -280,17 +285,17 @@ class _PushButtonState<T extends Object> extends State<PushButton<T>> {
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
             child: button,
           ),
-          Spacer(),
-          Padding(
+          const Spacer(),
+          const Padding(
             padding: EdgeInsets.symmetric(horizontal: 4),
             child: CustomPaint(
               size: Size(7, 4),
               painter: SortIndicatorPainter(
                 sortDirection: SortDirection.descending,
-                color: const Color(0xff000000),
+                color: Color(0xff000000),
               ),
             ),
           )
@@ -300,7 +305,8 @@ class _PushButtonState<T extends Object> extends State<PushButton<T>> {
 
     if (menuActive || hover || focused || !widget.isToolbar) {
       final Border border = Border.fromBorderSide(
-        BorderSide(color: isEnabled ? widget.borderColor : widget.disabledBorderColor),
+        BorderSide(
+            color: isEnabled ? widget.borderColor : widget.disabledBorderColor),
       );
       Decoration decoration;
       if (isEnabled && (pressed || menuActive)) {
@@ -308,7 +314,8 @@ class _PushButtonState<T extends Object> extends State<PushButton<T>> {
       } else if (isEnabled) {
         decoration = BoxDecoration(border: border, gradient: highlightGradient);
       } else {
-        decoration = BoxDecoration(border: border, color: widget.disabledBackgroundColor);
+        decoration = BoxDecoration(
+            border: border, color: widget.disabledBackgroundColor);
       }
       button = DecoratedBox(decoration: decoration, child: button);
     }
@@ -317,7 +324,7 @@ class _PushButtonState<T extends Object> extends State<PushButton<T>> {
       if (widget.showTooltip && widget.label != null) {
         button = Tooltip(
           message: widget.label!,
-          waitDuration: Duration(seconds: 1, milliseconds: 500),
+          waitDuration: const Duration(seconds: 1, milliseconds: 500),
           child: button,
         );
       }
@@ -358,10 +365,9 @@ class _PushButtonState<T extends Object> extends State<PushButton<T>> {
 
 class _MinimumAspectRatio extends SingleChildRenderObjectWidget {
   const _MinimumAspectRatio({
-    Key? key,
-    required Widget child,
+    required Widget super.child,
     required this.minimumAspectRatio,
-  }) : super(key: key, child: child);
+  });
 
   final double minimumAspectRatio;
 
@@ -371,8 +377,9 @@ class _MinimumAspectRatio extends SingleChildRenderObjectWidget {
   }
 
   @override
-  void updateRenderObject(BuildContext context, _RenderMinimumAspectRatio renderObject) {
-    renderObject..minimumAspectRatio = minimumAspectRatio;
+  void updateRenderObject(
+      BuildContext context, _RenderMinimumAspectRatio renderObject) {
+    renderObject.minimumAspectRatio = minimumAspectRatio;
   }
 }
 
@@ -401,7 +408,8 @@ class _RenderMinimumAspectRatio extends RenderProxyBox {
       height = child!.getMaxIntrinsicHeight(double.infinity);
     }
     assert(height.isFinite);
-    return math.max(height * minimumAspectRatio, child!.getMinIntrinsicWidth(height));
+    return math.max(
+        height * minimumAspectRatio, child!.getMinIntrinsicWidth(height));
   }
 
   @override
@@ -413,7 +421,8 @@ class _RenderMinimumAspectRatio extends RenderProxyBox {
       height = child!.getMaxIntrinsicHeight(double.infinity);
     }
     assert(height.isFinite);
-    return math.max(height * minimumAspectRatio, child!.getMaxIntrinsicWidth(height));
+    return math.max(
+        height * minimumAspectRatio, child!.getMaxIntrinsicWidth(height));
   }
 
   @override
@@ -426,12 +435,14 @@ class _RenderMinimumAspectRatio extends RenderProxyBox {
     if (child != null) {
       BoxConstraints childConstraints = constraints;
       if (!childConstraints.hasTightHeight) {
-        final double height = child!.getMaxIntrinsicHeight(childConstraints.maxWidth);
+        final double height =
+            child!.getMaxIntrinsicHeight(childConstraints.maxWidth);
         assert(height.isFinite);
         childConstraints = childConstraints.tighten(height: height);
       }
       childConstraints = childConstraints.copyWith(
-        minWidth: childConstraints.constrainWidth(childConstraints.maxHeight * minimumAspectRatio),
+        minWidth: childConstraints
+            .constrainWidth(childConstraints.maxHeight * minimumAspectRatio),
       );
       child!.layout(childConstraints, parentUsesSize: true);
       size = child!.size;
@@ -443,11 +454,11 @@ class _RenderMinimumAspectRatio extends RenderProxyBox {
 
 class CommandPushButton extends StatelessWidget {
   const CommandPushButton({
-    Key? key,
+    super.key,
     required this.label,
     this.autofocus = false,
     required this.onPressed,
-  }) : super(key: key);
+  });
 
   final String label;
   final bool autofocus;
@@ -459,7 +470,7 @@ class CommandPushButton extends StatelessWidget {
       color: const Color(0xffffffff),
       backgroundColor: const Color(0xff3c77b2),
       borderColor: const Color(0xff2b5580),
-      padding: EdgeInsets.fromLTRB(3, 4, 4, 5),
+      padding: const EdgeInsets.fromLTRB(3, 4, 4, 5),
       autofocus: autofocus,
       showTooltip: false,
       minimumAspectRatio: 3,
@@ -471,9 +482,9 @@ class CommandPushButton extends StatelessWidget {
 
 class ActionPushButton<I extends Intent> extends ActionTracker<I> {
   const ActionPushButton({
-    Key? key,
-    required I intent,
-    ValueChanged<Object?>? onActionInvoked,
+    super.key,
+    required super.intent,
+    super.onActionInvoked,
     this.icon,
     this.label,
     this.axis = _defaultAxis,
@@ -485,7 +496,7 @@ class ActionPushButton<I extends Intent> extends ActionTracker<I> {
     this.padding = _defaultPadding,
     this.showTooltip = _defaultShowTooltip,
     this.isFocusable = _defaultIsFocusable,
-  }) : super(key: key, intent: intent, onActionInvoked: onActionInvoked);
+  });
 
   final String? icon;
   final String? label;
@@ -500,10 +511,12 @@ class ActionPushButton<I extends Intent> extends ActionTracker<I> {
   final bool isFocusable;
 
   @override
-  _ActionPushButtonState<I> createState() => _ActionPushButtonState<I>();
+  ActionTrackerStateMixin<I, ActionTracker<I>> createState() =>
+      _ActionPushButtonState<I>();
 }
 
-class _ActionPushButtonState<I extends Intent> extends State<ActionPushButton<I>>
+class _ActionPushButtonState<I extends Intent>
+    extends State<ActionPushButton<I>>
     with ActionTrackerStateMixin<I, ActionPushButton<I>> {
   @override
   Widget build(BuildContext context) {

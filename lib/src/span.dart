@@ -25,12 +25,11 @@ import 'foundation.dart';
 class Span {
   const Span(this.start, this.end);
 
-  const Span.single(this.start)
-      : end = start;
+  const Span.single(this.start) : end = start;
 
   Span.normalized(int start, int end)
-      : this.start = math.min(start, end),
-        this.end = math.max(start, end);
+      : start = math.min(start, end),
+        end = math.max(start, end);
 
   final int start;
   final int end;
@@ -63,7 +62,9 @@ class Span {
   }
 
   Span? intersect(Span span) {
-    return intersects(span) ? Span(math.max(start, span.start), math.min(end, span.end)) : null;
+    return intersects(span)
+        ? Span(math.max(start, span.start), math.min(end, span.end))
+        : null;
   }
 
   Span union(Span span) {
@@ -87,12 +88,12 @@ class Span {
   /// produce increasing values. If its [start] is greater than its [end], the
   /// returned iterable will produce decreasing values.
   Iterable<int> asIterable() => Iterable<int>.generate(length, (int index) {
-    if (end >= start) {
-      return start + index;
-    } else {
-      return start - index;
-    }
-  });
+        if (end >= start) {
+          return start + index;
+        } else {
+          return start - index;
+        }
+      });
 
   @override
   bool operator ==(Object other) {
@@ -110,7 +111,7 @@ class Span {
 }
 
 class ListSelection {
-  List<Span> _ranges = <Span>[];
+  final List<Span> _ranges = <Span>[];
 
   /// Comparator that determines the index of the first intersecting range.
   int _compareStart(Span a, Span b) => a.end - b.start;
@@ -119,7 +120,11 @@ class ListSelection {
   int _compareEnd(Span a, Span b) => a.start - b.end;
 
   /// Comparator that determines if two ranges intersect.
-  int _compareIntersection(Span a, Span b) => (a.start > b.end) ? 1 : (b.start > a.end) ? -1 : 0;
+  int _compareIntersection(Span a, Span b) => (a.start > b.end)
+      ? 1
+      : (b.start > a.end)
+          ? -1
+          : 0;
 
   /// Adds a range to this list, merging and removing intersecting ranges as
   /// needed.
@@ -181,7 +186,8 @@ class ListSelection {
           Span lowerRange = _ranges[i];
           Span upperRange = _ranges[j - 1];
 
-          range = Span(math.min(range.start, lowerRange.start), math.max(range.end, upperRange.end));
+          range = Span(math.min(range.start, lowerRange.start),
+              math.max(range.end, upperRange.end));
 
           // Add the gaps to the added list
           if (range.start < lowerRange.start) {
@@ -191,7 +197,8 @@ class ListSelection {
           for (int k = i; k < j - 1; k++) {
             Span selectedRange = _ranges[k];
             Span nextSelectedRange = _ranges[k + 1];
-            addedRanges.add(Span(selectedRange.end + 1, nextSelectedRange.start - 1));
+            addedRanges
+                .add(Span(selectedRange.end + 1, nextSelectedRange.start - 1));
           }
 
           if (range.end > upperRange.end) {
@@ -304,7 +311,8 @@ class ListSelection {
   Iterable<Span> get data => _ranges;
 
   int indexOf(Span span) {
-    final int i = binarySearch<Span>(_ranges, span, compare: _compareIntersection);
+    final int i =
+        binarySearch<Span>(_ranges, span, compare: _compareIntersection);
     if (i >= 0) {
       return span == _ranges[i] ? i : -1;
     }
@@ -357,7 +365,8 @@ class ListSelection {
     // Decrement any subsequent selection indexes
     final Span range = Span.single(index);
     int i = binarySearch(_ranges, range, compare: _compareIntersection);
-    assert(i < 0, 'i should be negative, since index should no longer be selected');
+    assert(i < 0,
+        'i should be negative, since index should no longer be selected');
 
     i = -(i + 1);
 

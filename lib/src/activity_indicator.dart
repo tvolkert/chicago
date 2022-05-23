@@ -27,16 +27,16 @@ const Color _defaultColor = Color(0xff000000);
 
 class ActivityIndicator extends StatefulWidget {
   const ActivityIndicator({
-    Key? key,
+    super.key,
     this.color = _defaultColor,
     this.semanticLabel = 'Loading',
-  }) : super(key: key);
+  });
 
   final Color color;
   final String semanticLabel;
 
   @override
-  _ActivityIndicatorState createState() => _ActivityIndicatorState();
+  State<ActivityIndicator> createState() => _ActivityIndicatorState();
 }
 
 class _ActivityIndicatorState extends State<ActivityIndicator>
@@ -74,10 +74,9 @@ class _ActivityIndicatorState extends State<ActivityIndicator>
 
 class _RawActivityIndicator extends LeafRenderObjectWidget {
   const _RawActivityIndicator({
-    Key? key,
     required this.color,
     required this.controller,
-  }) : super(key: key);
+  });
 
   final Color color;
   final AnimationController controller;
@@ -91,7 +90,8 @@ class _RawActivityIndicator extends LeafRenderObjectWidget {
   }
 
   @override
-  void updateRenderObject(BuildContext context, _RenderRawActivityIndicator renderObject) {
+  void updateRenderObject(
+      BuildContext context, _RenderRawActivityIndicator renderObject) {
     renderObject
       ..color = color
       ..controller = controller;
@@ -223,11 +223,12 @@ class _RenderRawActivityIndicator extends RenderBox with VisibilityAwareMixin {
     canvas.translate(_defaultSize / 2, _defaultSize / 2);
     canvas.rotate(rotationValue);
 
-    final double increment = 2 * math.pi / _spokes;
+    const double increment = 2 * math.pi / _spokes;
     final Paint paint = Paint()..style = PaintingStyle.fill;
     for (int i = 0; i < _spokes; i++) {
       paint.color = _colors[i];
-      canvas.drawRRect(RRect.fromLTRBR(24, -4, 56, 4, Radius.circular(4)), paint);
+      canvas.drawRRect(
+          RRect.fromLTRBR(24, -4, 56, 4, const Radius.circular(4)), paint);
       canvas.rotate(increment);
     }
   }

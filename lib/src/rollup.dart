@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 
 import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import 'focus_indicator.dart';
@@ -27,13 +26,13 @@ class RollupController extends ChangeNotifier {
 
 class Rollup extends StatefulWidget {
   const Rollup({
-    Key? key,
+    super.key,
     required this.heading,
     required this.childBuilder,
     this.controller,
     this.isCollapsible = true,
     this.semanticLabel,
-  }) : super(key: key);
+  });
 
   final Widget heading;
   final WidgetBuilder childBuilder;
@@ -42,7 +41,7 @@ class Rollup extends StatefulWidget {
   final String? semanticLabel;
 
   @override
-  _RollupState createState() => _RollupState();
+  State<Rollup> createState() => _RollupState();
 }
 
 class _RollupState extends State<Rollup> {
@@ -75,7 +74,8 @@ class _RollupState extends State<Rollup> {
   void didUpdateWidget(covariant Rollup oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.controller != oldWidget.controller) {
-      final RollupController oldController = _controller ?? oldWidget.controller!;
+      final RollupController oldController =
+          _controller ?? oldWidget.controller!;
       oldController.removeListener(_handleIsExpandedChanged);
       _controller?.dispose();
       _controller = null;
@@ -112,7 +112,7 @@ class _RollupState extends State<Rollup> {
 
 class RawRollup extends ImplicitlyAnimatedWidget {
   const RawRollup({
-    Key? key,
+    super.key,
     required this.heading,
     required this.childBuilder,
     required this.focusNode,
@@ -120,7 +120,8 @@ class RawRollup extends ImplicitlyAnimatedWidget {
     required this.isCollapsible,
     required this.onToggleExpanded,
     required this.semanticLabel,
-  }) : super(key: key, duration: const Duration(milliseconds: 250), curve: Curves.easeOut);
+  }) : super(
+            duration: const Duration(milliseconds: 250), curve: Curves.easeOut);
 
   final Widget heading;
   final WidgetBuilder childBuilder;
@@ -131,7 +132,7 @@ class RawRollup extends ImplicitlyAnimatedWidget {
   final String? semanticLabel;
 
   @override
-  _RawRollupState createState() => _RawRollupState();
+  AnimatedWidgetBaseState<RawRollup> createState() => _RawRollupState();
 }
 
 class _RawRollupState extends AnimatedWidgetBaseState<RawRollup> {
@@ -148,9 +149,13 @@ class _RawRollupState extends AnimatedWidgetBaseState<RawRollup> {
   @override
   void forEachTween(TweenVisitor<dynamic> visitor) {
     _expansionTween = visitor(_expansionTween, widget.isExpanded ? 1.0 : 0.0,
-        (dynamic value) => Tween<double>(begin: value as double)) as Tween<double>?;
-    _arrowRotationTween = visitor(_arrowRotationTween, widget.isExpanded ? math.pi / 2 : 0.0,
-        (dynamic value) => Tween<double>(begin: value as double)) as Tween<double>?;
+            (dynamic value) => Tween<double>(begin: value as double))
+        as Tween<double>?;
+    _arrowRotationTween = visitor(
+            _arrowRotationTween,
+            widget.isExpanded ? math.pi / 2 : 0.0,
+            (dynamic value) => Tween<double>(begin: value as double))
+        as Tween<double>?;
   }
 
   @override
@@ -178,19 +183,20 @@ class _RawRollupState extends AnimatedWidgetBaseState<RawRollup> {
                   onFocusChange: _handleFocusChange,
                   child: FocusIndicator(
                     isFocused: _isFocused,
-                    insets: EdgeInsets.fromLTRB(-3, 0, -3, -1),
+                    insets: const EdgeInsets.fromLTRB(-3, 0, -3, -1),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Transform.rotate(
-                          angle: _arrowRotationTween?.evaluate(animation) ?? 0.0,
+                          angle:
+                              _arrowRotationTween?.evaluate(animation) ?? 0.0,
                           child: CustomPaint(
-                            size: Size.square(_arrowWidth),
+                            size: const Size.square(_arrowWidth),
                             painter: _ArrowPainter(),
                           ),
                         ),
-                        SizedBox(width: 4),
+                        const SizedBox(width: 4),
                         widget.heading,
                       ],
                     ),
@@ -204,12 +210,12 @@ class _RawRollupState extends AnimatedWidgetBaseState<RawRollup> {
           _RevealBox(
             reveal: reveal,
             child: Padding(
-              padding: EdgeInsets.only(top: 4),
+              padding: const EdgeInsets.only(top: 4),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  SizedBox(width: _arrowWidth),
-                  SizedBox(width: 4),
+                  const SizedBox(width: _arrowWidth),
+                  const SizedBox(width: 4),
                   widget.childBuilder(context),
                 ],
               ),
@@ -233,10 +239,9 @@ class _ActivateRollupAction extends ActivateAction {
 
 class _RevealBox extends SingleChildRenderObjectWidget {
   const _RevealBox({
-    Key? key,
     required this.reveal,
-    required Widget? child,
-  }) : super(key: key, child: child);
+    required super.child,
+  });
 
   final double reveal;
 
@@ -246,8 +251,9 @@ class _RevealBox extends SingleChildRenderObjectWidget {
   }
 
   @override
-  void updateRenderObject(BuildContext context, covariant _RenderRevealBox renderObject) {
-    renderObject..reveal = reveal;
+  void updateRenderObject(
+      BuildContext context, covariant _RenderRevealBox renderObject) {
+    renderObject.reveal = reveal;
   }
 }
 
@@ -291,7 +297,8 @@ class _RenderRevealBox extends RenderProxyBox {
     super.dispose();
   }
 
-  final LayerHandle<ClipRectLayer> _clipRectLayer = LayerHandle<ClipRectLayer>();
+  final LayerHandle<ClipRectLayer> _clipRectLayer =
+      LayerHandle<ClipRectLayer>();
 }
 
 class _ArrowPainter extends CustomPainter {

@@ -85,7 +85,7 @@ typedef ListButtonItemBuilder<T> = Widget Function(
 
 class ListButton<T> extends StatefulWidget {
   ListButton({
-    Key? key,
+    super.key,
     required this.items,
     this.builder = defaultBuilder,
     this.itemBuilder = defaultItemBuilder,
@@ -94,8 +94,8 @@ class ListButton<T> extends StatefulWidget {
     this.disabledItemFilter,
     this.isEnabled = true,
     this.roundToWholePixel = false,
-  })  : assert(selectionController == null || selectionController.selectMode == SelectMode.single),
-        super(key: key);
+  }) : assert(selectionController == null ||
+            selectionController.selectMode == SelectMode.single);
 
   final List<T> items;
   final ListButtonBuilder<T> builder;
@@ -106,14 +106,15 @@ class ListButton<T> extends StatefulWidget {
   final bool isEnabled;
   final bool roundToWholePixel;
 
-  static Widget defaultBuilder(BuildContext context, Object? item, bool isForMeasurementOnly) {
+  static Widget defaultBuilder(
+      BuildContext context, Object? item, bool isForMeasurementOnly) {
     if (item == null) {
       return Container();
     }
     final TextStyle style = DefaultTextStyle.of(context).style;
     final TextDirection textDirection = Directionality.of(context);
     return Padding(
-      padding: EdgeInsets.only(bottom: 1),
+      padding: const EdgeInsets.only(bottom: 1),
       child: Text(
         '$item',
         maxLines: 1,
@@ -139,9 +140,9 @@ class ListButton<T> extends StatefulWidget {
       style = style.copyWith(color: const Color(0xff999999));
     }
     return ConstrainedBox(
-      constraints: BoxConstraints(minWidth: 75),
+      constraints: const BoxConstraints(minWidth: 75),
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 3, vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
         child: Text('$item', style: style),
       ),
     );
@@ -176,7 +177,7 @@ class ListButton<T> extends StatefulWidget {
   }
 
   @override
-  _ListButtonState<T> createState() => _ListButtonState<T>();
+  State<StatefulWidget> createState() => _ListButtonState<T>();
 }
 
 class _ListButtonState<T> extends State<ListButton<T>> {
@@ -205,18 +206,20 @@ class _ListButtonState<T> extends State<ListButton<T>> {
         );
         double maxWidth = 0;
         for (int i = -1; i < widget.items.length; i++) {
-          Widget built = _buildContent(itemBuilder, index: i, useLocalBuildContext: true);
+          Widget built =
+              _buildContent(itemBuilder, index: i, useLocalBuildContext: true);
           maxWidth = math.max(maxWidth, surveyor.measureWidget(built).width);
         }
         _constraintsAdjuster = _WidthTightener(maxWidth);
         break;
       case ListButtonWidth.expand:
-        _constraintsAdjuster = _WidthMaximizer();
+        _constraintsAdjuster = const _WidthMaximizer();
         break;
     }
   }
 
-  BasicListItemBuilder _adaptBuilder(ListButtonBuilder<T> builder, {bool isForMeasurementOnly = false}) {
+  BasicListItemBuilder _adaptBuilder(ListButtonBuilder<T> builder,
+      {bool isForMeasurementOnly = false}) {
     return (BuildContext context, int index) {
       final T? item = index == -1 ? null : widget.items[index];
       return builder(context, item, isForMeasurementOnly);
@@ -276,15 +279,18 @@ class _ListButtonState<T> extends State<ListButton<T>> {
 
   void showPopup() {
     final RenderBox button = context.findRenderObject() as RenderBox;
-    final RenderBox overlay = Overlay.of(context)!.context.findRenderObject() as RenderBox;
-    final Offset buttonGlobalOffset = button.localToGlobal(Offset.zero, ancestor: overlay);
+    final RenderBox overlay =
+        Overlay.of(context)!.context.findRenderObject() as RenderBox;
+    final Offset buttonGlobalOffset =
+        button.localToGlobal(Offset.zero, ancestor: overlay);
     // TODO: Why do we need to ceil here?
     final Offset buttonPosition = Offset(
       buttonGlobalOffset.dx.ceilToDouble(),
       buttonGlobalOffset.dy.ceilToDouble(),
     );
     final _PopupListRoute<int> popupListRoute = _PopupListRoute<int>(
-      position: RelativeRect.fromRect(buttonPosition & button.size, Offset.zero & overlay.size),
+      position: RelativeRect.fromRect(
+          buttonPosition & button.size, Offset.zero & overlay.size),
       length: widget.items.length,
       itemBuilder: _adaptItemBuilder(widget.itemBuilder),
       selectionController: selectionController,
@@ -374,7 +380,7 @@ class _ListButtonState<T> extends State<ListButton<T>> {
 
   static const BoxDecoration _disabledDecoration = BoxDecoration(
     border: Border.fromBorderSide(BorderSide(color: Color(0xff999999))),
-    color: const Color(0xffdddcd5),
+    color: Color(0xffdddcd5),
   );
 
   @override
@@ -391,7 +397,7 @@ class _ListButtonState<T> extends State<ListButton<T>> {
     Widget result = DecoratedBox(
       decoration: decoration,
       child: Padding(
-        padding: EdgeInsets.all(1),
+        padding: const EdgeInsets.all(1),
         child: _RawListButton(
           childAdjuster: _constraintsAdjuster,
           roundToWholePixel: widget.roundToWholePixel,
@@ -424,7 +430,9 @@ class _ListButtonState<T> extends State<ListButton<T>> {
       );
     } else {
       result = DefaultTextStyle(
-        style: DefaultTextStyle.of(context).style.copyWith(color: const Color(0xff999999)),
+        style: DefaultTextStyle.of(context)
+            .style
+            .copyWith(color: const Color(0xff999999)),
         child: result,
       );
     }
@@ -453,23 +461,24 @@ class _WidthTightener extends _ConstraintsAdjuster {
   final double width;
 
   @override
-  BoxConstraints adjust(BoxConstraints constraints) => constraints.tighten(width: width);
+  BoxConstraints adjust(BoxConstraints constraints) =>
+      constraints.tighten(width: width);
 }
 
 class _WidthMaximizer extends _ConstraintsAdjuster {
   const _WidthMaximizer() : super._();
 
   @override
-  BoxConstraints adjust(BoxConstraints constraints) => constraints.copyWith(minWidth: constraints.maxWidth);
+  BoxConstraints adjust(BoxConstraints constraints) =>
+      constraints.copyWith(minWidth: constraints.maxWidth);
 }
 
 class _RawListButton extends SingleChildRenderObjectWidget {
   const _RawListButton({
-    Key? key,
-    required Widget child,
+    required Widget super.child,
     required this.childAdjuster,
     this.roundToWholePixel = false,
-  }) : super(key: key, child: child);
+  });
 
   final _ConstraintsAdjuster childAdjuster;
   final bool roundToWholePixel;
@@ -486,19 +495,23 @@ class _RawListButton extends SingleChildRenderObjectWidget {
   }
 
   @override
-  void updateRenderObject(BuildContext context, _RenderRawListButton renderObject) {
+  void updateRenderObject(
+      BuildContext context, _RenderRawListButton renderObject) {
     renderObject
       ..childConstraintAdjuster = childAdjuster
       ..roundToWholePixel = roundToWholePixel;
   }
 }
 
-class _RenderRawListButton extends RenderBox with RenderObjectWithChildMixin<RenderBox>, RenderBoxWithChildDefaultsMixin {
+class _RenderRawListButton extends RenderBox
+    with
+        RenderObjectWithChildMixin<RenderBox>,
+        RenderBoxWithChildDefaultsMixin {
   _RenderRawListButton({
     required _ConstraintsAdjuster childAdjuster,
     bool roundToWholePixel = false,
   }) {
-    this.childConstraintAdjuster = childAdjuster;
+    childConstraintAdjuster = childAdjuster;
     this.roundToWholePixel = roundToWholePixel;
   }
 
@@ -526,9 +539,11 @@ class _RenderRawListButton extends RenderBox with RenderObjectWithChildMixin<Ren
   @override
   double? computeDistanceToActualBaseline(TextBaseline baseline) {
     if (child != null) {
-      final double? childBaseline = child!.getDistanceToActualBaseline(baseline);
+      final double? childBaseline =
+          child!.getDistanceToActualBaseline(baseline);
       if (childBaseline != null) {
-        final BoxParentData childParentData = child!.parentData as BoxParentData;
+        final BoxParentData childParentData =
+            child!.parentData as BoxParentData;
         return childBaseline + childParentData.offset.dy;
       }
     }
@@ -537,22 +552,28 @@ class _RenderRawListButton extends RenderBox with RenderObjectWithChildMixin<Ren
 
   @override
   double computeMinIntrinsicWidth(double height) {
-    return (child == null ? 0 : child!.getMinIntrinsicWidth(height)) + _kReservedWidth;
+    return (child == null ? 0 : child!.getMinIntrinsicWidth(height)) +
+        _kReservedWidth;
   }
 
   @override
   double computeMaxIntrinsicWidth(double height) {
-    return (child == null ? 0 : child!.getMinIntrinsicWidth(height)) + _kReservedWidth;
+    return (child == null ? 0 : child!.getMinIntrinsicWidth(height)) +
+        _kReservedWidth;
   }
 
   @override
   double computeMinIntrinsicHeight(double width) {
-    return child == null ? _kMinHeight : math.max(child!.getMinIntrinsicHeight(width), _kMinHeight);
+    return child == null
+        ? _kMinHeight
+        : math.max(child!.getMinIntrinsicHeight(width), _kMinHeight);
   }
 
   @override
   double computeMaxIntrinsicHeight(double width) {
-    return child == null ? _kMinHeight : math.max(child!.getMinIntrinsicHeight(width), _kMinHeight);
+    return child == null
+        ? _kMinHeight
+        : math.max(child!.getMinIntrinsicHeight(width), _kMinHeight);
   }
 
   double _dividerDx = 0;
@@ -561,27 +582,35 @@ class _RenderRawListButton extends RenderBox with RenderObjectWithChildMixin<Ren
   void performLayout() {
     Size childSize = Size.zero;
     if (child != null) {
-      BoxConstraints childConstraints = constraints.deflate(EdgeInsets.only(left: _kReservedWidth));
+      BoxConstraints childConstraints =
+          constraints.deflate(const EdgeInsets.only(left: _kReservedWidth));
       if (roundToWholePixel) {
-        childConstraints = childConstraints.copyWith(maxWidth: childConstraints.maxWidth.floorToDouble());
+        childConstraints = childConstraints.copyWith(
+            maxWidth: childConstraints.maxWidth.floorToDouble());
       }
       childConstraints = childConstraintAdjuster.adjust(childConstraints);
       assert(() {
         if (childConstraints.minWidth.isInfinite) {
           child!.layout(BoxConstraints.tight(Size.zero));
-          size = Size.zero; // To avoid ancillary exceptions that will confuse things.
+          size = Size
+              .zero; // To avoid ancillary exceptions that will confuse things.
           throw FlutterError.fromParts(<DiagnosticsNode>[
-            ErrorSummary('ListButtonWidth.expand cannot be used with unbounded with.'),
-            ErrorDescription('ListButtonWidth.expand causes a ListButton to expand to fill the '
+            ErrorSummary(
+                'ListButtonWidth.expand cannot be used with unbounded with.'),
+            ErrorDescription(
+                'ListButtonWidth.expand causes a ListButton to expand to fill the '
                 'available space. It cannot be used in a layout setting where it is given unbounded '
                 '(infinite) width constraints, because doing so would cause the ListButton to have '
                 'infinite width, which is not allowed.'),
             ErrorSpacer(),
-            DiagnosticsProperty<BoxConstraints>('The constraints passed to the ListButton '
-                'content were', constraints),
+            DiagnosticsProperty<BoxConstraints>(
+                'The constraints passed to the ListButton '
+                'content were',
+                constraints),
             ErrorSpacer(),
             DiagnosticsProperty<Object>(
-                'The widget tree that created the ListButton in question was', debugCreator,
+                'The widget tree that created the ListButton in question was',
+                debugCreator,
                 style: DiagnosticsTreeStyle.errorProperty),
           ]);
         }
@@ -605,7 +634,7 @@ class _RenderRawListButton extends RenderBox with RenderObjectWithChildMixin<Ren
   }
 
   @override
-  bool hitTestChildren(BoxHitTestResult result, { required Offset position }) {
+  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
     return defaultHitTestChild(result, position: position);
   }
 
@@ -620,13 +649,17 @@ class _RenderRawListButton extends RenderBox with RenderObjectWithChildMixin<Ren
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1
       ..color = const Color(0xff999999);
-    context.canvas.drawLine(offset.translate(_dividerDx + 0.5, 0), offset.translate(_dividerDx + 0.5, size.height), paint);
+    context.canvas.drawLine(offset.translate(_dividerDx + 0.5, 0),
+        offset.translate(_dividerDx + 0.5, size.height), paint);
 
     const _ArrowImage arrow = _ArrowImage();
     final double pulldownWidth = size.width - (_dividerDx + 1);
     final double pulldownDx = (pulldownWidth - arrow.preferredSize.width) / 2;
     final double pulldownDy = (size.height - arrow.preferredSize.height) / 2;
-    context.canvas..save()..translate(offset.dx + _dividerDx + 1 + pulldownDx, offset.dy + pulldownDy);
+    context.canvas
+      ..save()
+      ..translate(
+          offset.dx + _dividerDx + 1 + pulldownDx, offset.dy + pulldownDy);
     try {
       arrow.paint(context.canvas, arrow.preferredSize);
     } finally {
@@ -716,7 +749,8 @@ class _PopupListRouteLayout extends SingleChildLayoutDelegate {
   }
 
   @override
-  bool shouldRelayout(_PopupListRouteLayout oldDelegate) => position != oldDelegate.position;
+  bool shouldRelayout(_PopupListRouteLayout oldDelegate) =>
+      position != oldDelegate.position;
 }
 
 class _PopupList<T> extends StatefulWidget {
@@ -768,14 +802,16 @@ class _PopupListState<T> extends State<_PopupList<T>> {
 
   ListViewItemDisablerController? _createItemDisabledController() {
     return widget.disabledItemFilter == null
-        ? null : ListViewItemDisablerController(filter: widget.disabledItemFilter);
+        ? null
+        : ListViewItemDisablerController(filter: widget.disabledItemFilter);
   }
 
   @override
   void initState() {
     super.initState();
     _selectionController = ListViewSelectionController();
-    _selectionController.selectedIndex = widget.selectionController.selectedIndex;
+    _selectionController.selectedIndex =
+        widget.selectionController.selectedIndex;
     _selectionController.addListener(_handleSelectedIndexChanged);
     _itemDisabledController = _createItemDisabledController();
   }
@@ -820,7 +856,8 @@ class _PopupListState<T> extends State<_PopupList<T>> {
             child: DecoratedBox(
               decoration: const BoxDecoration(
                 color: Color(0xffffffff),
-                border: Border.fromBorderSide(BorderSide(color: Color(0xff999999))),
+                border:
+                    Border.fromBorderSide(BorderSide(color: Color(0xff999999))),
                 boxShadow: [shadow],
               ),
               child: Padding(

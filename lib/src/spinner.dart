@@ -18,7 +18,6 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -28,7 +27,8 @@ import 'focus_indicator.dart';
 import 'hover_builder.dart';
 import 'widget_surveyor.dart';
 
-typedef SpinnerItemBuilder = Widget Function(BuildContext context, int index, bool isEnabled);
+typedef SpinnerItemBuilder = Widget Function(
+    BuildContext context, int index, bool isEnabled);
 
 class _Worker {
   _Worker(this.spinner, this.controller);
@@ -104,6 +104,7 @@ class SpinnerController extends ChangeNotifier {
   SpinnerController._withIndex(this._index);
 
   bool _debugDisposed = false;
+  @override
   void dispose() {
     assert(() {
       _debugDisposed = true;
@@ -123,7 +124,7 @@ class SpinnerController extends ChangeNotifier {
 
 class Spinner extends StatefulWidget {
   const Spinner({
-    Key? key,
+    super.key,
     required this.length,
     required this.itemBuilder,
     this.controller,
@@ -131,7 +132,7 @@ class Spinner extends StatefulWidget {
     this.isCircular = false,
     this.sizeToContent = false,
     this.semanticLabel,
-  }) : super(key: key);
+  });
 
   final int length;
   final SpinnerItemBuilder itemBuilder;
@@ -147,7 +148,7 @@ class Spinner extends StatefulWidget {
         final TextStyle style = DefaultTextStyle.of(context).style;
         final TextDirection textDirection = Directionality.of(context);
         return Padding(
-          padding: EdgeInsets.all(2),
+          padding: const EdgeInsets.all(2),
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text(
@@ -164,7 +165,7 @@ class Spinner extends StatefulWidget {
   }
 
   @override
-  _SpinnerState createState() => _SpinnerState();
+  State<Spinner> createState() => _SpinnerState();
 }
 
 class _SpinnerState extends State<Spinner> {
@@ -178,7 +179,9 @@ class _SpinnerState extends State<Spinner> {
   SpinnerController get controller => widget.controller ?? _controller!;
 
   int _boundsCheckIndex() {
-    return controller.selectedIndex < widget.length ? controller.selectedIndex : -1;
+    return controller.selectedIndex < widget.length
+        ? controller.selectedIndex
+        : -1;
   }
 
   void _handleSelectedIndexUpdated() {
@@ -266,7 +269,8 @@ class _SpinnerState extends State<Spinner> {
       if (widget.controller == null) {
         assert(oldWidget.controller != null);
         assert(_controller == null);
-        _controller = SpinnerController._withIndex(oldWidget.controller!.selectedIndex);
+        _controller =
+            SpinnerController._withIndex(oldWidget.controller!.selectedIndex);
       }
       if (oldWidget.controller == null) {
         assert(widget.controller != null);
@@ -317,7 +321,7 @@ class _SpinnerState extends State<Spinner> {
           onIncrease: () => _worker.spin(1),
           onDecrease: () => _worker.spin(-1),
           child: Padding(
-            padding: EdgeInsets.all(1),
+            padding: const EdgeInsets.all(1),
             child: FocusIndicator(
               isFocused: _isFocused,
               child: content,
@@ -352,12 +356,11 @@ class _SpinnerState extends State<Spinner> {
 
 class _SpinnerButton extends StatefulWidget {
   const _SpinnerButton({
-    Key? key,
     required this.worker,
     required this.direction,
     required this.onTapDown,
     required this.isEnabled,
-  }) : super(key: key);
+  });
 
   final _Worker worker;
   final int direction;
@@ -448,14 +451,16 @@ class _SpinnerButtonPainter extends CustomPainter {
         ..moveTo(0, 4)
         ..lineTo(2.5, 1)
         ..lineTo(5, 4);
-      ui.Paint paint = ui.Paint()..color = isEnabled ? const Color(0xff000000) : const Color(0xff999999);
+      ui.Paint paint = ui.Paint()
+        ..color = isEnabled ? const Color(0xff000000) : const Color(0xff999999);
       canvas.drawPath(path, paint);
     } else {
       ui.Path path = ui.Path()
         ..moveTo(0, 1)
         ..lineTo(2.5, 4)
         ..lineTo(5, 1);
-      ui.Paint paint = ui.Paint()..color = isEnabled ? const Color(0xff000000) : const Color(0xff999999);
+      ui.Paint paint = ui.Paint()
+        ..color = isEnabled ? const Color(0xff000000) : const Color(0xff999999);
       canvas.drawPath(path, paint);
     }
   }
@@ -470,11 +475,10 @@ class _SpinnerButtonPainter extends CustomPainter {
 
 class _RawSpinner extends RenderObjectWidget {
   const _RawSpinner({
-    Key? key,
     required this.content,
     required this.upButton,
     required this.downButton,
-  }) : super(key: key);
+  });
 
   final Widget content;
   final Widget upButton;
@@ -494,7 +498,7 @@ enum _SpinnerSlot {
 }
 
 class _SpinnerElement extends RenderObjectElement {
-  _SpinnerElement(_RawSpinner widget) : super(widget);
+  _SpinnerElement(_RawSpinner super.widget);
 
   Element? _content;
   Element? _upButton;
@@ -518,7 +522,8 @@ class _SpinnerElement extends RenderObjectElement {
     super.mount(parent, newSlot);
     _content = updateChild(_content, widget.content, _SpinnerSlot.content);
     _upButton = updateChild(_upButton, widget.upButton, _SpinnerSlot.upButton);
-    _downButton = updateChild(_downButton, widget.downButton, _SpinnerSlot.downButton);
+    _downButton =
+        updateChild(_downButton, widget.downButton, _SpinnerSlot.downButton);
   }
 
   @override
@@ -537,7 +542,8 @@ class _SpinnerElement extends RenderObjectElement {
   }
 
   @override
-  void moveRenderObjectChild(RenderObject _, _SpinnerSlot? __, _SpinnerSlot? ___) {
+  void moveRenderObjectChild(
+      RenderObject _, _SpinnerSlot? __, _SpinnerSlot? ___) {
     assert(false);
   }
 
@@ -546,7 +552,8 @@ class _SpinnerElement extends RenderObjectElement {
     super.update(newWidget);
     _content = updateChild(_content, widget.content, _SpinnerSlot.content);
     _upButton = updateChild(_upButton, widget.upButton, _SpinnerSlot.upButton);
-    _downButton = updateChild(_downButton, widget.downButton, _SpinnerSlot.downButton);
+    _downButton =
+        updateChild(_downButton, widget.downButton, _SpinnerSlot.downButton);
   }
 
   @override
@@ -660,7 +667,8 @@ class _RenderSpinner extends RenderBox {
   }
 
   @override
-  double computeMinIntrinsicWidth(double height) => computeMaxIntrinsicWidth(height);
+  double computeMinIntrinsicWidth(double height) =>
+      computeMaxIntrinsicWidth(height);
 
   /// Intrinsic width is the sum of our maximum button width plus the content
   /// width, plus the border.
@@ -677,20 +685,24 @@ class _RenderSpinner extends RenderBox {
   }
 
   @override
-  double computeMinIntrinsicHeight(double width) => computeMaxIntrinsicHeight(width);
+  double computeMinIntrinsicHeight(double width) =>
+      computeMaxIntrinsicHeight(width);
 
   /// Intrinsic height is the maximum of the button height and the
   /// builder's intrinsic height (plus the border), where button height is
   /// defined as the larger of the two buttons' intrinsic height, doubled.
   @override
   double computeMaxIntrinsicHeight(double width) {
-    final double upButtonHeight = upButton!.getMaxIntrinsicHeight(double.infinity);
-    final double downButtonHeight = downButton!.getMaxIntrinsicHeight(double.infinity);
+    final double upButtonHeight =
+        upButton!.getMaxIntrinsicHeight(double.infinity);
+    final double downButtonHeight =
+        downButton!.getMaxIntrinsicHeight(double.infinity);
     final double height = math.max(upButtonHeight, downButtonHeight) * 2;
 
     if (width.isFinite) {
       // Subtract the button and border width from width constraint.
-      double buttonWidth = math.max(upButton!.getMaxIntrinsicWidth(double.infinity),
+      double buttonWidth = math.max(
+          upButton!.getMaxIntrinsicWidth(double.infinity),
           downButton!.getMaxIntrinsicWidth(double.infinity));
       width = math.max(width - buttonWidth - 2, 0);
     }
@@ -719,7 +731,7 @@ class _RenderSpinner extends RenderBox {
     );
     content!.layout(contentConstraints, parentUsesSize: true);
     BoxParentData contentParentData = content!.parentData as BoxParentData;
-    contentParentData.offset = Offset(1, 1);
+    contentParentData.offset = const Offset(1, 1);
 
     final double buttonHeight = (content!.size.height - 1) / 2;
     BoxConstraints buttonConstraints = BoxConstraints.tightFor(
@@ -737,8 +749,10 @@ class _RenderSpinner extends RenderBox {
     BoxParentData upButtonParentData = upButton!.parentData as BoxParentData;
     upButtonParentData.offset = Offset(size.width - buttonWidth - 1, 1);
 
-    BoxParentData downButtonParentData = downButton!.parentData as BoxParentData;
-    downButtonParentData.offset = Offset(size.width - buttonWidth - 1, buttonHeight + 2);
+    BoxParentData downButtonParentData =
+        downButton!.parentData as BoxParentData;
+    downButtonParentData.offset =
+        Offset(size.width - buttonWidth - 1, buttonHeight + 2);
   }
 
   @override
@@ -749,7 +763,8 @@ class _RenderSpinner extends RenderBox {
 
     BoxParentData contentParentData = content!.parentData as BoxParentData;
     BoxParentData upButtonParentData = upButton!.parentData as BoxParentData;
-    BoxParentData downButtonParentData = downButton!.parentData as BoxParentData;
+    BoxParentData downButtonParentData =
+        downButton!.parentData as BoxParentData;
 
     final double buttonWidth = upButton!.size.width;
     final double buttonHeight = upButton!.size.height;
@@ -777,12 +792,17 @@ class _RenderSpinner extends RenderBox {
       ..style = ui.PaintingStyle.stroke
       ..strokeWidth = 1
       ..color = const Color(0xff999999);
-    context.canvas
-        .drawRect(Rect.fromLTWH(0.5, 0.5, size.width - 1, size.height - 1).shift(offset), paint);
-    context.canvas.drawLine(offset + Offset(size.width - buttonWidth - 1.5, 0.5),
-        offset + Offset(size.width - buttonWidth - 1.5, size.height - 1), paint);
-    context.canvas.drawLine(offset + Offset(size.width - buttonWidth - 1.5, buttonHeight + 1.5),
-        offset + Offset(size.width - 1, buttonHeight + 1.5), paint);
+    context.canvas.drawRect(
+        Rect.fromLTWH(0.5, 0.5, size.width - 1, size.height - 1).shift(offset),
+        paint);
+    context.canvas.drawLine(
+        offset + Offset(size.width - buttonWidth - 1.5, 0.5),
+        offset + Offset(size.width - buttonWidth - 1.5, size.height - 1),
+        paint);
+    context.canvas.drawLine(
+        offset + Offset(size.width - buttonWidth - 1.5, buttonHeight + 1.5),
+        offset + Offset(size.width - 1, buttonHeight + 1.5),
+        paint);
   }
 
   @override

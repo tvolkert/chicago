@@ -15,7 +15,6 @@
 
 import 'dart:async';
 
-import 'package:flutter/widgets.dart';
 import 'package:flutter/material.dart';
 
 import 'push_button.dart';
@@ -23,10 +22,10 @@ import 'foundation.dart';
 
 class Sheet extends StatelessWidget {
   const Sheet({
-    Key? key,
+    super.key,
     required this.content,
     this.padding = const EdgeInsets.all(8),
-  }) : super(key: key);
+  });
 
   final Widget content;
   final EdgeInsetsGeometry padding;
@@ -39,7 +38,7 @@ class Sheet extends StatelessWidget {
       elevation: 4,
       child: DecoratedBox(
         decoration: const BoxDecoration(
-          border: Border.fromBorderSide(BorderSide(color: const Color(0xff999999))),
+          border: Border.fromBorderSide(BorderSide(color: Color(0xff999999))),
         ),
         child: Padding(
           padding: const EdgeInsets.all(1),
@@ -80,13 +79,13 @@ class Sheet extends StatelessWidget {
 
 class Prompt extends StatelessWidget {
   const Prompt({
-    Key? key,
+    super.key,
     required this.messageType,
     required this.message,
     required this.body,
     this.options = const <String>[],
     this.selectedOption,
-  }) : super(key: key);
+  });
 
   final MessageType messageType;
   final String message;
@@ -113,7 +112,7 @@ class Prompt extends StatelessWidget {
               ),
             ),
             child: Padding(
-              padding: EdgeInsets.all(13),
+              padding: const EdgeInsets.all(13),
               child: SizedBox(
                 width: 280,
                 child: Row(
@@ -122,7 +121,7 @@ class Prompt extends StatelessWidget {
                     messageType.toImage(),
                     Expanded(
                       child: Padding(
-                        padding: EdgeInsets.only(left: 12),
+                        padding: const EdgeInsets.only(left: 12),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -134,7 +133,7 @@ class Prompt extends StatelessWidget {
                                   .copyWith(fontWeight: FontWeight.bold),
                             ),
                             Padding(
-                              padding: EdgeInsets.only(top: 11),
+                              padding: const EdgeInsets.only(top: 11),
                               child: body,
                             ),
                           ],
@@ -147,13 +146,13 @@ class Prompt extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: EdgeInsets.only(top: 8),
+            padding: const EdgeInsets.only(top: 8),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               mainAxisSize: MainAxisSize.min,
               children: List<Widget>.generate(options.length, (int index) {
                 return Padding(
-                  padding: EdgeInsets.only(left: 4),
+                  padding: const EdgeInsets.only(left: 4),
                   child: CommandPushButton(
                     onPressed: () => _setSelectedOption(context, index),
                     label: options[index],
@@ -242,7 +241,7 @@ class DialogTracker<T> {
           alignment: Alignment.topCenter,
           child: SlideTransition(
             position: Tween<Offset>(
-              begin: Offset(0, -1),
+              begin: const Offset(0, -1),
               end: Offset.zero,
             ).animate(CurvedAnimation(
               parent: animation,
@@ -280,7 +279,8 @@ class _AsyncResult<T> {
       : error = null,
         stack = null;
 
-  const _AsyncResult.error(Object this.error, StackTrace this.stack) : value = null;
+  const _AsyncResult.error(Object this.error, StackTrace this.stack)
+      : value = null;
 
   final T? value;
   final Object? error;

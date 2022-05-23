@@ -13,7 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 import 'action_tracker.dart';
@@ -21,11 +20,11 @@ import 'hover_builder.dart';
 
 class LinkButton extends StatelessWidget {
   const LinkButton({
-    Key? key,
+    super.key,
     this.image,
     required this.text,
     this.onPressed,
-  }) : super(key: key);
+  });
 
   final ImageProvider? image;
   final String text;
@@ -38,7 +37,7 @@ class LinkButton extends StatelessWidget {
     Widget? imageWidget;
     if (image != null) {
       imageWidget = Padding(
-        padding: EdgeInsets.only(right: 4),
+        padding: const EdgeInsets.only(right: 4),
         child: Image(image: image!),
       );
       if (onPressed == null) {
@@ -103,21 +102,23 @@ class LinkButton extends StatelessWidget {
 
 class ActionLinkButton<I extends Intent> extends ActionTracker<I> {
   const ActionLinkButton({
-    Key? key,
-    required I intent,
-    ValueChanged<Object?>? onActionInvoked,
+    super.key,
+    required super.intent,
+    super.onActionInvoked,
     this.image,
     required this.text,
-  }) : super(key: key, intent: intent, onActionInvoked: onActionInvoked);
+  });
 
   final ImageProvider? image;
   final String text;
 
   @override
-  _ActionLinkButtonState<I> createState() => _ActionLinkButtonState<I>();
+  ActionTrackerStateMixin<I, ActionTracker<I>> createState() =>
+      _ActionLinkButtonState<I>();
 }
 
-class _ActionLinkButtonState<I extends Intent> extends State<ActionLinkButton<I>>
+class _ActionLinkButtonState<I extends Intent>
+    extends State<ActionLinkButton<I>>
     with ActionTrackerStateMixin<I, ActionLinkButton<I>> {
   @override
   Widget build(BuildContext context) {

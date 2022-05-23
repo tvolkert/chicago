@@ -23,14 +23,14 @@ import 'visibility_aware.dart';
 
 class BoxPane extends MultiChildRenderObjectWidget {
   BoxPane({
-    Key? key,
+    super.key,
     this.axis = Axis.vertical,
     this.mainAxisAlignment = MainAxisAlignment.start,
     this.crossAxisAlignment = CrossAxisAlignment.start,
     this.padding = EdgeInsets.zero,
     this.spacing = 4,
-    List<Widget> children = const <Widget>[],
-  }) : super(key: key, children: children);
+    super.children,
+  });
 
   final Axis axis;
   final MainAxisAlignment mainAxisAlignment;
@@ -168,36 +168,6 @@ class RenderBoxPane extends RenderSegment
   }
 
   @override
-  double computeMinIntrinsicWidth(double height) {
-    // TODO: implement computeMinIntrinsicWidth
-    return super.computeMinIntrinsicWidth(height);
-  }
-
-  @override
-  double computeMaxIntrinsicWidth(double height) {
-    // TODO: implement computeMaxIntrinsicWidth
-    return super.computeMaxIntrinsicWidth(height);
-  }
-
-  @override
-  double computeMinIntrinsicHeight(double width) {
-    // TODO: implement computeMinIntrinsicHeight
-    return super.computeMinIntrinsicHeight(width);
-  }
-
-  @override
-  double computeMaxIntrinsicHeight(double width) {
-    // TODO: implement computeMaxIntrinsicHeight
-    return super.computeMaxIntrinsicHeight(width);
-  }
-
-  @override
-  Size computeDryLayout(BoxConstraints constraints) {
-    // TODO: implement computeDryLayout
-    return super.computeDryLayout(constraints);
-  }
-
-  @override
   void performLayout() {
     final BoxConstraints paddedConstraints = constraints.deflate(padding);
     double crossSize = 0;
@@ -206,24 +176,29 @@ class RenderBoxPane extends RenderSegment
     RenderBox? child = firstChild;
     while (child != null) {
       childCount++;
-      final BoxPaneParentData childParentData = child.parentData! as BoxPaneParentData;
+      final BoxPaneParentData childParentData =
+          child.parentData! as BoxPaneParentData;
       final BoxConstraints innerConstraints;
       if (crossAxisAlignment == CrossAxisAlignment.stretch) {
         switch (axis) {
           case Axis.horizontal:
-            innerConstraints = BoxConstraints.tightFor(height: paddedConstraints.maxHeight);
+            innerConstraints =
+                BoxConstraints.tightFor(height: paddedConstraints.maxHeight);
             break;
           case Axis.vertical:
-            innerConstraints = BoxConstraints.tightFor(width: paddedConstraints.maxWidth);
+            innerConstraints =
+                BoxConstraints.tightFor(width: paddedConstraints.maxWidth);
             break;
         }
       } else {
         switch (axis) {
           case Axis.horizontal:
-            innerConstraints = BoxConstraints(maxHeight: paddedConstraints.maxHeight);
+            innerConstraints =
+                BoxConstraints(maxHeight: paddedConstraints.maxHeight);
             break;
           case Axis.vertical:
-            innerConstraints = BoxConstraints(maxWidth: paddedConstraints.maxWidth);
+            innerConstraints =
+                BoxConstraints(maxWidth: paddedConstraints.maxWidth);
             break;
         }
       }
@@ -236,7 +211,8 @@ class RenderBoxPane extends RenderSegment
     }
 
     mainSize += math.max(childCount - 1, 0) * spacing;
-    size = constraints.constrain(padding.inflateSize(_getSize(mainSize, crossSize)));
+    size = constraints
+        .constrain(padding.inflateSize(_getSize(mainSize, crossSize)));
 
     child = firstChild;
     double mainOffset;
@@ -252,7 +228,8 @@ class RenderBoxPane extends RenderSegment
         break;
     }
     while (child != null) {
-      final BoxPaneParentData childParentData = child.parentData! as BoxPaneParentData;
+      final BoxPaneParentData childParentData =
+          child.parentData! as BoxPaneParentData;
       switch (axis) {
         case Axis.horizontal:
           double dx = mainOffset;
@@ -261,7 +238,8 @@ class RenderBoxPane extends RenderSegment
               // Existing dx is correct
               break;
             case MainAxisAlignment.center:
-              dx = mainOffset + (size.width - mainSize - padding.horizontal) / 2;
+              dx =
+                  mainOffset + (size.width - mainSize - padding.horizontal) / 2;
               break;
             case MainAxisAlignment.end:
               dx = mainOffset + (size.width - mainSize - padding.horizontal);
@@ -279,7 +257,8 @@ class RenderBoxPane extends RenderSegment
               // Initial value of dy is correct.
               break;
             case CrossAxisAlignment.center:
-              dy = padding.top + (size.height - padding.vertical - child.size.height) / 2;
+              dy = padding.top +
+                  (size.height - padding.vertical - child.size.height) / 2;
               break;
             case CrossAxisAlignment.baseline:
               throw UnimplementedError();
@@ -299,12 +278,14 @@ class RenderBoxPane extends RenderSegment
               // Initial value of dx is correct.
               break;
             case CrossAxisAlignment.center:
-              dx = padding.left + (size.width - padding.horizontal - child.size.width) / 2;
+              dx = padding.left +
+                  (size.width - padding.horizontal - child.size.width) / 2;
               break;
             case CrossAxisAlignment.baseline:
               assert(() {
                 throw FlutterError.fromParts(<DiagnosticsNode>[
-                  ErrorSummary('CrossAxisAlignment.baseline is not supported for vertical axes'),
+                  ErrorSummary(
+                      'CrossAxisAlignment.baseline is not supported for vertical axes'),
                 ]);
               }());
               // In non-debug mode, fall through to initial value of dx.
@@ -343,7 +324,8 @@ class RenderBoxPane extends RenderSegment
     final Rect viewport = constraints.viewportResolver.resolve(size);
     RenderBox? child = firstChild;
     while (child != null) {
-      final BoxPaneParentData childParentData = child.parentData! as BoxPaneParentData;
+      final BoxPaneParentData childParentData =
+          child.parentData! as BoxPaneParentData;
       if (viewport.overlaps(childParentData.offset & child.size)) {
         VisibilityAwareMixin.setChildVisible(child, true);
         context.paintChild(child, childParentData.offset + offset);

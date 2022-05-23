@@ -28,7 +28,7 @@ enum SplitPaneResizePolicy {
 
 class SplitPane extends StatelessWidget {
   const SplitPane({
-    Key? key,
+    super.key,
     this.orientation = Axis.horizontal,
     this.initialSplitRatio = 0.5,
     this.splitterThickness = 6,
@@ -36,7 +36,7 @@ class SplitPane extends StatelessWidget {
     this.resizePolicy = SplitPaneResizePolicy.maintainSplitRatio,
     required this.before,
     required this.after,
-  }) : super(key: key);
+  });
 
   final Axis orientation;
   final double initialSplitRatio;
@@ -62,7 +62,7 @@ class SplitPane extends StatelessWidget {
 }
 
 class _Splitter extends StatelessWidget {
-  const _Splitter({Key? key, required this.orientation}) : super(key: key);
+  const _Splitter({required this.orientation});
 
   final Axis orientation;
 
@@ -77,7 +77,8 @@ class _Splitter extends StatelessWidget {
 
   GestureDragUpdateCallback _handleDrag(BuildContext context) {
     return (DragUpdateDetails details) {
-      final _RenderSplitPane renderObject = context.findAncestorRenderObjectOfType<_RenderSplitPane>()!;
+      final _RenderSplitPane renderObject =
+          context.findAncestorRenderObjectOfType<_RenderSplitPane>()!;
       renderObject._handleDrag(details);
     };
   }
@@ -89,7 +90,8 @@ class _Splitter extends StatelessWidget {
       cursor: _cursorForOrientation(),
       child: GestureDetector(
         dragStartBehavior: DragStartBehavior.down,
-        onHorizontalDragUpdate: orientation == Axis.horizontal ? handleDrag : null,
+        onHorizontalDragUpdate:
+            orientation == Axis.horizontal ? handleDrag : null,
         onVerticalDragUpdate: orientation == Axis.vertical ? handleDrag : null,
         child: CustomPaint(
           painter: _SplitterPainter(orientation),
@@ -129,19 +131,21 @@ class _SplitterPainter extends CustomPainter {
       ui.Paint paint = ui.Paint();
       switch (orientation) {
         case Axis.horizontal:
-          paint..style = PaintingStyle.stroke..strokeWidth = 1;
+          paint
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1;
           paint.color = dark;
-          canvas.drawLine(Offset(0, 0.5), Offset(imageWidth, 0.5), paint);
-          canvas.drawLine(Offset(0, 3.5), Offset(imageWidth, 3.5), paint);
-          canvas.drawLine(Offset(0, 6.5), Offset(imageWidth, 6.5), paint);
+          canvas.drawLine(const Offset(0, 0.5), Offset(imageWidth, 0.5), paint);
+          canvas.drawLine(const Offset(0, 3.5), Offset(imageWidth, 3.5), paint);
+          canvas.drawLine(const Offset(0, 6.5), Offset(imageWidth, 6.5), paint);
 
           paint.color = light;
-          canvas.drawLine(Offset(0, 1.5), Offset(imageWidth, 1.5), paint);
-          canvas.drawLine(Offset(0, 4.5), Offset(imageWidth, 4.5), paint);
-          canvas.drawLine(Offset(0, 7.5), Offset(imageWidth, 7.5), paint);
+          canvas.drawLine(const Offset(0, 1.5), Offset(imageWidth, 1.5), paint);
+          canvas.drawLine(const Offset(0, 4.5), Offset(imageWidth, 4.5), paint);
+          canvas.drawLine(const Offset(0, 7.5), Offset(imageWidth, 7.5), paint);
           break;
         case Axis.vertical:
-          paint..style = PaintingStyle.fill;
+          paint.style = PaintingStyle.fill;
           final double half = imageHeight / 2;
 
           paint.color = dark;
@@ -166,7 +170,6 @@ class _SplitterPainter extends CustomPainter {
 
 class _RawSplitPane extends RenderObjectWidget {
   const _RawSplitPane({
-    Key? key,
     this.orientation = Axis.horizontal,
     required this.initialSplitRatio,
     required this.splitterThickness,
@@ -175,7 +178,7 @@ class _RawSplitPane extends RenderObjectWidget {
     required this.before,
     required this.after,
     required this.splitter,
-  }) : super(key: key);
+  });
 
   final Axis orientation;
   final double initialSplitRatio;
@@ -217,7 +220,7 @@ enum _SplitPaneSlot {
 }
 
 class _SplitPaneElement extends RenderObjectElement {
-  _SplitPaneElement(_RawSplitPane widget) : super(widget);
+  _SplitPaneElement(_RawSplitPane super.widget);
 
   Element? _before;
   Element? _after;
@@ -241,7 +244,8 @@ class _SplitPaneElement extends RenderObjectElement {
     super.mount(parent, newSlot);
     _before = updateChild(_before, widget.before, _SplitPaneSlot.before);
     _after = updateChild(_after, widget.after, _SplitPaneSlot.after);
-    _splitter = updateChild(_splitter, widget.splitter, _SplitPaneSlot.splitter);
+    _splitter =
+        updateChild(_splitter, widget.splitter, _SplitPaneSlot.splitter);
   }
 
   @override
@@ -260,7 +264,8 @@ class _SplitPaneElement extends RenderObjectElement {
   }
 
   @override
-  void moveRenderObjectChild(RenderObject _, _SplitPaneSlot? __, _SplitPaneSlot? ___) {
+  void moveRenderObjectChild(
+      RenderObject _, _SplitPaneSlot? __, _SplitPaneSlot? ___) {
     assert(false);
   }
 
@@ -269,7 +274,8 @@ class _SplitPaneElement extends RenderObjectElement {
     super.update(newWidget);
     _before = updateChild(_before, widget.before, _SplitPaneSlot.before);
     _after = updateChild(_after, widget.after, _SplitPaneSlot.after);
-    _splitter = updateChild(_splitter, widget.splitter, _SplitPaneSlot.splitter);
+    _splitter =
+        updateChild(_splitter, widget.splitter, _SplitPaneSlot.splitter);
   }
 
   @override
@@ -287,7 +293,9 @@ class _SplitPaneElement extends RenderObjectElement {
 
   @override
   void removeRenderObjectChild(RenderBox child, _SplitPaneSlot? slot) {
-    assert(child == renderObject.before || child == renderObject.after || child == renderObject.splitter);
+    assert(child == renderObject.before ||
+        child == renderObject.after ||
+        child == renderObject.splitter);
     switch (slot) {
       case _SplitPaneSlot.before:
         renderObject.before = null;
@@ -310,7 +318,8 @@ class _RenderSplitPane extends RenderBox {
     double splitRatio = 0.5,
     double splitterThickness = 6,
     bool roundToWholePixel = false,
-    SplitPaneResizePolicy resizePolicy = SplitPaneResizePolicy.maintainSplitRatio,
+    SplitPaneResizePolicy resizePolicy =
+        SplitPaneResizePolicy.maintainSplitRatio,
   }) {
     this.orientation = orientation;
     this.splitRatio = splitRatio;
@@ -461,13 +470,15 @@ class _RenderSplitPane extends RenderBox {
   double computeMinIntrinsicWidth(double height) => 0;
 
   @override
-  double computeMaxIntrinsicWidth(double height) => computeMinIntrinsicWidth(height);
+  double computeMaxIntrinsicWidth(double height) =>
+      computeMinIntrinsicWidth(height);
 
   @override
   double computeMinIntrinsicHeight(double width) => 0;
 
   @override
-  double computeMaxIntrinsicHeight(double width) => computeMinIntrinsicHeight(width);
+  double computeMaxIntrinsicHeight(double width) =>
+      computeMinIntrinsicHeight(width);
 
   @override
   void performLayout() {
@@ -513,8 +524,10 @@ class _RenderSplitPane extends RenderBox {
         if (roundToWholePixel) {
           splitterThickness = splitterThickness.roundToDouble();
         }
-        splitter!.layout(BoxConstraints.tightFor(width: splitterThickness, height: size.height));
-        BoxParentData splitterParentData = splitter!.parentData as BoxParentData;
+        splitter!.layout(BoxConstraints.tightFor(
+            width: splitterThickness, height: size.height));
+        BoxParentData splitterParentData =
+            splitter!.parentData as BoxParentData;
         splitterParentData.offset = Offset(splitX, 0);
 
         final double afterX = splitX + splitterThickness;
@@ -568,8 +581,10 @@ class _RenderSplitPane extends RenderBox {
         if (roundToWholePixel) {
           splitterThickness = splitterThickness.roundToDouble();
         }
-        splitter!.layout(BoxConstraints.tightFor(width: size.width, height: splitterThickness));
-        BoxParentData splitterParentData = splitter!.parentData as BoxParentData;
+        splitter!.layout(BoxConstraints.tightFor(
+            width: size.width, height: splitterThickness));
+        BoxParentData splitterParentData =
+            splitter!.parentData as BoxParentData;
         splitterParentData.offset = Offset(0, splitY);
 
         final double afterY = splitY + splitterThickness;

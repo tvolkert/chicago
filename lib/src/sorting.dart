@@ -13,7 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import 'package:flutter/painting.dart';
 import 'package:flutter/rendering.dart';
 
 enum SortDirection {
@@ -65,9 +64,9 @@ class SortIndicatorPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(CustomPainter old) {
-    assert(old is SortIndicatorPainter);
-    SortIndicatorPainter oldPainter = old as SortIndicatorPainter;
+  bool shouldRepaint(CustomPainter oldDelegate) {
+    assert(oldDelegate is SortIndicatorPainter);
+    SortIndicatorPainter oldPainter = oldDelegate as SortIndicatorPainter;
     return sortDirection != oldPainter.sortDirection;
   }
 }

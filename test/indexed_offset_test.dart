@@ -18,8 +18,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('operator ==', () {
-    expect(IndexedOffset(0, 0), equals(IndexedOffset(0, 0)));
-    expect(IndexedOffset(3, 7), equals(IndexedOffset(3, 7)));
-    expect(IndexedOffset(0, 0), isNot(equals(IndexedOffset(1, 1))));
+    expect(const IndexedOffset(0, 0), equals(const IndexedOffset(0, 0)));
+    expect(const IndexedOffset(3, 7), equals(const IndexedOffset(3, 7)));
+    expect(const IndexedOffset(0, 0), isNot(equals(const IndexedOffset(1, 1))));
   });
 }

@@ -16,19 +16,17 @@
 import 'dart:ui' as ui;
 
 import 'package:chicago/chicago.dart';
-import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import 'focus_indicator.dart';
 
 class RadioButtonController<T> extends ValueNotifier<T?> {
-  RadioButtonController([T? value]) : super(value);
+  RadioButtonController([super.value]);
 }
 
 class RadioButton<T> extends StatefulWidget {
   const RadioButton({
-    Key? key,
+    super.key,
     required this.value,
     required this.controller,
     this.spacing = 4,
@@ -36,7 +34,7 @@ class RadioButton<T> extends StatefulWidget {
     this.isEnabled = true,
     this.onSelected,
     this.semanticLabel,
-  }) : super(key: key);
+  });
 
   final T value;
   final RadioButtonController<T> controller;
@@ -47,7 +45,7 @@ class RadioButton<T> extends StatefulWidget {
   final String? semanticLabel;
 
   @override
-  _RadioButtonState<T> createState() => _RadioButtonState<T>();
+  State<RadioButton<T>> createState() => _RadioButtonState<T>();
 }
 
 class _RadioButtonState<T> extends State<RadioButton<T>> {
@@ -152,12 +150,12 @@ class _ActivateRadioButtonAction<T> extends ActivateAction {
 
 class BasicRadioButton extends StatelessWidget {
   const BasicRadioButton({
-    Key? key,
+    super.key,
     this.isSelected = false,
     this.spacing = 4,
     this.trailing,
     this.onSelected,
-  }) : super(key: key);
+  });
 
   final bool isSelected;
   final double spacing;
@@ -215,10 +213,9 @@ class BasicRadioButton extends StatelessWidget {
 
 class _RawRadioButton extends LeafRenderObjectWidget {
   const _RawRadioButton({
-    Key? key,
     required this.isSelected,
     required this.isEnabled,
-  }) : super(key: key);
+  });
 
   final bool isSelected;
   final bool isEnabled;
@@ -232,7 +229,8 @@ class _RawRadioButton extends LeafRenderObjectWidget {
   }
 
   @override
-  void updateRenderObject(BuildContext context, covariant _RenderRawRadioButton renderObject) {
+  void updateRenderObject(
+      BuildContext context, covariant _RenderRawRadioButton renderObject) {
     renderObject
       ..isSelected = isSelected
       ..isEnabled = isEnabled;
@@ -274,11 +272,12 @@ class _RenderRawRadioButton extends RenderBox {
 
   @override
   void paint(PaintingContext context, Offset offset) {
-    final Color buttonColor = const Color(0xffffffff);
+    const Color buttonColor = Color(0xffffffff);
     final Color borderColor;
     final Color selectionColor;
     final Paint paint = Paint();
-    final Rect backgroundCircle = Rect.fromLTWH(1, 1, _diameter - 3, _diameter - 3);
+    const Rect backgroundCircle =
+        Rect.fromLTWH(1, 1, _diameter - 3, _diameter - 3);
 
     if (isEnabled) {
       paint.shader = ui.Gradient.radial(
@@ -296,11 +295,13 @@ class _RenderRawRadioButton extends RenderBox {
 
     // Center the button vertically
     context.canvas.save();
-    context.canvas.translate(offset.dx, offset.dy + (size.height - _diameter) / 2);
+    context.canvas
+        .translate(offset.dx, offset.dy + (size.height - _diameter) / 2);
     try {
       // Paint the border
       final Paint borderPaint = Paint()..color = borderColor;
-      context.canvas.drawOval(Rect.fromLTWH(0, 0, _diameter - 1, _diameter - 1), borderPaint);
+      context.canvas.drawOval(
+          const Rect.fromLTWH(0, 0, _diameter - 1, _diameter - 1), borderPaint);
 
       // Paint the background
       context.canvas.drawOval(backgroundCircle, paint);
@@ -308,7 +309,7 @@ class _RenderRawRadioButton extends RenderBox {
       // Paint the selection
       if (isSelected) {
         Paint selectionPaint = Paint()..color = selectionColor;
-        final Rect selection = Rect.fromLTWH(
+        const Rect selection = Rect.fromLTWH(
           (_diameter - _selectionDiameter) / 2,
           (_diameter - _selectionDiameter) / 2,
           _selectionDiameter - 1,

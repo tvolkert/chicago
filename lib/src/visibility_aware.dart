@@ -18,7 +18,7 @@ import 'package:flutter/rendering.dart';
 
 // TODO: eliminate the need for a tree walk when visibility changes
 mixin VisibilityAwareMixin on RenderBox {
-  Set<int> _hiddenAncestors = <int>{};
+  final Set<int> _hiddenAncestors = <int>{};
   bool _isVisible = true;
   bool get isVisible => _isVisible && _hiddenAncestors.isEmpty;
   set isVisible(bool value) {
@@ -40,7 +40,8 @@ mixin VisibilityAwareMixin on RenderBox {
     }
   }
 
-  static RenderObjectVisitor _setHiddenAncestorsField(bool isVisible, int depth) {
+  static RenderObjectVisitor _setHiddenAncestorsField(
+      bool isVisible, int depth) {
     return isVisible ? _unhideDescendants(depth) : _hideDescendants(depth);
   }
 
@@ -55,6 +56,7 @@ mixin VisibilityAwareMixin on RenderBox {
       }
       child.visitChildren(visitor);
     }
+
     return visitor;
   }
 
@@ -69,6 +71,7 @@ mixin VisibilityAwareMixin on RenderBox {
       }
       child.visitChildren(visitor);
     }
+
     return visitor;
   }
 
