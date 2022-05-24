@@ -70,8 +70,7 @@ class WidgetSurveyor {
     TextBaseline baseline = TextBaseline.alphabetic,
     BoxConstraints constraints = const BoxConstraints(),
   }) {
-    final SurveyorView rendered =
-        _render(widget, constraints, baselineToCalculate: baseline);
+    final SurveyorView rendered = _render(widget, constraints, baselineToCalculate: baseline);
     return rendered.childBaseline ?? rendered.size.height;
   }
 
@@ -80,8 +79,7 @@ class WidgetSurveyor {
     TextBaseline baseline = TextBaseline.alphabetic,
     BoxConstraints constraints = const BoxConstraints(),
   }) {
-    final SurveyorView rendered =
-        _render(widget, constraints, baselineToCalculate: baseline);
+    final SurveyorView rendered = _render(widget, constraints, baselineToCalculate: baseline);
     return rendered.childBaseline;
   }
 
@@ -97,8 +95,7 @@ class WidgetSurveyor {
           if (!debugIsPerformingCleanup) {
             throw FlutterError.fromParts(<DiagnosticsNode>[
               ErrorSummary('Visual update was requested during survey.'),
-              ErrorDescription(
-                  'WidgetSurveyor does not support a render object '
+              ErrorDescription('WidgetSurveyor does not support a render object '
                   'calling markNeedsLayout(), markNeedsPaint(), or '
                   'markNeedsSemanticUpdate() while the widget is being surveyed.'),
             ]);
@@ -110,8 +107,7 @@ class WidgetSurveyor {
     final SurveyorView rootView = pipelineOwner.rootNode = SurveyorView();
     final BuildOwner buildOwner = BuildOwner(focusManager: FocusManager());
     assert(buildOwner.globalKeyCount == 0);
-    final RenderObjectToWidgetElement element =
-        RenderObjectToWidgetAdapter<RenderBox>(
+    final RenderObjectToWidgetElement element = RenderObjectToWidgetAdapter<RenderBox>(
       container: rootView,
       debugShortDescription: '[root]',
       child: widget,
@@ -127,20 +123,17 @@ class WidgetSurveyor {
       // Un-mount all child elements to properly clean up.
       debugIsPerformingCleanup = true;
       try {
-        element.update(
-            RenderObjectToWidgetAdapter<RenderBox>(container: rootView));
+        element.update(RenderObjectToWidgetAdapter<RenderBox>(container: rootView));
         buildOwner.finalizeTree();
       } finally {
         debugIsPerformingCleanup = false;
       }
-      assert(buildOwner.globalKeyCount ==
-          1); // RenderObjectToWidgetAdapter uses a global key
+      assert(buildOwner.globalKeyCount == 1); // RenderObjectToWidgetAdapter uses a global key
     }
   }
 }
 
-class SurveyorView extends RenderBox
-    with RenderObjectWithChildMixin<RenderBox> {
+class SurveyorView extends RenderBox with RenderObjectWithChildMixin<RenderBox> {
   BoxConstraints? childConstraints;
   TextBaseline? baselineToCalculate;
   double? childBaseline;

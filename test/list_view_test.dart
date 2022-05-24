@@ -18,8 +18,7 @@ import 'package:flutter/widgets.dart' hide ListView, TableCell, TableRow;
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  Widget buildDummy(BuildContext context, int index, bool isSelected,
-      bool isHighlighted, bool isDisabled) {
+  Widget buildDummy(BuildContext context, int index, bool isSelected, bool isHighlighted, bool isDisabled) {
     return Container();
   }
 
@@ -32,10 +31,8 @@ void main() {
   }
 
   // Regression test for https://github.com/tvolkert/chicago/issues/10
-  testWidgets('Can reuse selectionController across render objects',
-      (WidgetTester tester) async {
-    final ListViewSelectionController controller =
-        ListViewSelectionController();
+  testWidgets('Can reuse selectionController across render objects', (WidgetTester tester) async {
+    final ListViewSelectionController controller = ListViewSelectionController();
     await tester.pumpWidget(
       wrap(
         ListView(
@@ -63,11 +60,9 @@ void main() {
   });
 
   // Regression test for https://github.com/tvolkert/chicago/issues/6
-  testWidgets('updating itemBuilder invokes new builder when widget is rebuilt',
-      (WidgetTester tester) async {
+  testWidgets('updating itemBuilder invokes new builder when widget is rebuilt', (WidgetTester tester) async {
     ListItemBuilder builder(String text) {
-      return (BuildContext ctx, int index, bool isSelected, bool isHighlighted,
-          bool isDisabled) {
+      return (BuildContext ctx, int index, bool isSelected, bool isHighlighted, bool isDisabled) {
         return Directionality(
           textDirection: TextDirection.ltr,
           child: Text(text),
@@ -95,8 +90,7 @@ void main() {
 
   testWidgets('Reassemble triggers itemBuilder', (WidgetTester tester) async {
     int buildCount = 0;
-    Widget build(BuildContext c, int index, bool isSelected, bool isHighlighted,
-        bool isDisabled) {
+    Widget build(BuildContext c, int index, bool isSelected, bool isHighlighted, bool isDisabled) {
       buildCount++;
       return const Directionality(
         textDirection: TextDirection.ltr,
@@ -112,28 +106,22 @@ void main() {
       ),
     );
     expect(buildCount, 1);
-    tester.binding.buildOwner!
-        .reassemble(tester.binding.renderViewElement!, null);
+    tester.binding.buildOwner!.reassemble(tester.binding.renderViewElement!, null);
     await tester.pump();
     expect(buildCount, 2);
   });
 
   group('ListViewSelectionController', () {
     test('selectedItems', () {
-      final ListViewSelectionController controller =
-          ListViewSelectionController(
+      final ListViewSelectionController controller = ListViewSelectionController(
         selectMode: SelectMode.multi,
       );
-      controller.selectedRanges = <Span>[
-        const Span(5, 2),
-        const Span.single(10)
-      ];
+      controller.selectedRanges = <Span>[const Span(5, 2), const Span.single(10)];
       expect(controller.selectedItems, <int>[2, 3, 4, 5, 10]);
     });
 
     test('setSelectedRanges only notifies if selection changes', () {
-      final ListViewSelectionController controller =
-          ListViewSelectionController(
+      final ListViewSelectionController controller = ListViewSelectionController(
         selectMode: SelectMode.multi,
       );
       int notifications = 0;
@@ -147,8 +135,7 @@ void main() {
     });
 
     test('addSelectedRange only notifies if range not already selected', () {
-      final ListViewSelectionController controller =
-          ListViewSelectionController(
+      final ListViewSelectionController controller = ListViewSelectionController(
         selectMode: SelectMode.multi,
       );
       int notifications = 0;
@@ -160,8 +147,7 @@ void main() {
     });
 
     test('removeSelectedRange only notifies if range already selected', () {
-      final ListViewSelectionController controller =
-          ListViewSelectionController(
+      final ListViewSelectionController controller = ListViewSelectionController(
         selectMode: SelectMode.multi,
       );
       int notifications = 0;
@@ -171,8 +157,7 @@ void main() {
     });
 
     test('clearSelection only notifies if range already selected', () {
-      final ListViewSelectionController controller =
-          ListViewSelectionController(
+      final ListViewSelectionController controller = ListViewSelectionController(
         selectMode: SelectMode.multi,
       );
       int notifications = 0;

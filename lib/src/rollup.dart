@@ -74,8 +74,7 @@ class _RollupState extends State<Rollup> {
   void didUpdateWidget(covariant Rollup oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.controller != oldWidget.controller) {
-      final RollupController oldController =
-          _controller ?? oldWidget.controller!;
+      final RollupController oldController = _controller ?? oldWidget.controller!;
       oldController.removeListener(_handleIsExpandedChanged);
       _controller?.dispose();
       _controller = null;
@@ -120,8 +119,7 @@ class RawRollup extends ImplicitlyAnimatedWidget {
     required this.isCollapsible,
     required this.onToggleExpanded,
     required this.semanticLabel,
-  }) : super(
-            duration: const Duration(milliseconds: 250), curve: Curves.easeOut);
+  }) : super(duration: const Duration(milliseconds: 250), curve: Curves.easeOut);
 
   final Widget heading;
   final WidgetBuilder childBuilder;
@@ -148,14 +146,11 @@ class _RawRollupState extends AnimatedWidgetBaseState<RawRollup> {
 
   @override
   void forEachTween(TweenVisitor<dynamic> visitor) {
-    _expansionTween = visitor(_expansionTween, widget.isExpanded ? 1.0 : 0.0,
-            (dynamic value) => Tween<double>(begin: value as double))
+    _expansionTween = visitor(
+            _expansionTween, widget.isExpanded ? 1.0 : 0.0, (dynamic value) => Tween<double>(begin: value as double))
         as Tween<double>?;
-    _arrowRotationTween = visitor(
-            _arrowRotationTween,
-            widget.isExpanded ? math.pi / 2 : 0.0,
-            (dynamic value) => Tween<double>(begin: value as double))
-        as Tween<double>?;
+    _arrowRotationTween = visitor(_arrowRotationTween, widget.isExpanded ? math.pi / 2 : 0.0,
+        (dynamic value) => Tween<double>(begin: value as double)) as Tween<double>?;
   }
 
   @override
@@ -189,8 +184,7 @@ class _RawRollupState extends AnimatedWidgetBaseState<RawRollup> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Transform.rotate(
-                          angle:
-                              _arrowRotationTween?.evaluate(animation) ?? 0.0,
+                          angle: _arrowRotationTween?.evaluate(animation) ?? 0.0,
                           child: CustomPaint(
                             size: const Size.square(_arrowWidth),
                             painter: _ArrowPainter(),
@@ -251,8 +245,7 @@ class _RevealBox extends SingleChildRenderObjectWidget {
   }
 
   @override
-  void updateRenderObject(
-      BuildContext context, covariant _RenderRevealBox renderObject) {
+  void updateRenderObject(BuildContext context, covariant _RenderRevealBox renderObject) {
     renderObject.reveal = reveal;
   }
 }
@@ -297,8 +290,7 @@ class _RenderRevealBox extends RenderProxyBox {
     super.dispose();
   }
 
-  final LayerHandle<ClipRectLayer> _clipRectLayer =
-      LayerHandle<ClipRectLayer>();
+  final LayerHandle<ClipRectLayer> _clipRectLayer = LayerHandle<ClipRectLayer>();
 }
 
 class _ArrowPainter extends CustomPainter {

@@ -66,9 +66,7 @@ class _FocusPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_FocusPainter oldDelegate) {
-    return isFocused != oldDelegate.isFocused ||
-        padding != oldDelegate.padding ||
-        color != oldDelegate.color;
+    return isFocused != oldDelegate.isFocused || padding != oldDelegate.padding || color != oldDelegate.color;
   }
 }
 

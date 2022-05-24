@@ -65,8 +65,7 @@ class Meter extends SingleChildRenderObjectWidget {
   }
 
   @override
-  void updateRenderObject(
-      BuildContext context, covariant RenderMeter renderObject) {
+  void updateRenderObject(BuildContext context, covariant RenderMeter renderObject) {
     renderObject
       ..percentage = percentage
       ..fillColor = fillColor
@@ -116,11 +115,9 @@ class RenderMeter extends RenderBox with RenderObjectWithChildMixin<RenderBox> {
   @override
   double? computeDistanceToActualBaseline(TextBaseline baseline) {
     if (child != null) {
-      final double? childBaseline =
-          child!.getDistanceToActualBaseline(baseline);
+      final double? childBaseline = child!.getDistanceToActualBaseline(baseline);
       if (childBaseline != null) {
-        final BoxParentData childParentData =
-            child!.parentData as BoxParentData;
+        final BoxParentData childParentData = child!.parentData as BoxParentData;
         return childBaseline + childParentData.offset.dy;
       }
     }
@@ -175,8 +172,7 @@ class RenderMeter extends RenderBox with RenderObjectWithChildMixin<RenderBox> {
   Size computeDryLayout(BoxConstraints constraints) {
     Size dryLayoutSize = _defaultSize;
     if (child != null) {
-      final BoxConstraints childConstraints =
-          constraints.deflate(const EdgeInsets.all(_borderWidth));
+      final BoxConstraints childConstraints = constraints.deflate(const EdgeInsets.all(_borderWidth));
       final Size childSize = child!.getDryLayout(childConstraints);
       dryLayoutSize = Size(
         math.max(dryLayoutSize.width, childSize.width + 2 * _borderWidth),
@@ -191,8 +187,7 @@ class RenderMeter extends RenderBox with RenderObjectWithChildMixin<RenderBox> {
     Size preferredSize = _defaultSize;
     Size? childSize;
     if (child != null) {
-      final BoxConstraints childConstraints =
-          constraints.deflate(const EdgeInsets.all(_borderWidth));
+      final BoxConstraints childConstraints = constraints.deflate(const EdgeInsets.all(_borderWidth));
       child!.layout(childConstraints, parentUsesSize: true);
       childSize = child!.size;
       preferredSize = Size(
@@ -214,8 +209,7 @@ class RenderMeter extends RenderBox with RenderObjectWithChildMixin<RenderBox> {
 
   @override
   void paint(PaintingContext context, Offset offset) {
-    final Size innerSize =
-        size - const Offset(2 * _borderWidth, 2 * _borderWidth) as Size;
+    final Size innerSize = size - const Offset(2 * _borderWidth, 2 * _borderWidth) as Size;
     final Offset innerOffset = offset.translate(_borderWidth, _borderWidth);
 
     // Draw the border.
@@ -232,8 +226,7 @@ class RenderMeter extends RenderBox with RenderObjectWithChildMixin<RenderBox> {
     // Save the layer so as to draw the progress bar on a transparent canvas,
     // thus allowing the BlendMode.xor to work as intended when we composite
     // the progress bar with the child.
-    context.canvas
-        .saveLayer(offset & size, Paint()..blendMode = BlendMode.srcOver);
+    context.canvas.saveLayer(offset & size, Paint()..blendMode = BlendMode.srcOver);
     try {
       // Draw the progress bar.
       final Paint fillPaint = Paint()
@@ -246,18 +239,15 @@ class RenderMeter extends RenderBox with RenderObjectWithChildMixin<RenderBox> {
             darken(fillColor),
           ],
         );
-      context.canvas.drawRect(
-          innerOffset & Size(meterStopX, innerSize.height), fillPaint);
+      context.canvas.drawRect(innerOffset & Size(meterStopX, innerSize.height), fillPaint);
 
       // Paint the grid lines in the progress bar.
       _paintGridLines(context, offset, paint, stopAt: meterStopX);
 
       if (child != null) {
-        context.canvas
-            .saveLayer(offset & size, Paint()..blendMode = BlendMode.xor);
+        context.canvas.saveLayer(offset & size, Paint()..blendMode = BlendMode.xor);
         try {
-          final BoxParentData childParentData =
-              child!.parentData as BoxParentData;
+          final BoxParentData childParentData = child!.parentData as BoxParentData;
           context.paintChild(child!, offset + childParentData.offset);
         } finally {
           context.canvas.restore();

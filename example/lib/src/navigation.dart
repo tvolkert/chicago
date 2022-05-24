@@ -69,43 +69,37 @@ class TabsDemo extends StatelessWidget {
                   Tab(
                     label: 'Pomegranate',
                     builder: (BuildContext context) {
-                      return Center(
-                          child: ColoredText('Red', Color(0xffff0000)));
+                      return Center(child: ColoredText('Red', Color(0xffff0000)));
                     },
                   ),
                   Tab(
                     label: 'Mango',
                     builder: (BuildContext context) {
-                      return Center(
-                          child: ColoredText('Orange', Color(0xffffa500)));
+                      return Center(child: ColoredText('Orange', Color(0xffffa500)));
                     },
                   ),
                   Tab(
                     label: 'Banana',
                     builder: (BuildContext context) {
-                      return Center(
-                          child: ColoredText('Yellow', Color(0xffffff00)));
+                      return Center(child: ColoredText('Yellow', Color(0xffffff00)));
                     },
                   ),
                   Tab(
                     label: 'Lime',
                     builder: (BuildContext context) {
-                      return Center(
-                          child: ColoredText('Green', Color(0xff00ff00)));
+                      return Center(child: ColoredText('Green', Color(0xff00ff00)));
                     },
                   ),
                   Tab(
                     label: 'Blueberry',
                     builder: (BuildContext context) {
-                      return Center(
-                          child: ColoredText('Blue', Color(0xff0000ff)));
+                      return Center(child: ColoredText('Blue', Color(0xff0000ff)));
                     },
                   ),
                   Tab(
                     label: 'Plum',
                     builder: (BuildContext context) {
-                      return Center(
-                          child: ColoredText('Purple', Color(0xff800080)));
+                      return Center(child: ColoredText('Purple', Color(0xff800080)));
                     },
                   ),
                 ],
@@ -186,17 +180,11 @@ class _RollupDemoState extends State<RollupDemo> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Checkbox(trailing: Text('Circle')),
-                    Checkbox(
-                        trailing: Text('Ellipse'),
-                        controller: _ellipseController),
-                    Checkbox(
-                        trailing: Text('Square'),
-                        controller: _squareController),
+                    Checkbox(trailing: Text('Ellipse'), controller: _ellipseController),
+                    Checkbox(trailing: Text('Square'), controller: _squareController),
                     const Checkbox(trailing: Text('Rectangle')),
                     const Checkbox(trailing: Text('Hexagon')),
-                    Checkbox(
-                        trailing: Text('Octagon'),
-                        controller: _octagonController),
+                    Checkbox(trailing: Text('Octagon'), controller: _octagonController),
                   ],
                 );
               },

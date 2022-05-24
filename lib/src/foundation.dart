@@ -60,8 +60,7 @@ Comparator<T> _defaultCompare<T>() {
 /// Returns true if any shift key is pressed on a physical keyboard.
 bool isShiftKeyPressed() {
   final Set<LogicalKeyboardKey> keys = RawKeyboard.instance.keysPressed;
-  return keys.contains(LogicalKeyboardKey.shiftLeft) ||
-      keys.contains(LogicalKeyboardKey.shiftRight);
+  return keys.contains(LogicalKeyboardKey.shiftLeft) || keys.contains(LogicalKeyboardKey.shiftRight);
 }
 
 /// Returns true if any "command" key is pressed on a physical keyboard.
@@ -73,24 +72,18 @@ bool isPlatformCommandKeyPressed([TargetPlatform? platform]) {
   final Set<LogicalKeyboardKey> keys = RawKeyboard.instance.keysPressed;
   switch (platform) {
     case TargetPlatform.macOS:
-      return keys.contains(LogicalKeyboardKey.metaLeft) ||
-          keys.contains(LogicalKeyboardKey.metaRight);
+      return keys.contains(LogicalKeyboardKey.metaLeft) || keys.contains(LogicalKeyboardKey.metaRight);
     default:
-      return keys.contains(LogicalKeyboardKey.controlLeft) ||
-          keys.contains(LogicalKeyboardKey.controlRight);
+      return keys.contains(LogicalKeyboardKey.controlLeft) || keys.contains(LogicalKeyboardKey.controlRight);
   }
 }
 
 bool isActivateKey(LogicalKeyboardKey key) {
-  final Iterable<LogicalKeyboardKey> activateKeys = WidgetsApp
-      .defaultShortcuts.entries
-      .where((MapEntry<ShortcutActivator, Intent> entry) =>
-          entry.value is ActivateIntent)
-      .map<ShortcutActivator>(
-          (MapEntry<ShortcutActivator, Intent> entry) => entry.key)
+  final Iterable<LogicalKeyboardKey> activateKeys = WidgetsApp.defaultShortcuts.entries
+      .where((MapEntry<ShortcutActivator, Intent> entry) => entry.value is ActivateIntent)
+      .map<ShortcutActivator>((MapEntry<ShortcutActivator, Intent> entry) => entry.key)
       .where((ShortcutActivator activator) => activator.triggers?.length == 1)
-      .map<LogicalKeyboardKey>(
-          (ShortcutActivator activator) => activator.triggers!.single);
+      .map<LogicalKeyboardKey>((ShortcutActivator activator) => activator.triggers!.single);
   return activateKeys.contains(key);
 }
 
@@ -184,13 +177,11 @@ class MessageType {
   static const MessageType info = MessageType._('info');
 
   Widget toImage() {
-    return Image.asset('assets/message_type-$_assetKey-32x32.png',
-        package: 'chicago');
+    return Image.asset('assets/message_type-$_assetKey-32x32.png', package: 'chicago');
   }
 
   Widget toSmallImage() {
-    return Image.asset('assets/message_type-$_assetKey-16x16.png',
-        package: 'chicago');
+    return Image.asset('assets/message_type-$_assetKey-16x16.png', package: 'chicago');
   }
 }
 
@@ -236,8 +227,7 @@ class FakeSubscription<T> implements StreamSubscription<T> {
 }
 
 mixin RenderBoxWithChildDefaultsMixin on RenderObjectWithChildMixin<RenderBox> {
-  bool defaultHitTestChild(BoxHitTestResult result,
-      {required ui.Offset position}) {
+  bool defaultHitTestChild(BoxHitTestResult result, {required ui.Offset position}) {
     if (child == null) {
       return false;
     }

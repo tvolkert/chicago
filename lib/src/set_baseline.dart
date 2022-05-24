@@ -31,14 +31,12 @@ class SetBaseline extends SingleChildRenderObjectWidget {
   }
 
   @override
-  void updateRenderObject(
-      BuildContext context, RenderSetBaseline renderObject) {
+  void updateRenderObject(BuildContext context, RenderSetBaseline renderObject) {
     renderObject.baseline = baseline;
   }
 }
 
-class RenderSetBaseline extends RenderBox
-    with RenderObjectWithChildMixin<RenderBox> {
+class RenderSetBaseline extends RenderBox with RenderObjectWithChildMixin<RenderBox> {
   RenderSetBaseline({required double baseline}) {
     this.baseline = baseline;
   }

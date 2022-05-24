@@ -229,8 +229,7 @@ class _RawRadioButton extends LeafRenderObjectWidget {
   }
 
   @override
-  void updateRenderObject(
-      BuildContext context, covariant _RenderRawRadioButton renderObject) {
+  void updateRenderObject(BuildContext context, covariant _RenderRawRadioButton renderObject) {
     renderObject
       ..isSelected = isSelected
       ..isEnabled = isEnabled;
@@ -276,8 +275,7 @@ class _RenderRawRadioButton extends RenderBox {
     final Color borderColor;
     final Color selectionColor;
     final Paint paint = Paint();
-    const Rect backgroundCircle =
-        Rect.fromLTWH(1, 1, _diameter - 3, _diameter - 3);
+    const Rect backgroundCircle = Rect.fromLTWH(1, 1, _diameter - 3, _diameter - 3);
 
     if (isEnabled) {
       paint.shader = ui.Gradient.radial(
@@ -295,13 +293,11 @@ class _RenderRawRadioButton extends RenderBox {
 
     // Center the button vertically
     context.canvas.save();
-    context.canvas
-        .translate(offset.dx, offset.dy + (size.height - _diameter) / 2);
+    context.canvas.translate(offset.dx, offset.dy + (size.height - _diameter) / 2);
     try {
       // Paint the border
       final Paint borderPaint = Paint()..color = borderColor;
-      context.canvas.drawOval(
-          const Rect.fromLTWH(0, 0, _diameter - 1, _diameter - 1), borderPaint);
+      context.canvas.drawOval(const Rect.fromLTWH(0, 0, _diameter - 1, _diameter - 1), borderPaint);
 
       // Paint the background
       context.canvas.drawOval(backgroundCircle, paint);

@@ -113,12 +113,10 @@ class ActionLinkButton<I extends Intent> extends ActionTracker<I> {
   final String text;
 
   @override
-  ActionTrackerStateMixin<I, ActionTracker<I>> createState() =>
-      _ActionLinkButtonState<I>();
+  ActionTrackerStateMixin<I, ActionTracker<I>> createState() => _ActionLinkButtonState<I>();
 }
 
-class _ActionLinkButtonState<I extends Intent>
-    extends State<ActionLinkButton<I>>
+class _ActionLinkButtonState<I extends Intent> extends State<ActionLinkButton<I>>
     with ActionTrackerStateMixin<I, ActionLinkButton<I>> {
   @override
   Widget build(BuildContext context) {

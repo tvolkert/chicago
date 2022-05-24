@@ -44,9 +44,7 @@ void main() {
             bool isHighlighted,
             bool isDisabled,
           ) {
-            return Padding(
-                padding: EdgeInsets.only(left: index.toDouble()),
-                child: Text('$index'));
+            return Padding(padding: EdgeInsets.only(left: index.toDouble()), child: Text('$index'));
           },
         ),
       ),
@@ -122,24 +120,20 @@ class ListViewSelectionController with ChangeNotifier {
     for (Span range in ranges) {
       selectedRanges.addRange(range.start, range.end);
     }
-    if (!const IterableEquality<Span>()
-        .equals(_selectedRanges.data, selectedRanges.data)) {
+    if (!const IterableEquality<Span>().equals(_selectedRanges.data, selectedRanges.data)) {
       _selectedRanges = selectedRanges;
       notifyListeners();
     }
   }
 
-  int get firstSelectedIndex =>
-      _selectedRanges.isNotEmpty ? _selectedRanges.first.start : -1;
+  int get firstSelectedIndex => _selectedRanges.isNotEmpty ? _selectedRanges.first.start : -1;
 
-  int get lastSelectedIndex =>
-      _selectedRanges.isNotEmpty ? _selectedRanges.last.end : -1;
+  int get lastSelectedIndex => _selectedRanges.isNotEmpty ? _selectedRanges.last.end : -1;
 
   Iterable<int> get selectedItems sync* {
     for (Span range in selectedRanges) {
       // ListSelection guarantees that `range` is already normalized.
-      yield* Iterable<int>.generate(
-          range.length, (int index) => range.start + index);
+      yield* Iterable<int>.generate(range.length, (int index) => range.start + index);
     }
   }
 
@@ -183,20 +177,17 @@ class ListViewSelectionController with ChangeNotifier {
   }
 }
 
-typedef ListViewItemDisabledFilterChangedHandler = void Function(
-    Predicate<int>? previousFilter);
+typedef ListViewItemDisabledFilterChangedHandler = void Function(Predicate<int>? previousFilter);
 
 class ListViewItemDisablerListener {
   const ListViewItemDisablerListener({
     required this.onListViewItemDisabledFilterChanged,
   });
 
-  final ListViewItemDisabledFilterChangedHandler
-      onListViewItemDisabledFilterChanged;
+  final ListViewItemDisabledFilterChangedHandler onListViewItemDisabledFilterChanged;
 }
 
-class ListViewItemDisablerController
-    with ListenerNotifier<ListViewItemDisablerListener> {
+class ListViewItemDisablerController with ListenerNotifier<ListViewItemDisablerListener> {
   ListViewItemDisablerController({Predicate<int>? filter}) : _filter = filter;
 
   Predicate<int>? _filter;
@@ -326,9 +317,7 @@ class ListViewElement extends RenderObjectElement with ListViewElementMixin {
   }
 }
 
-class RenderListView extends RenderBasicListView
-    with DeferredLayoutMixin
-    implements MouseTrackerAnnotation {
+class RenderListView extends RenderBasicListView with DeferredLayoutMixin implements MouseTrackerAnnotation {
   RenderListView({
     required super.itemHeight,
     required super.length,
@@ -363,8 +352,7 @@ class RenderListView extends RenderBasicListView
   }
 
   ListViewItemDisablerController? _itemDisabledController;
-  ListViewItemDisablerController? get itemDisabledController =>
-      _itemDisabledController;
+  ListViewItemDisablerController? get itemDisabledController => _itemDisabledController;
   set itemDisabledController(ListViewItemDisablerController? value) {
     if (_itemDisabledController == value) return;
     if (attached && _itemDisabledController != null) {
@@ -377,8 +365,7 @@ class RenderListView extends RenderBasicListView
     markNeedsBuild();
   }
 
-  bool _isItemDisabled(int index) =>
-      _itemDisabledController?.isItemDisabled(index) ?? false;
+  bool _isItemDisabled(int index) => _itemDisabledController?.isItemDisabled(index) ?? false;
 
   TargetPlatform? _platform;
   TargetPlatform get platform => _platform!;
@@ -441,8 +428,7 @@ class RenderListView extends RenderBasicListView
 
   void _handleTapDown(TapDownDetails details) {
     ListViewSelectionController? selectionController = this.selectionController;
-    final SelectMode selectMode =
-        selectionController?.selectMode ?? SelectMode.none;
+    final SelectMode selectMode = selectionController?.selectMode ?? SelectMode.none;
     if (selectionController != null && selectMode != SelectMode.none) {
       final int index = getItemAt(details.localPosition.dy);
       if (index >= 0 && index < length && !_isItemDisabled(index)) {
@@ -452,19 +438,16 @@ class RenderListView extends RenderBasicListView
             _tapDownSelectionUpdateTask = _ListViewAddToSelection(index);
           } else {
             final int endIndex = selectionController.lastSelectedIndex;
-            final Span range =
-                Span(index, index > startIndex ? startIndex : endIndex);
+            final Span range = Span(index, index > startIndex ? startIndex : endIndex);
             _tapDownSelectionUpdateTask = _ListViewSetSelectedRange(range);
           }
-        } else if (isPlatformCommandKeyPressed(platform) &&
-            selectMode == SelectMode.multi) {
+        } else if (isPlatformCommandKeyPressed(platform) && selectMode == SelectMode.multi) {
           if (selectionController.isItemSelected(index)) {
             _tapDownSelectionUpdateTask = _ListViewRemoveFromSelection(index);
           } else {
             _tapDownSelectionUpdateTask = _ListViewAddToSelection(index);
           }
-        } else if (isPlatformCommandKeyPressed(platform) &&
-            selectMode == SelectMode.single) {
+        } else if (isPlatformCommandKeyPressed(platform) && selectMode == SelectMode.single) {
           if (selectionController.isItemSelected(index)) {
             _tapDownSelectionUpdateTask = const _ListViewSetSelectedIndex(-1);
           } else {
@@ -550,8 +533,7 @@ class RenderListView extends RenderBasicListView
         ..color = const Color(0xffdddcd5);
       context.canvas.drawRect(rowBounds.shift(offset), paint);
     }
-    if (selectionController != null &&
-        selectionController!.selectedRanges.isNotEmpty) {
+    if (selectionController != null && selectionController!.selectedRanges.isNotEmpty) {
       final Paint paint = Paint()
         ..style = PaintingStyle.fill
         ..color = const Color(0xff14538b);
@@ -578,8 +560,7 @@ class _ListViewAddToSelection extends _ListViewSelectionUpdateTask {
   final int index;
 
   @override
-  void run(ListViewSelectionController? controller) =>
-      controller?.addSelectedIndex(index);
+  void run(ListViewSelectionController? controller) => controller?.addSelectedIndex(index);
 }
 
 class _ListViewRemoveFromSelection extends _ListViewSelectionUpdateTask {
@@ -588,8 +569,7 @@ class _ListViewRemoveFromSelection extends _ListViewSelectionUpdateTask {
   final int index;
 
   @override
-  void run(ListViewSelectionController? controller) =>
-      controller?.removeSelectedIndex(index);
+  void run(ListViewSelectionController? controller) => controller?.removeSelectedIndex(index);
 }
 
 class _ListViewSetSelectedRange extends _ListViewSelectionUpdateTask {
@@ -598,8 +578,7 @@ class _ListViewSetSelectedRange extends _ListViewSelectionUpdateTask {
   final Span range;
 
   @override
-  void run(ListViewSelectionController? controller) =>
-      controller?.selectedRange = range;
+  void run(ListViewSelectionController? controller) => controller?.selectedRange = range;
 }
 
 class _ListViewSetSelectedIndex extends _ListViewSelectionUpdateTask {
@@ -608,6 +587,5 @@ class _ListViewSetSelectedIndex extends _ListViewSelectionUpdateTask {
   final int index;
 
   @override
-  void run(ListViewSelectionController? controller) =>
-      controller?.selectedIndex = index;
+  void run(ListViewSelectionController? controller) => controller?.selectedIndex = index;
 }

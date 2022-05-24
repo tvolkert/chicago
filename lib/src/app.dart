@@ -14,8 +14,7 @@
 // limitations under the License.
 
 // Needed because chicago.TextInput still depends on Material
-import 'package:flutter/material.dart'
-    show DefaultMaterialLocalizations, Material;
+import 'package:flutter/material.dart' show DefaultMaterialLocalizations, Material;
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
@@ -50,8 +49,7 @@ class _ChicagoAppState extends State<ChicagoApp> with WidgetsBindingObserver {
         SchedulerBinding.instance.addPostFrameCallback((Duration timeStamp) {
           _scrollToVisibleScheduled = false;
           assert(mounted && scrollPane.mounted && focusNode.hasPrimaryFocus);
-          final RenderObject? focusRenderObject =
-              focusContext.findRenderObject();
+          final RenderObject? focusRenderObject = focusContext.findRenderObject();
           if (focusRenderObject is RenderBox) {
             final Rect focusRect = Offset.zero & focusRenderObject.size;
             scrollPane.scrollToVisible(focusRect, context: focusContext);
@@ -99,8 +97,7 @@ class _ChicagoAppState extends State<ChicagoApp> with WidgetsBindingObserver {
                     onGenerateRoute: (RouteSettings settings) {
                       return PageRouteBuilder<void>(
                         settings: settings,
-                        pageBuilder: (BuildContext _, Animation<double> __,
-                            Animation<double> ___) {
+                        pageBuilder: (BuildContext _, Animation<double> __, Animation<double> ___) {
                           return widget.home ?? Container();
                         },
                       );

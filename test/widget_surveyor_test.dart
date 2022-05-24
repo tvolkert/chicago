@@ -18,16 +18,13 @@ import 'package:flutter/widgets.dart' hide TableCell, TableRow;
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('WidgetSurveyor returns correct unconstrained measurements',
-      (WidgetTester tester) async {
+  testWidgets('WidgetSurveyor returns correct unconstrained measurements', (WidgetTester tester) async {
     const WidgetSurveyor surveyor = WidgetSurveyor();
-    final Size size =
-        surveyor.measureWidget(const SizedBox(width: 100, height: 200));
+    final Size size = surveyor.measureWidget(const SizedBox(width: 100, height: 200));
     expect(size, const Size(100, 200));
   });
 
-  testWidgets('WidgetSurveyor returns correct constrained measurements',
-      (WidgetTester tester) async {
+  testWidgets('WidgetSurveyor returns correct constrained measurements', (WidgetTester tester) async {
     const WidgetSurveyor surveyor = WidgetSurveyor();
     final Size size = surveyor.measureWidget(
       const SizedBox(width: 100, height: 200),
@@ -36,16 +33,14 @@ void main() {
     expect(size, const Size(80, 180));
   });
 
-  testWidgets('WidgetSurveyor disposes of the widget tree',
-      (WidgetTester tester) async {
+  testWidgets('WidgetSurveyor disposes of the widget tree', (WidgetTester tester) async {
     const WidgetSurveyor surveyor = WidgetSurveyor();
     final List<WidgetState> states = <WidgetState>[];
     surveyor.measureWidget(SizedBox(child: TestStates(states: states)));
     expect(states, [WidgetState.initialized, WidgetState.disposed]);
   });
 
-  testWidgets('WidgetSurveyor does not pollute widget binding global keys',
-      (WidgetTester tester) async {
+  testWidgets('WidgetSurveyor does not pollute widget binding global keys', (WidgetTester tester) async {
     final int initialCount = WidgetsBinding.instance.buildOwner!.globalKeyCount;
     const WidgetSurveyor surveyor = WidgetSurveyor();
     surveyor.measureWidget(TestGlobalKeyPollution(
@@ -109,18 +104,14 @@ class TestGlobalKeyPollutionState extends State<TestGlobalKeyPollution> {
   @override
   void initState() {
     super.initState();
-    expect(WidgetsBinding.instance.buildOwner!.globalKeyCount,
-        widget.expectedGlobalKeyCountInBinding);
-    expect(context.owner!.globalKeyCount,
-        widget.expectedGlobalKeyCountInContextDuringInit);
+    expect(WidgetsBinding.instance.buildOwner!.globalKeyCount, widget.expectedGlobalKeyCountInBinding);
+    expect(context.owner!.globalKeyCount, widget.expectedGlobalKeyCountInContextDuringInit);
   }
 
   @override
   void dispose() {
-    expect(WidgetsBinding.instance.buildOwner!.globalKeyCount,
-        widget.expectedGlobalKeyCountInBinding);
-    expect(context.owner!.globalKeyCount,
-        widget.expectedGlobalKeyCountInContextDuringDispose);
+    expect(WidgetsBinding.instance.buildOwner!.globalKeyCount, widget.expectedGlobalKeyCountInBinding);
+    expect(context.owner!.globalKeyCount, widget.expectedGlobalKeyCountInContextDuringDispose);
     super.dispose();
   }
 

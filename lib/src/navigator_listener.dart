@@ -131,8 +131,7 @@ abstract class NavigatorListenerController {
   });
 }
 
-class _NavigatorListenerState extends State<NavigatorListener>
-    implements NavigatorListenerController {
+class _NavigatorListenerState extends State<NavigatorListener> implements NavigatorListenerController {
   @override
   final _AggregateObserver observer = _AggregateObserver();
 
@@ -176,8 +175,7 @@ class _Scope extends InheritedWidget {
 
   @override
   bool updateShouldNotify(_Scope old) {
-    return navigatorListenerState.observer !=
-        old.navigatorListenerState.observer;
+    return navigatorListenerState.observer != old.navigatorListenerState.observer;
   }
 }
 
@@ -213,8 +211,7 @@ class _AggregateObserver extends NavigatorObserver {
   }
 
   @override
-  void didStartUserGesture(
-      Route<dynamic> route, Route<dynamic>? previousRoute) {
+  void didStartUserGesture(Route<dynamic> route, Route<dynamic>? previousRoute) {
     for (NavigatorObserver proxy in proxies) {
       proxy.didStartUserGesture(route, previousRoute);
     }
@@ -274,8 +271,7 @@ class _ProxyObserver extends NavigatorObserver {
   }
 
   @override
-  void didStartUserGesture(
-      Route<dynamic> route, Route<dynamic>? previousRoute) {
+  void didStartUserGesture(Route<dynamic> route, Route<dynamic>? previousRoute) {
     if (onStartUserGesture != null) {
       onStartUserGesture!(route, previousRoute);
     }

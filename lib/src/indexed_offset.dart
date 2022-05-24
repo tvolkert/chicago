@@ -31,9 +31,7 @@ class IndexedOffset with Diagnosticable {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (runtimeType != other.runtimeType) return false;
-    return other is IndexedOffset &&
-        other.rowIndex == rowIndex &&
-        other.columnIndex == columnIndex;
+    return other is IndexedOffset && other.rowIndex == rowIndex && other.columnIndex == columnIndex;
   }
 
   @override

@@ -32,8 +32,7 @@ const Color _defaultBackgroundColor = Color(0xffdddcd5);
 const Color _defaultBorderColor = Color(0xff999999);
 const Color _defaultDisabledBackgroundColor = Color(0xffdddcd5);
 const Color _defaultDisabledBorderColor = Color(0xff999999);
-const EdgeInsets _defaultPadding =
-    EdgeInsets.symmetric(horizontal: 4, vertical: 4);
+const EdgeInsets _defaultPadding = EdgeInsets.symmetric(horizontal: 4, vertical: 4);
 const bool _defaultIsToolbar = false;
 const bool _defaultShowTooltip = true;
 const bool _defaultIsFocusable = true;
@@ -55,8 +54,7 @@ class PushButton<T extends Object> extends StatefulWidget {
     this.disabledBackgroundColor = _defaultDisabledBackgroundColor,
     this.disabledBorderColor = _defaultDisabledBorderColor,
     this.padding = _defaultPadding,
-    this.focusIndicatorPadding =
-        const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+    this.focusIndicatorPadding = const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
     this.isFocusable = _defaultIsFocusable,
     this.autofocus = false,
     this.showTooltip = _defaultShowTooltip,
@@ -142,14 +140,11 @@ class _PushButtonState<T extends Object> extends State<PushButton<T>> {
       menuActive = true;
     });
     final RenderBox button = context.findRenderObject() as RenderBox;
-    final RenderBox overlay =
-        Overlay.of(context)!.context.findRenderObject() as RenderBox;
+    final RenderBox overlay = Overlay.of(context)!.context.findRenderObject() as RenderBox;
     final RelativeRect position = RelativeRect.fromRect(
       Rect.fromPoints(
-        button.localToGlobal(button.size.bottomLeft(Offset.zero),
-            ancestor: overlay),
-        button.localToGlobal(button.size.bottomRight(Offset.zero),
-            ancestor: overlay),
+        button.localToGlobal(button.size.bottomLeft(Offset.zero), ancestor: overlay),
+        button.localToGlobal(button.size.bottomRight(Offset.zero), ancestor: overlay),
       ),
       Offset.zero & overlay.size,
     );
@@ -246,9 +241,7 @@ class _PushButtonState<T extends Object> extends State<PushButton<T>> {
       buttonData.add(Text(widget.label!, style: style));
     }
 
-    Widget button = widget.axis == Axis.horizontal
-        ? Row(children: buttonData)
-        : Column(children: buttonData);
+    Widget button = widget.axis == Axis.horizontal ? Row(children: buttonData) : Column(children: buttonData);
 
     button = Center(
       child: Padding(
@@ -305,8 +298,7 @@ class _PushButtonState<T extends Object> extends State<PushButton<T>> {
 
     if (menuActive || hover || focused || !widget.isToolbar) {
       final Border border = Border.fromBorderSide(
-        BorderSide(
-            color: isEnabled ? widget.borderColor : widget.disabledBorderColor),
+        BorderSide(color: isEnabled ? widget.borderColor : widget.disabledBorderColor),
       );
       Decoration decoration;
       if (isEnabled && (pressed || menuActive)) {
@@ -314,8 +306,7 @@ class _PushButtonState<T extends Object> extends State<PushButton<T>> {
       } else if (isEnabled) {
         decoration = BoxDecoration(border: border, gradient: highlightGradient);
       } else {
-        decoration = BoxDecoration(
-            border: border, color: widget.disabledBackgroundColor);
+        decoration = BoxDecoration(border: border, color: widget.disabledBackgroundColor);
       }
       button = DecoratedBox(decoration: decoration, child: button);
     }
@@ -377,8 +368,7 @@ class _MinimumAspectRatio extends SingleChildRenderObjectWidget {
   }
 
   @override
-  void updateRenderObject(
-      BuildContext context, _RenderMinimumAspectRatio renderObject) {
+  void updateRenderObject(BuildContext context, _RenderMinimumAspectRatio renderObject) {
     renderObject.minimumAspectRatio = minimumAspectRatio;
   }
 }
@@ -408,8 +398,7 @@ class _RenderMinimumAspectRatio extends RenderProxyBox {
       height = child!.getMaxIntrinsicHeight(double.infinity);
     }
     assert(height.isFinite);
-    return math.max(
-        height * minimumAspectRatio, child!.getMinIntrinsicWidth(height));
+    return math.max(height * minimumAspectRatio, child!.getMinIntrinsicWidth(height));
   }
 
   @override
@@ -421,8 +410,7 @@ class _RenderMinimumAspectRatio extends RenderProxyBox {
       height = child!.getMaxIntrinsicHeight(double.infinity);
     }
     assert(height.isFinite);
-    return math.max(
-        height * minimumAspectRatio, child!.getMaxIntrinsicWidth(height));
+    return math.max(height * minimumAspectRatio, child!.getMaxIntrinsicWidth(height));
   }
 
   @override
@@ -435,14 +423,12 @@ class _RenderMinimumAspectRatio extends RenderProxyBox {
     if (child != null) {
       BoxConstraints childConstraints = constraints;
       if (!childConstraints.hasTightHeight) {
-        final double height =
-            child!.getMaxIntrinsicHeight(childConstraints.maxWidth);
+        final double height = child!.getMaxIntrinsicHeight(childConstraints.maxWidth);
         assert(height.isFinite);
         childConstraints = childConstraints.tighten(height: height);
       }
       childConstraints = childConstraints.copyWith(
-        minWidth: childConstraints
-            .constrainWidth(childConstraints.maxHeight * minimumAspectRatio),
+        minWidth: childConstraints.constrainWidth(childConstraints.maxHeight * minimumAspectRatio),
       );
       child!.layout(childConstraints, parentUsesSize: true);
       size = child!.size;
@@ -511,12 +497,10 @@ class ActionPushButton<I extends Intent> extends ActionTracker<I> {
   final bool isFocusable;
 
   @override
-  ActionTrackerStateMixin<I, ActionTracker<I>> createState() =>
-      _ActionPushButtonState<I>();
+  ActionTrackerStateMixin<I, ActionTracker<I>> createState() => _ActionPushButtonState<I>();
 }
 
-class _ActionPushButtonState<I extends Intent>
-    extends State<ActionPushButton<I>>
+class _ActionPushButtonState<I extends Intent> extends State<ActionPushButton<I>>
     with ActionTrackerStateMixin<I, ActionPushButton<I>> {
   @override
   Widget build(BuildContext context) {

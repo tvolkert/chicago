@@ -127,10 +127,7 @@ class Prompt extends StatelessWidget {
                           children: [
                             Text(
                               message,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyText2!
-                                  .copyWith(fontWeight: FontWeight.bold),
+                              style: Theme.of(context).textTheme.bodyText2!.copyWith(fontWeight: FontWeight.bold),
                             ),
                             Padding(
                               padding: const EdgeInsets.only(top: 11),
@@ -279,8 +276,7 @@ class _AsyncResult<T> {
       : error = null,
         stack = null;
 
-  const _AsyncResult.error(Object this.error, StackTrace this.stack)
-      : value = null;
+  const _AsyncResult.error(Object this.error, StackTrace this.stack) : value = null;
 
   final T? value;
   final Object? error;

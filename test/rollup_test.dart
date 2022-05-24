@@ -19,8 +19,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   // Regression test for https://github.com/tvolkert/chicago/issues/17
-  testWidgets('Expanded Rollup can paint multiple times',
-      (WidgetTester tester) async {
+  testWidgets('Expanded Rollup can paint multiple times', (WidgetTester tester) async {
     final RollupController controller = RollupController(isExpanded: true);
     int frame = 0;
 

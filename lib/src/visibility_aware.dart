@@ -40,8 +40,7 @@ mixin VisibilityAwareMixin on RenderBox {
     }
   }
 
-  static RenderObjectVisitor _setHiddenAncestorsField(
-      bool isVisible, int depth) {
+  static RenderObjectVisitor _setHiddenAncestorsField(bool isVisible, int depth) {
     return isVisible ? _unhideDescendants(depth) : _hideDescendants(depth);
   }
 

@@ -104,9 +104,7 @@ class SegmentConstraints extends BoxConstraints {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is SegmentConstraints &&
-        super == other &&
-        other.viewportResolver == viewportResolver;
+    return other is SegmentConstraints && super == other && other.viewportResolver == viewportResolver;
   }
 
   @override
@@ -126,8 +124,7 @@ abstract class RenderSegment extends RenderBox {
     assert(() {
       if (constraints is! SegmentConstraints) {
         FlutterError.reportError(FlutterErrorDetails(
-          exception:
-              'RenderSegment was given constraints other than SegmentConstraints',
+          exception: 'RenderSegment was given constraints other than SegmentConstraints',
           stack: StackTrace.current,
           library: 'chicago',
         ));

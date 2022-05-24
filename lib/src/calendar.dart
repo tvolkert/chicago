@@ -43,20 +43,7 @@ class CalendarDate implements Comparable<CalendarDate> {
   final int month;
   final int day;
 
-  static const List<int> _monthLengths = <int>[
-    31,
-    28,
-    31,
-    30,
-    31,
-    30,
-    31,
-    31,
-    30,
-    31,
-    30,
-    31
-  ];
+  static const List<int> _monthLengths = <int>[31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
   static const int _gregorianCutoverYear = 1582;
 
@@ -159,10 +146,7 @@ class CalendarDate implements Comparable<CalendarDate> {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is CalendarDate &&
-        year == other.year &&
-        month == other.month &&
-        day == other.day;
+    return other is CalendarDate && year == other.year && month == other.month && day == other.day;
   }
 
   @override
@@ -204,14 +188,12 @@ class CalendarDateFormat {
   static const CalendarDateFormat long = CalendarDateFormat._('MMMM d, yyyy');
   static const CalendarDateFormat iso8601 = CalendarDateFormat._('yyyy-MM-dd');
 
-  static final Map<String, intl.DateFormat> _formats =
-      <String, intl.DateFormat>{};
+  static final Map<String, intl.DateFormat> _formats = <String, intl.DateFormat>{};
 
   String format(CalendarDate date) => formatDateTime(date.toDateTime());
 
   String formatDateTime(DateTime date) {
-    final intl.DateFormat format =
-        _formats.putIfAbsent(_pattern, () => intl.DateFormat(_pattern));
+    final intl.DateFormat format = _formats.putIfAbsent(_pattern, () => intl.DateFormat(_pattern));
     return format.format(date);
   }
 }
@@ -257,18 +239,14 @@ class _CalendarState extends State<Calendar> {
   }
 
   void _updateCalendarRows() {
-    final int year =
-        _yearController.selectedIndex + CalendarDate._gregorianCutoverYear;
+    final int year = _yearController.selectedIndex + CalendarDate._gregorianCutoverYear;
     final int month = _monthController.selectedIndex;
     final CalendarDate today = CalendarDate.fromDateTime(DateTime.now());
     final CalendarDate startOfMonth = CalendarDate(year, month, 0);
     final int daysInMonth = startOfMonth.daysInMonth;
-    final int firstDayOfMonthOffset =
-        (firstDayOfWeek + 1 + startOfMonth.weekday) % 7;
-    final int lastDayOfMonthOffset =
-        (firstDayOfMonthOffset - 1 + daysInMonth) % 7;
-    final int totalDaysShown =
-        daysInMonth + firstDayOfMonthOffset + (6 - lastDayOfMonthOffset);
+    final int firstDayOfMonthOffset = (firstDayOfWeek + 1 + startOfMonth.weekday) % 7;
+    final int lastDayOfMonthOffset = (firstDayOfMonthOffset - 1 + daysInMonth) % 7;
+    final int totalDaysShown = daysInMonth + firstDayOfMonthOffset + (6 - lastDayOfMonthOffset);
     assert(totalDaysShown % 7 == 0);
     final int numRows = totalDaysShown ~/ 7;
 
@@ -333,9 +311,7 @@ class _CalendarState extends State<Calendar> {
       child: Text(
         _dayOfWeekShort.format(date)[0],
         textAlign: TextAlign.center,
-        style: DefaultTextStyle.of(context)
-            .style
-            .copyWith(fontWeight: FontWeight.bold),
+        style: DefaultTextStyle.of(context).style.copyWith(fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -346,8 +322,7 @@ class _CalendarState extends State<Calendar> {
     _monthController = SpinnerController();
     _yearController = SpinnerController();
     _monthController.selectedIndex = widget.initialMonth;
-    _yearController.selectedIndex =
-        widget.initialYear - CalendarDate._gregorianCutoverYear;
+    _yearController.selectedIndex = widget.initialYear - CalendarDate._gregorianCutoverYear;
     _monthController.addListener(_updateCalendarRows);
     _yearController.addListener(_updateCalendarRows);
     _metricsController = TablePaneMetricsController();
@@ -365,8 +340,7 @@ class _CalendarState extends State<Calendar> {
       _monthController.selectedIndex = widget.initialMonth;
     }
     if (widget.initialYear != oldWidget.initialYear) {
-      _yearController.selectedIndex =
-          widget.initialYear - CalendarDate._gregorianCutoverYear;
+      _yearController.selectedIndex = widget.initialYear - CalendarDate._gregorianCutoverYear;
     }
     if (oldWidget.selectionController != widget.selectionController) {
       if (oldWidget.selectionController == null) {
@@ -377,14 +351,12 @@ class _CalendarState extends State<Calendar> {
         _selectionController = null;
       } else {
         assert(_selectionController == null);
-        oldWidget.selectionController!
-            .removeListener(_handleSelectedDateChanged);
+        oldWidget.selectionController!.removeListener(_handleSelectedDateChanged);
       }
       if (widget.selectionController == null) {
         assert(oldWidget.selectionController != null);
         assert(_selectionController == null);
-        _selectionController =
-            CalendarSelectionController(oldWidget.selectionController!.value);
+        _selectionController = CalendarSelectionController(oldWidget.selectionController!.value);
         _selectionController!.addListener(_handleSelectedDateChanged);
       } else {
         widget.selectionController!.addListener(_handleSelectedDateChanged);
@@ -463,8 +435,7 @@ class _CalendarState extends State<Calendar> {
               ],
             ),
             TableRow(
-              children: List<Widget>.generate(
-                  7, (int index) => buildDayOfWeekHeader(context, index)),
+              children: List<Widget>.generate(7, (int index) => buildDayOfWeekHeader(context, index)),
             ),
             ..._calendarRows,
           ],
@@ -509,10 +480,7 @@ class _DateButton extends StatelessWidget {
             gradient = LinearGradient(
               begin: Alignment.bottomCenter,
               end: Alignment.topCenter,
-              colors: <Color>[
-                const Color(0xff14538b),
-                brighten(const Color(0xff14538b))
-              ],
+              colors: <Color>[const Color(0xff14538b), brighten(const Color(0xff14538b))],
             );
             style = style.copyWith(color: const Color(0xffffffff));
           } else if (hover) {
@@ -541,8 +509,7 @@ class _DateButton extends StatelessWidget {
       );
       if (isSelected) {
         content = ColoredBox(
-          color:
-              const Color(0xffdddddd), // TODO: what's the canonical color here?
+          color: const Color(0xffdddddd), // TODO: what's the canonical color here?
           child: content,
         );
       }

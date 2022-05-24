@@ -77,36 +77,29 @@ class _CalendarButtonState extends State<CalendarButton> {
       if (overlayState == null) {
         throw FlutterError.fromParts(<DiagnosticsNode>[
           ErrorSummary('No overlay found in widget ancestry.'),
-          ErrorDescription(
-              'Usually the Navigator created by WidgetsApp provides the overlay. '
+          ErrorDescription('Usually the Navigator created by WidgetsApp provides the overlay. '
               'Perhaps your app content was created above the Navigator with the WidgetsApp '
               'builder parameter.'),
         ]);
       }
       return true;
     }());
-    final RenderBox overlay =
-        overlayState!.context.findRenderObject() as RenderBox;
-    final Offset buttonGlobalOffset =
-        button.localToGlobal(Offset.zero, ancestor: overlay);
+    final RenderBox overlay = overlayState!.context.findRenderObject() as RenderBox;
+    final Offset buttonGlobalOffset = button.localToGlobal(Offset.zero, ancestor: overlay);
     // TODO: Why do we need to ceil here?
     final Offset buttonPosition = Offset(
       buttonGlobalOffset.dx.ceilToDouble(),
       buttonGlobalOffset.dy.ceilToDouble(),
     );
-    final _PopupCalendarRoute<CalendarDate> popupCalendarRoute =
-        _PopupCalendarRoute<CalendarDate>(
-      position: RelativeRect.fromRect(
-          buttonPosition & button.size, Offset.zero & overlay.size),
+    final _PopupCalendarRoute<CalendarDate> popupCalendarRoute = _PopupCalendarRoute<CalendarDate>(
+      position: RelativeRect.fromRect(buttonPosition & button.size, Offset.zero & overlay.size),
       initialMonth: widget.initialMonth,
       initialYear: widget.initialYear,
       selectedDate: selectionController.value,
       disabledDateFilter: widget.disabledDateFilter,
       showMenuContext: context,
     );
-    Navigator.of(context)
-        .push<CalendarDate>(popupCalendarRoute)
-        .then((CalendarDate? date) {
+    Navigator.of(context).push<CalendarDate>(popupCalendarRoute).then((CalendarDate? date) {
       if (mounted) {
         setState(() {
           _pressed = false;
@@ -168,8 +161,7 @@ class _CalendarButtonState extends State<CalendarButton> {
         _selectionController = null;
       } else {
         assert(_selectionController == null);
-        oldWidget.selectionController!
-            .removeListener(_handleSelectedDateChanged);
+        oldWidget.selectionController!.removeListener(_handleSelectedDateChanged);
       }
       if (widget.selectionController == null) {
         _selectionController = CalendarSelectionController();
@@ -222,8 +214,7 @@ class _CalendarButtonState extends State<CalendarButton> {
               child: content,
             ),
           );
-          if (widget.width == CalendarButtonWidth.expand &&
-              constraints.hasBoundedWidth) {
+          if (widget.width == CalendarButtonWidth.expand && constraints.hasBoundedWidth) {
             contentArea = Expanded(child: contentArea);
           }
           return Row(
@@ -273,9 +264,7 @@ class _CalendarButtonState extends State<CalendarButton> {
       );
     } else {
       result = DefaultTextStyle(
-        style: DefaultTextStyle.of(context)
-            .style
-            .copyWith(color: const Color(0xff999999)),
+        style: DefaultTextStyle.of(context).style.copyWith(color: const Color(0xff999999)),
         child: result,
       );
     }
@@ -365,8 +354,7 @@ class _PopupCalendarRouteLayout extends SingleChildLayoutDelegate {
   }
 
   @override
-  bool shouldRelayout(_PopupCalendarRouteLayout oldDelegate) =>
-      position != oldDelegate.position;
+  bool shouldRelayout(_PopupCalendarRouteLayout oldDelegate) => position != oldDelegate.position;
 }
 
 class _PopupCalendar<T> extends StatefulWidget {
@@ -434,12 +422,8 @@ class _PopupCalendarState<T> extends State<_PopupCalendar<T>> {
                 boxShadow: [shadow],
               ),
               child: Calendar(
-                initialMonth: widget.initialMonth ??
-                    widget.selectedDate?.month ??
-                    today.month,
-                initialYear: widget.initialYear ??
-                    widget.selectedDate?.year ??
-                    today.year,
+                initialMonth: widget.initialMonth ?? widget.selectedDate?.month ?? today.month,
+                initialYear: widget.initialYear ?? widget.selectedDate?.year ?? today.year,
                 selectionController: _selectionController,
                 disabledDateFilter: widget.disabledDateFilter,
                 onDateChanged: _handleDateSelected,

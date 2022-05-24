@@ -39,8 +39,7 @@ class ActivityIndicator extends StatefulWidget {
   State<ActivityIndicator> createState() => _ActivityIndicatorState();
 }
 
-class _ActivityIndicatorState extends State<ActivityIndicator>
-    with SingleTickerProviderStateMixin<ActivityIndicator> {
+class _ActivityIndicatorState extends State<ActivityIndicator> with SingleTickerProviderStateMixin<ActivityIndicator> {
   late AnimationController _controller;
 
   @override
@@ -90,8 +89,7 @@ class _RawActivityIndicator extends LeafRenderObjectWidget {
   }
 
   @override
-  void updateRenderObject(
-      BuildContext context, _RenderRawActivityIndicator renderObject) {
+  void updateRenderObject(BuildContext context, _RenderRawActivityIndicator renderObject) {
     renderObject
       ..color = color
       ..controller = controller;
@@ -227,8 +225,7 @@ class _RenderRawActivityIndicator extends RenderBox with VisibilityAwareMixin {
     final Paint paint = Paint()..style = PaintingStyle.fill;
     for (int i = 0; i < _spokes; i++) {
       paint.color = _colors[i];
-      canvas.drawRRect(
-          RRect.fromLTRBR(24, -4, 56, 4, const Radius.circular(4)), paint);
+      canvas.drawRRect(RRect.fromLTRBR(24, -4, 56, 4, const Radius.circular(4)), paint);
       canvas.rotate(increment);
     }
   }

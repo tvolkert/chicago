@@ -77,8 +77,7 @@ class _Splitter extends StatelessWidget {
 
   GestureDragUpdateCallback _handleDrag(BuildContext context) {
     return (DragUpdateDetails details) {
-      final _RenderSplitPane renderObject =
-          context.findAncestorRenderObjectOfType<_RenderSplitPane>()!;
+      final _RenderSplitPane renderObject = context.findAncestorRenderObjectOfType<_RenderSplitPane>()!;
       renderObject._handleDrag(details);
     };
   }
@@ -90,8 +89,7 @@ class _Splitter extends StatelessWidget {
       cursor: _cursorForOrientation(),
       child: GestureDetector(
         dragStartBehavior: DragStartBehavior.down,
-        onHorizontalDragUpdate:
-            orientation == Axis.horizontal ? handleDrag : null,
+        onHorizontalDragUpdate: orientation == Axis.horizontal ? handleDrag : null,
         onVerticalDragUpdate: orientation == Axis.vertical ? handleDrag : null,
         child: CustomPaint(
           painter: _SplitterPainter(orientation),
@@ -244,8 +242,7 @@ class _SplitPaneElement extends RenderObjectElement {
     super.mount(parent, newSlot);
     _before = updateChild(_before, widget.before, _SplitPaneSlot.before);
     _after = updateChild(_after, widget.after, _SplitPaneSlot.after);
-    _splitter =
-        updateChild(_splitter, widget.splitter, _SplitPaneSlot.splitter);
+    _splitter = updateChild(_splitter, widget.splitter, _SplitPaneSlot.splitter);
   }
 
   @override
@@ -264,8 +261,7 @@ class _SplitPaneElement extends RenderObjectElement {
   }
 
   @override
-  void moveRenderObjectChild(
-      RenderObject _, _SplitPaneSlot? __, _SplitPaneSlot? ___) {
+  void moveRenderObjectChild(RenderObject _, _SplitPaneSlot? __, _SplitPaneSlot? ___) {
     assert(false);
   }
 
@@ -274,8 +270,7 @@ class _SplitPaneElement extends RenderObjectElement {
     super.update(newWidget);
     _before = updateChild(_before, widget.before, _SplitPaneSlot.before);
     _after = updateChild(_after, widget.after, _SplitPaneSlot.after);
-    _splitter =
-        updateChild(_splitter, widget.splitter, _SplitPaneSlot.splitter);
+    _splitter = updateChild(_splitter, widget.splitter, _SplitPaneSlot.splitter);
   }
 
   @override
@@ -293,9 +288,7 @@ class _SplitPaneElement extends RenderObjectElement {
 
   @override
   void removeRenderObjectChild(RenderBox child, _SplitPaneSlot? slot) {
-    assert(child == renderObject.before ||
-        child == renderObject.after ||
-        child == renderObject.splitter);
+    assert(child == renderObject.before || child == renderObject.after || child == renderObject.splitter);
     switch (slot) {
       case _SplitPaneSlot.before:
         renderObject.before = null;
@@ -318,8 +311,7 @@ class _RenderSplitPane extends RenderBox {
     double splitRatio = 0.5,
     double splitterThickness = 6,
     bool roundToWholePixel = false,
-    SplitPaneResizePolicy resizePolicy =
-        SplitPaneResizePolicy.maintainSplitRatio,
+    SplitPaneResizePolicy resizePolicy = SplitPaneResizePolicy.maintainSplitRatio,
   }) {
     this.orientation = orientation;
     this.splitRatio = splitRatio;
@@ -470,15 +462,13 @@ class _RenderSplitPane extends RenderBox {
   double computeMinIntrinsicWidth(double height) => 0;
 
   @override
-  double computeMaxIntrinsicWidth(double height) =>
-      computeMinIntrinsicWidth(height);
+  double computeMaxIntrinsicWidth(double height) => computeMinIntrinsicWidth(height);
 
   @override
   double computeMinIntrinsicHeight(double width) => 0;
 
   @override
-  double computeMaxIntrinsicHeight(double width) =>
-      computeMinIntrinsicHeight(width);
+  double computeMaxIntrinsicHeight(double width) => computeMinIntrinsicHeight(width);
 
   @override
   void performLayout() {
@@ -524,10 +514,8 @@ class _RenderSplitPane extends RenderBox {
         if (roundToWholePixel) {
           splitterThickness = splitterThickness.roundToDouble();
         }
-        splitter!.layout(BoxConstraints.tightFor(
-            width: splitterThickness, height: size.height));
-        BoxParentData splitterParentData =
-            splitter!.parentData as BoxParentData;
+        splitter!.layout(BoxConstraints.tightFor(width: splitterThickness, height: size.height));
+        BoxParentData splitterParentData = splitter!.parentData as BoxParentData;
         splitterParentData.offset = Offset(splitX, 0);
 
         final double afterX = splitX + splitterThickness;
@@ -581,10 +569,8 @@ class _RenderSplitPane extends RenderBox {
         if (roundToWholePixel) {
           splitterThickness = splitterThickness.roundToDouble();
         }
-        splitter!.layout(BoxConstraints.tightFor(
-            width: size.width, height: splitterThickness));
-        BoxParentData splitterParentData =
-            splitter!.parentData as BoxParentData;
+        splitter!.layout(BoxConstraints.tightFor(width: size.width, height: splitterThickness));
+        BoxParentData splitterParentData = splitter!.parentData as BoxParentData;
         splitterParentData.offset = Offset(0, splitY);
 
         final double afterY = splitY + splitterThickness;
