@@ -18,7 +18,6 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -31,10 +30,10 @@ import 'widget_surveyor.dart';
 typedef SpinnerItemBuilder = Widget Function(BuildContext context, int index, bool isEnabled);
 
 class _Worker {
-  _Worker(this.spinner, this.controller);
+  _Worker(this._spinner, this._controller);
 
-  final Spinner spinner;
-  final SpinnerController controller;
+  Spinner _spinner;
+  SpinnerController _controller;
   Timer? _timer;
 
   static const Duration _delay = Duration(milliseconds: 400);
@@ -50,10 +49,10 @@ class _Worker {
     _timer = Timer(_delay, () {
       _timer = Timer.periodic(_period, (Timer timer) {
         assert(() {
-          if (controller._debugDisposed) {
+          if (_controller._debugDisposed) {
             stop();
             throw FlutterError(
-              'A ${controller.runtimeType} was used after being disposed.\n'
+              'A ${_controller.runtimeType} was used after being disposed.\n'
               'Once you have called dispose() on an object, it can no longer be used.',
             );
           }
@@ -75,26 +74,31 @@ class _Worker {
   }
 
   void spin(int direction) {
-    final bool circular = spinner.isCircular;
-    final int length = spinner.length;
+    final bool circular = _spinner.isCircular;
+    final int length = _spinner.length;
 
     if (direction > 0) {
-      if (controller.selectedIndex < length - 1) {
-        controller.selectedIndex++;
+      if (_controller.selectedIndex < length - 1) {
+        _controller.selectedIndex++;
       } else if (circular) {
-        controller.selectedIndex = 0;
+        _controller.selectedIndex = 0;
       } else {
         stop();
       }
     } else {
-      if (controller.selectedIndex > 0) {
-        controller.selectedIndex--;
+      if (_controller.selectedIndex > 0) {
+        _controller.selectedIndex--;
       } else if (circular) {
-        controller.selectedIndex = length - 1;
+        _controller.selectedIndex = length - 1;
       } else {
         stop();
       }
     }
+  }
+
+  void _didUpdateWidget(Spinner spinner, SpinnerController controller) {
+    this._spinner = spinner;
+    this._controller = controller;
   }
 }
 
@@ -274,10 +278,9 @@ class _SpinnerState extends State<Spinner> {
         _controller!.dispose();
         _controller = null;
       }
-      _worker = _Worker(widget, controller);
     }
     _focusNode!.canRequestFocus = widget.isEnabled;
-    _worker = _Worker(widget, controller);
+    _worker._didUpdateWidget(widget, controller);
     _index = _boundsCheckIndex();
     _updateContentWidth();
   }
