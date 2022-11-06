@@ -1,5 +1,5 @@
 name: chicago
-version: 0.2.0-dev
+version: 0.3.0-dev
 repository: https://github.com/tvolkert/chicago
 
 description:
@@ -7,8 +7,8 @@ description:
   for desktop (keyboard and mouse) form factors. It is based on Apache Pivot.
 
 environment:
-  sdk: ">=2.12.0 <3.0.0"
-  flutter: ">=2.5.0"
+  sdk: ">=2.17.0 <3.0.0"
+  flutter: ">=3.3.0"
 
 dependencies:
   flutter:

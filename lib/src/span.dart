@@ -14,7 +14,6 @@
 // limitations under the License.
 
 import 'dart:math' as math;
-import 'dart:ui' show hashValues;
 
 import 'foundation.dart';
 
@@ -103,7 +102,7 @@ class Span {
   }
 
   @override
-  int get hashCode => hashValues(start, end);
+  int get hashCode => Object.hash(start, end);
 
   @override
   String toString() => '$runtimeType(start=$start,end=$end)';

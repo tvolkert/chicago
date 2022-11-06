@@ -1,3 +1,7 @@
+#### 0.3.0-dev
+
+* Updated to Flutter 3.3 (fixeed lints)
+
 #### 0.2.0-dev
 
 * Use SerialTapGestureRecognizer in TableView

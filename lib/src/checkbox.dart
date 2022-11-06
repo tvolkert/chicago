@@ -14,8 +14,6 @@
 // limitations under the License.
 
 import 'package:chicago/src/colors.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 const double _checkboxSize = 14;

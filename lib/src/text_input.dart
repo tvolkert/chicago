@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' show InputBorder, InputDecoration, OutlineInputBorder, TextField;
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -92,7 +92,7 @@ class _TextInputState extends State<TextInput> {
     controller.addListener(_handleEdit);
     _lastValidValue = controller.value;
     if (widget.autofocus) {
-      SchedulerBinding.instance!.addPostFrameCallback((Duration timeStamp) {
+      SchedulerBinding.instance.addPostFrameCallback((Duration timeStamp) {
         if (mounted) {
           focusNode.requestFocus();
         }

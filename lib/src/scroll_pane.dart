@@ -15,9 +15,7 @@
 
 import 'dart:math' show log, min, max;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
-import 'package:flutter/painting.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
@@ -891,7 +889,7 @@ class _ScrollPaneViewportResolver implements ViewportResolver {
 
   @override
   int get hashCode {
-    return hashValues(offset, sizeAdjustment, constraints);
+    return Object.hash(offset, sizeAdjustment, constraints);
   }
 
   @override
@@ -1093,7 +1091,7 @@ class RenderScrollPane extends RenderBox with DeferredLayoutMixin {
             event.scrollDelta.dx > 0) ||
         (scrollController.scrollOffset.dy < scrollController._maxScrollTop &&
             event.scrollDelta.dy > 0)) {
-      GestureBinding.instance!.pointerSignalResolver.register(event, (PointerSignalEvent event) {
+      GestureBinding.instance.pointerSignalResolver.register(event, (PointerSignalEvent event) {
         PointerScrollEvent scrollEvent = event as PointerScrollEvent;
         deferMarkNeedsLayout(() {
           scrollController.scrollOffset += scrollEvent.scrollDelta;

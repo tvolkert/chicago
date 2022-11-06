@@ -32,17 +32,17 @@ class _SpinnersDemoState extends State<SpinnersDemo> {
 
   static Widget _buildBasicItem(context, index, isEnabled) {
     const List<String> numbers = ['One', 'Two', 'Three', 'Four', 'Five'];
-    return Text(numbers[index]);
+    return Spinner.defaultItemBuilder(context, numbers[index]);
   }
 
   static Widget _buildNumericItem(context, index, isEnabled) {
-    return Text('${index * 4}');
+    return Spinner.defaultItemBuilder(context, '${index * 4}');
   }
 
   static Widget _buildDateItem(context, index, isEnabled) {
     const CalendarDate baseDate = CalendarDate(2019, 11, 30);
     final CalendarDate date = baseDate + index;
-    return Text(date.toString());
+    return Spinner.defaultItemBuilder(context, date.toString());
   }
 
   @override

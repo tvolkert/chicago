@@ -41,7 +41,7 @@ void main() {
   });
 
   testWidgets('WidgetSurveyor does not pollute widget binding global keys', (WidgetTester tester) async {
-    final int initialCount = WidgetsBinding.instance!.buildOwner!.globalKeyCount;
+    final int initialCount = WidgetsBinding.instance.buildOwner!.globalKeyCount;
     const WidgetSurveyor surveyor = WidgetSurveyor();
     surveyor.measureWidget(TestGlobalKeyPollution(
       key: GlobalKey(),
@@ -49,7 +49,7 @@ void main() {
       expectedGlobalKeyCountInContextDuringInit: 2,
       expectedGlobalKeyCountInContextDuringDispose: 1,
     ));
-    expect(WidgetsBinding.instance!.buildOwner!.globalKeyCount, initialCount);
+    expect(WidgetsBinding.instance.buildOwner!.globalKeyCount, initialCount);
   });
 }
 
@@ -104,13 +104,13 @@ class TestGlobalKeyPollutionState extends State<TestGlobalKeyPollution> {
   @override
   void initState() {
     super.initState();
-    expect(WidgetsBinding.instance!.buildOwner!.globalKeyCount, widget.expectedGlobalKeyCountInBinding);
+    expect(WidgetsBinding.instance.buildOwner!.globalKeyCount, widget.expectedGlobalKeyCountInBinding);
     expect(context.owner!.globalKeyCount, widget.expectedGlobalKeyCountInContextDuringInit);
   }
 
   @override
   void dispose() {
-    expect(WidgetsBinding.instance!.buildOwner!.globalKeyCount, widget.expectedGlobalKeyCountInBinding);
+    expect(WidgetsBinding.instance.buildOwner!.globalKeyCount, widget.expectedGlobalKeyCountInBinding);
     expect(context.owner!.globalKeyCount, widget.expectedGlobalKeyCountInContextDuringDispose);
     super.dispose();
   }

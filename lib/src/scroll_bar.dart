@@ -19,7 +19,6 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
-import 'package:flutter/painting.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -323,7 +322,7 @@ class ScrollBarConstraints extends BoxConstraints {
   @override
   int get hashCode {
     assert(debugAssertIsValid());
-    return hashValues(super.hashCode, enabled, start, end, value, extent);
+    return Object.hash(super.hashCode, enabled, start, end, value, extent);
   }
 
   @override

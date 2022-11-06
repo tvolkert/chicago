@@ -32,7 +32,7 @@ mixin DeferredLayoutMixin on RenderObject {
       super.markNeedsLayout();
     } else if (!_needsLayoutDeferred) {
       _needsLayoutDeferred = true;
-      SchedulerBinding.instance!.scheduleFrameCallback((Duration timeStamp) {
+      SchedulerBinding.instance.scheduleFrameCallback((Duration timeStamp) {
         if (_needsLayoutDeferred) {
           _needsLayoutDeferred = false;
           super.markNeedsLayout();

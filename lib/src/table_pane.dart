@@ -432,6 +432,7 @@ class TablePane extends MultiChildRenderObjectWidget {
       assert(rowIndex >= 0);
       return IndexedOffset(rowIndex, columnIndex);
     }
+    return null;
   }
 
   static TablePaneElement? of(BuildContext context) {
@@ -549,7 +550,7 @@ class TableRowConstraints extends BoxConstraints {
   @override
   int get hashCode {
     assert(debugAssertIsValid());
-    return hashValues(super.hashCode, hashList(cellConstraints), hashList(cellPositions));
+    return Object.hash(super.hashCode, Object.hashAll(cellConstraints), Object.hashAll(cellPositions));
   }
 
   @override

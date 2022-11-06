@@ -14,7 +14,6 @@
 // limitations under the License.
 
 import 'package:flutter/gestures.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 typedef HoverWidgetBuilder = Widget Function(BuildContext context, bool hover);

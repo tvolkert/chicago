@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import 'dart:ui' show hashValues;
-
 import 'package:flutter/foundation.dart';
 
 @immutable
@@ -25,7 +23,7 @@ class IndexedOffset with Diagnosticable {
   final int columnIndex;
 
   @override
-  int get hashCode => hashValues(rowIndex, columnIndex);
+  int get hashCode => Object.hash(rowIndex, columnIndex);
 
   @override
   bool operator ==(Object other) {

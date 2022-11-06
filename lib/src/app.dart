@@ -46,7 +46,7 @@ class _ChicagoAppState extends State<ChicagoApp> with WidgetsBindingObserver {
       final ScrollPaneState? scrollPane = ScrollPane.of(focusContext);
       if (scrollPane != null && !_scrollToVisibleScheduled) {
         _scrollToVisibleScheduled = true;
-        SchedulerBinding.instance!.addPostFrameCallback((Duration timeStamp) {
+        SchedulerBinding.instance.addPostFrameCallback((Duration timeStamp) {
           _scrollToVisibleScheduled = false;
           assert(mounted && scrollPane.mounted && focusNode.hasPrimaryFocus);
           final RenderObject? focusRenderObject = focusContext.findRenderObject();
@@ -62,12 +62,12 @@ class _ChicagoAppState extends State<ChicagoApp> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance!.addObserver(this);
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance!.removeObserver(this);
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 

@@ -106,7 +106,7 @@ class BasicTableColumn extends AbstractTableColumn {
   final WidgetBuilder? prototypeCellBuilder;
 
   @override
-  int get hashCode => hashValues(super.hashCode, cellBuilder);
+  int get hashCode => Object.hash(super.hashCode, cellBuilder);
 
   @override
   bool operator ==(Object other) {
@@ -132,7 +132,7 @@ abstract class TableColumnWidth with Diagnosticable {
   }
 
   @override
-  int get hashCode => hashValues(width, isFlex);
+  int get hashCode => Object.hash(width, isFlex);
 
   @override
   bool operator ==(Object other) {
@@ -217,7 +217,7 @@ class TableViewSlot with Diagnosticable {
   }
 
   @override
-  int get hashCode => hashValues(rowIndex, columnIndex);
+  int get hashCode => Object.hash(rowIndex, columnIndex);
 
   @override
   @protected
@@ -423,7 +423,7 @@ class TableCellOffset with Diagnosticable {
   final int columnIndex;
 
   @override
-  int get hashCode => hashValues(rowIndex, columnIndex);
+  int get hashCode => Object.hash(rowIndex, columnIndex);
 
   @override
   bool operator ==(Object other) {
@@ -1409,7 +1409,7 @@ class Range with Diagnosticable {
   }
 
   @override
-  int get hashCode => hashValues(start, end);
+  int get hashCode => Object.hash(start, end);
 
   @override
   bool operator ==(Object other) {

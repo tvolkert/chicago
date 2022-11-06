@@ -16,7 +16,7 @@
 import 'dart:async';
 
 import 'package:flutter/widgets.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' show Material, MaterialType, Theme, ThemeData;
 
 import 'push_button.dart';
 import 'foundation.dart';
@@ -130,7 +130,7 @@ class Prompt extends StatelessWidget {
                               message,
                               style: Theme.of(context)
                                   .textTheme
-                                  .bodyText2!
+                                  .bodyMedium!
                                   .copyWith(fontWeight: FontWeight.bold),
                             ),
                             Padding(

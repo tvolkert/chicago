@@ -150,7 +150,7 @@ class CalendarDate implements Comparable<CalendarDate> {
   }
 
   @override
-  int get hashCode => hashValues(year, month, day);
+  int get hashCode => Object.hash(year, month, day);
 
   @override
   int compareTo(CalendarDate other) {

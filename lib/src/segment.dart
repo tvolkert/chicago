@@ -112,7 +112,7 @@ class SegmentConstraints extends BoxConstraints {
   @override
   int get hashCode {
     assert(debugAssertIsValid());
-    return hashValues(super.hashCode, viewportResolver);
+    return Object.hash(super.hashCode, viewportResolver);
   }
 
   @override

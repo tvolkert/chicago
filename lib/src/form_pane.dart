@@ -190,7 +190,7 @@ class _FormSlot {
   }
 
   @override
-  int get hashCode => hashValues(previous, type);
+  int get hashCode => Object.hash(previous, type);
 }
 
 class _FormRow {

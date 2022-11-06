@@ -347,7 +347,7 @@ class TableColumn extends AbstractTableColumn with ChangeNotifier {
   }
 
   @override
-  int get hashCode => hashValues(super.hashCode, cellBuilder, headerBuilder);
+  int get hashCode => Object.hash(super.hashCode, cellBuilder, headerBuilder);
 
   @override
   bool operator ==(Object other) {
@@ -667,7 +667,7 @@ class ConstrainedTableColumnWidth extends TableColumnWidth {
   }
 
   @override
-  int get hashCode => hashValues(super.hashCode, minWidth, maxWidth);
+  int get hashCode => Object.hash(super.hashCode, minWidth, maxWidth);
 
   @override
   bool operator ==(Object other) {
@@ -1242,7 +1242,7 @@ class RenderTableView extends RenderSegment
     _disposeSerialTap();
     _cellsBeingEdited = controller.cellsBeingEdited;
     markCellsDirty(_cellsBeingEdited!);
-    GestureBinding.instance!.pointerRouter.addGlobalRoute(_handleGlobalPointerEvent);
+    GestureBinding.instance.pointerRouter.addGlobalRoute(_handleGlobalPointerEvent);
     _navigatorListenerRegistration = _observeNavigator(
       onPushed: _handleRoutePushedDuringEditing,
       onPopped: _handleRoutePoppedDuringEditing,
@@ -1252,7 +1252,7 @@ class RenderTableView extends RenderSegment
   void _handleRoutePushedDuringEditing(Route<dynamic> route, Route<dynamic>? previousRoute) {
     assert(_routesPushedDuringEdit >= 0);
     if (_routesPushedDuringEdit++ == 0) {
-      GestureBinding.instance!.pointerRouter.removeGlobalRoute(_handleGlobalPointerEvent);
+      GestureBinding.instance.pointerRouter.removeGlobalRoute(_handleGlobalPointerEvent);
     }
   }
 
@@ -1260,7 +1260,7 @@ class RenderTableView extends RenderSegment
     assert(_navigatorListenerRegistration != null);
     assert(_routesPushedDuringEdit > 0);
     if (--_routesPushedDuringEdit == 0) {
-      GestureBinding.instance!.pointerRouter.addGlobalRoute(_handleGlobalPointerEvent);
+      GestureBinding.instance.pointerRouter.addGlobalRoute(_handleGlobalPointerEvent);
     }
   }
 
@@ -1286,7 +1286,7 @@ class RenderTableView extends RenderSegment
     _navigatorListenerRegistration = null;
     markCellsDirty(_cellsBeingEdited!);
     _cellsBeingEdited = null;
-    GestureBinding.instance!.pointerRouter.removeGlobalRoute(_handleGlobalPointerEvent);
+    GestureBinding.instance.pointerRouter.removeGlobalRoute(_handleGlobalPointerEvent);
   }
 
   void _handleRowDisabledFilterChanged(Predicate<int>? previousFilter) {

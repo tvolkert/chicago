@@ -15,10 +15,8 @@
 
 import 'dart:math' as math;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/painting.dart';
+import 'package:flutter/material.dart' show PopupMenuEntry, PopupMenuItemSelected, showMenu, Theme, Tooltip;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -233,7 +231,7 @@ class _PushButtonState<T extends Object> extends State<PushButton<T>> {
     }
 
     if (widget.label != null) {
-      TextStyle style = Theme.of(context).textTheme.bodyText2!;
+      TextStyle style = Theme.of(context).textTheme.bodyMedium!;
       if (isEnabled) {
         style = style.copyWith(color: widget.color);
       } else {
