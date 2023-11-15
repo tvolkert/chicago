@@ -276,7 +276,7 @@ class _ListButtonState<T> extends State<ListButton<T>> {
 
   void showPopup() {
     final RenderBox button = context.findRenderObject() as RenderBox;
-    final RenderBox overlay = Overlay.of(context)!.context.findRenderObject() as RenderBox;
+    final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
     final Offset buttonGlobalOffset = button.localToGlobal(Offset.zero, ancestor: overlay);
     // TODO: Why do we need to ceil here?
     final Offset buttonPosition = Offset(
