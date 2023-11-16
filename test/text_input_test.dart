@@ -28,7 +28,7 @@ void main() {
         DefaultMaterialLocalizations.delegate,
       ],
       child: MediaQuery(
-        data: MediaQueryData.fromWindow(ui.window),
+        data: MediaQueryData.fromView(ui.window),
         child: Directionality(
           textDirection: TextDirection.ltr,
           child: Material(

@@ -141,7 +141,7 @@ class _PushButtonState<T extends Object> extends State<PushButton<T>> {
       menuActive = true;
     });
     final RenderBox button = context.findRenderObject() as RenderBox;
-    final RenderBox overlay = Overlay.of(context)!.context.findRenderObject() as RenderBox;
+    final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
     final RelativeRect position = RelativeRect.fromRect(
       Rect.fromPoints(
         button.localToGlobal(button.size.bottomLeft(Offset.zero), ancestor: overlay),
