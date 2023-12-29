@@ -107,7 +107,7 @@ void main() {
       ),
     );
     expect(buildCount, 1);
-    tester.binding.buildOwner!.reassemble(tester.binding.renderViewElement!, null);
+    tester.binding.buildOwner!.reassemble(tester.binding.rootElement!);
     await tester.pump();
     expect(buildCount, 2);
   });

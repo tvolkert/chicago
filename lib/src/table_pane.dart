@@ -31,98 +31,89 @@ void main() {
         textDirection: TextDirection.ltr,
         child: DefaultTextStyle(
           style: TextStyle(fontFamily: 'Verdana', color: const Color(0xff000000)),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              IntrinsicWidth(
-                child: IntrinsicHeight(
-                  child: TablePane(
-                    verticalIntrinsicSize: MainAxisSize.min,
-                    horizontalSpacing: 5,
-                    verticalSpacing: 20,
-                    columns: <TablePaneColumn>[
-                      TablePaneColumn(width: RelativeTablePaneColumnWidth(weight: 2)),
-                      TablePaneColumn(width: RelativeTablePaneColumnWidth(weight: 20)),
-                      TablePaneColumn(width: RelativeTablePaneColumnWidth(weight: 1)),
-                      TablePaneColumn(width: RelativeTablePaneColumnWidth(weight: 3)),
-                      TablePaneColumn(width: RelativeTablePaneColumnWidth(weight: 1)),
-                      TablePaneColumn(width: RelativeTablePaneColumnWidth(weight: 1)),
-                    ],
-                    children: <Widget>[
-                      TableRow(
-                        height: RelativeTablePaneRowHeight(weight: 5),
-                        children: [
-                          ColoredCell(),
-                          ColoredCell(),
-                          ColoredCell(),
-                          ColoredCell(),
-                          ColoredCell(),
-                          ColoredCell(),
-                        ],
-                      ),
-                      TableRow(
-                        children: [
-                          ColoredCell(),
-                          TableCell(
-                            rowSpan: 2,
-                            child: ColoredCell(text: 'rowSpan=2'),
-                          ),
-                          ColoredCell(),
-                          ColoredCell(),
-                          ColoredCell(),
-                          ColoredCell(),
-                        ],
-                      ),
-                      TableRow(
-                        children: [
-                          ColoredCell(),
-                          EmptyTableCell(),
-                          ColoredCell(),
-                          TableCell(
-                            columnSpan: 2,
-                            child: ColoredCell(text: 'columnSpan=2'),
-                          ),
-                          EmptyTableCell(),
-                          ColoredCell(),
-                        ],
-                      ),
-                      TableRow(
-                        children: [
-                          ColoredCell(),
-                          ColoredCell(),
-                          TableCell(
-                            rowSpan: 3,
-                            columnSpan: 3,
-                            child: ColoredCell(text: 'rowSpan=3\ncolumnSpan=3'),
-                          ),
-                          EmptyTableCell(),
-                          EmptyTableCell(),
-                          ColoredCell(),
-                        ],
-                      ),
-                      TableRow(
-                        children: [
-                          ColoredCell(),
-                          ColoredCell(),
-                          EmptyTableCell(),
-                          EmptyTableCell(),
-                          EmptyTableCell(),
-                          ColoredCell(),
-                        ],
-                      ),
-                      TableRow(
-                        children: [
-                          ColoredCell(),
-                          ColoredCell(),
-                          EmptyTableCell(),
-                          EmptyTableCell(),
-                          EmptyTableCell(),
-                          ColoredCell(),
-                        ],
-                      ),
-                    ],
+          child: TablePane(
+            verticalIntrinsicSize: MainAxisSize.min,
+            horizontalSpacing: 5,
+            verticalSpacing: 20,
+            columns: <TablePaneColumn>[
+              TablePaneColumn(width: RelativeTablePaneColumnWidth(weight: 2)),
+              TablePaneColumn(width: RelativeTablePaneColumnWidth(weight: 20)),
+              TablePaneColumn(width: RelativeTablePaneColumnWidth(weight: 1)),
+              TablePaneColumn(width: RelativeTablePaneColumnWidth(weight: 3)),
+              TablePaneColumn(width: RelativeTablePaneColumnWidth(weight: 1)),
+              TablePaneColumn(width: RelativeTablePaneColumnWidth(weight: 1)),
+            ],
+            children: <Widget>[
+              TableRow(
+                height: RelativeTablePaneRowHeight(weight: 5),
+                children: [
+                  ColoredCell(),
+                  ColoredCell(),
+                  ColoredCell(),
+                  ColoredCell(),
+                  ColoredCell(),
+                  ColoredCell(),
+                ],
+              ),
+              TableRow(
+                children: [
+                  ColoredCell(),
+                  TableCell(
+                    rowSpan: 2,
+                    child: ColoredCell(text: 'rowSpan=2'),
                   ),
-                ),
+                  ColoredCell(),
+                  ColoredCell(),
+                  ColoredCell(),
+                  ColoredCell(),
+                ],
+              ),
+              TableRow(
+                children: [
+                  ColoredCell(),
+                  EmptyTableCell(),
+                  ColoredCell(),
+                  TableCell(
+                    columnSpan: 2,
+                    child: ColoredCell(text: 'columnSpan=2'),
+                  ),
+                  EmptyTableCell(),
+                  ColoredCell(),
+                ],
+              ),
+              TableRow(
+                children: [
+                  ColoredCell(),
+                  ColoredCell(),
+                  TableCell(
+                    rowSpan: 3,
+                    columnSpan: 3,
+                    child: ColoredCell(text: 'rowSpan=3\ncolumnSpan=3'),
+                  ),
+                  EmptyTableCell(),
+                  EmptyTableCell(),
+                  ColoredCell(),
+                ],
+              ),
+              TableRow(
+                children: [
+                  ColoredCell(),
+                  ColoredCell(),
+                  EmptyTableCell(),
+                  EmptyTableCell(),
+                  EmptyTableCell(),
+                  ColoredCell(),
+                ],
+              ),
+              TableRow(
+                children: [
+                  ColoredCell(),
+                  ColoredCell(),
+                  EmptyTableCell(),
+                  EmptyTableCell(),
+                  EmptyTableCell(),
+                  ColoredCell(),
+                ],
               ),
             ],
           ),
@@ -300,7 +291,7 @@ class TableCell extends ParentDataWidget<TableCellParentData> {
     if (parentData.rowSpan != rowSpan || parentData.columnSpan != columnSpan) {
       parentData.rowSpan = rowSpan;
       parentData.columnSpan = columnSpan;
-      AbstractNode? targetParent = renderObject.parent;
+      RenderObject? targetParent = renderObject.parent;
       while (targetParent != null && targetParent is! RenderTablePane) {
         targetParent = targetParent.parent;
       }

@@ -1,6 +1,10 @@
+#### 0.4.0-dev
+
+* Updated to Flutter 3.18
+
 #### 0.3.0-dev
 
-* Updated to Flutter 3.3 (fixeed lints)
+* Updated to Flutter 3.3 (fixed lints)
 
 #### 0.2.0-dev
 
