@@ -1,3 +1,7 @@
+#### 0.4.1-dev
+
+* Fixed compilation issue
+
 #### 0.4.0-dev
 
 * Updated to Flutter 3.18

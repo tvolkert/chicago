@@ -19,7 +19,7 @@ import 'package:flutter/foundation.dart';
 
 typedef ListenerVisitor<T> = void Function(T listener);
 
-class _ListenerEntry<T extends Object> extends LinkedListEntry<_ListenerEntry<T>> {
+final class _ListenerEntry<T extends Object> extends LinkedListEntry<_ListenerEntry<T>> {
   _ListenerEntry(this.listener);
   final T listener;
 }
