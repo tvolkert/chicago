@@ -1,3 +1,7 @@
+#### 0.4.2-dev
+
+* Added ListViewSelectionController.selectedItems=
+
 #### 0.4.1-dev
 
 * Fixed compilation issue

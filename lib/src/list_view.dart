@@ -137,6 +137,19 @@ class ListViewSelectionController with ChangeNotifier {
     }
   }
 
+  set selectedItems(Iterable<int> indexes) {
+    assert(selectMode != SelectMode.none, 'Selection is not enabled');
+    assert(indexes.length <= 1 || selectMode == SelectMode.multi);
+    final ListSelection selectedRanges = ListSelection();
+    for (int index in indexes) {
+      selectedRanges.addRange(index, index);
+    }
+    if (!const IterableEquality<Span>().equals(_selectedRanges.data, selectedRanges.data)) {
+      _selectedRanges = selectedRanges;
+      notifyListeners();
+    }
+  }
+
   bool addSelectedIndex(int index) {
     final List<Span> addedRanges = addSelectedRange(index, index);
     return addedRanges.isNotEmpty;
