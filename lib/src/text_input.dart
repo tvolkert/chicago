@@ -35,7 +35,7 @@ class TextInput extends StatefulWidget {
   }) : super(key: key);
 
   final TextEditingController? controller;
-  final ValueChanged<RawKeyEvent>? onKeyEvent;
+  final ValueChanged<KeyEvent>? onKeyEvent;
   final ValueChanged<String>? onTextUpdated;
   final Predicate<String>? validator;
   final FocusNode? focusNode;
@@ -163,9 +163,9 @@ class _TextInputState extends State<TextInput> {
     );
 
     if (widget.onKeyEvent != null) {
-      result = RawKeyboardListener(
+      result = KeyboardListener(
         focusNode: focusNode,
-        onKey: widget.onKeyEvent,
+        onKeyEvent: widget.onKeyEvent,
         child: result,
       );
     }

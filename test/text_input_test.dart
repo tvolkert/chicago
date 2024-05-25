@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import 'dart:ui' as ui;
-
 import 'package:chicago/chicago.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -27,21 +25,25 @@ void main() {
         DefaultWidgetsLocalizations.delegate,
         DefaultMaterialLocalizations.delegate,
       ],
-      child: MediaQuery(
-        data: MediaQueryData.fromView(ui.window),
-        child: Directionality(
-          textDirection: TextDirection.ltr,
-          child: Material(
-            child: Navigator(
-              onGenerateRoute: (RouteSettings settings) {
-                return MaterialPageRoute<void>(
-                  settings: settings,
-                  builder: (BuildContext context) => child,
-                );
-              },
+      child: Builder(
+        builder: (BuildContext context) {
+          return MediaQuery(
+            data: MediaQueryData.fromView(View.of(context)),
+            child: Directionality(
+              textDirection: TextDirection.ltr,
+              child: Material(
+                child: Navigator(
+                  onGenerateRoute: (RouteSettings settings) {
+                    return MaterialPageRoute<void>(
+                      settings: settings,
+                      builder: (BuildContext context) => child,
+                    );
+                  },
+                ),
+              ),
             ),
-          ),
-        ),
+          );
+        }
       ),
     );
   }
@@ -61,7 +63,7 @@ void main() {
   });
 
   testWidgets('Can render a TextInput with an onKeyEvent handler', (WidgetTester tester) async {
-    await tester.pumpWidget(wrap(TextInput(onKeyEvent: (RawKeyEvent event) {})));
+    await tester.pumpWidget(wrap(TextInput(onKeyEvent: (KeyEvent event) {})));
     expect(find.byType(TextInput), findsOneWidget);
   });
 
@@ -70,7 +72,7 @@ void main() {
     await tester.pumpWidget(wrap(
       TextInput(
         autofocus: true,
-        onKeyEvent: (RawKeyEvent event) {},
+        onKeyEvent: (KeyEvent event) {},
       ),
     ));
     BuildContext focusContext = tester.binding.focusManager.primaryFocus!.context!;

@@ -1369,7 +1369,7 @@ class RenderTableView extends RenderSegment
       final int rowIndex = metrics.getRowAt(localPosition.dy);
       if (rowIndex >= 0 && rowIndex < length && !_isRowDisabled(rowIndex)) {
         focusNode.requestFocus();
-        final Set<LogicalKeyboardKey> keys = RawKeyboard.instance.keysPressed;
+        final Set<LogicalKeyboardKey> keys = HardwareKeyboard.instance.logicalKeysPressed;
 
         if (isShiftKeyPressed() && selectMode == SelectMode.multi) {
           final int startIndex = selectionController.firstSelectedIndex;

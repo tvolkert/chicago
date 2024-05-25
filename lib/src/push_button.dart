@@ -111,12 +111,12 @@ class _PushButtonState<T extends Object> extends State<PushButton<T>> {
     });
   }
 
-  KeyEventResult _handleKey(FocusNode focusNode, RawKeyEvent event) {
+  KeyEventResult _handleKey(FocusNode focusNode, KeyEvent event) {
     // The actual "pressing" of the button happens via the `ActivateIntent`.
     // This code merely visually shows the button in the pressed state.
     if (isActivateKey(event.logicalKey)) {
       setState(() {
-        pressed = event is RawKeyDownEvent;
+        pressed = event is KeyDownEvent;
       });
     }
     return KeyEventResult.ignored;
@@ -267,7 +267,7 @@ class _PushButtonState<T extends Object> extends State<PushButton<T>> {
         canRequestFocus: isEnabled && widget.isFocusable,
         descendantsAreFocusable: isEnabled && widget.isFocusable,
         focusNode: focusNode,
-        onKey: _handleKey,
+        onKeyEvent: _handleKey,
         onFocusChange: _handleFocusChange,
         child: button,
       ),

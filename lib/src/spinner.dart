@@ -220,17 +220,17 @@ class _SpinnerState extends State<Spinner> {
     });
   }
 
-  KeyEventResult _handleKey(FocusNode node, RawKeyEvent event) {
+  KeyEventResult _handleKey(FocusNode node, KeyEvent event) {
     assert(widget.isEnabled);
     if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-      if (event is RawKeyDownEvent) {
+      if (event is KeyDownEvent) {
         _worker.start(-1);
       } else {
         _worker.stop();
       }
       return KeyEventResult.handled;
     } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-      if (event is RawKeyDownEvent) {
+      if (event is KeyDownEvent) {
         _worker.start(1);
       } else {
         _worker.stop();
@@ -310,7 +310,7 @@ class _SpinnerState extends State<Spinner> {
       onTap: widget.isEnabled ? _requestFocus : null,
       child: Focus(
         focusNode: _focusNode,
-        onKey: widget.isEnabled ? _handleKey : null,
+        onKeyEvent: widget.isEnabled ? _handleKey : null,
         onFocusChange: _handleFocusChange,
         child: Semantics(
           enabled: widget.isEnabled,

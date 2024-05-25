@@ -90,7 +90,7 @@ class SegmentConstraints extends BoxConstraints {
   }
 
   @override
-  BoxConstraints deflate(EdgeInsets edges) {
+  BoxConstraints deflate(EdgeInsetsGeometry edges) {
     final BoxConstraints baseConstraints = super.deflate(edges);
     return SegmentConstraints(
       minWidth: baseConstraints.minWidth,

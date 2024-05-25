@@ -59,7 +59,7 @@ Comparator<T> _defaultCompare<T>() {
 
 /// Returns true if any shift key is pressed on a physical keyboard.
 bool isShiftKeyPressed() {
-  final Set<LogicalKeyboardKey> keys = RawKeyboard.instance.keysPressed;
+  final Set<LogicalKeyboardKey> keys = HardwareKeyboard.instance.logicalKeysPressed;
   return keys.contains(LogicalKeyboardKey.shiftLeft) ||
       keys.contains(LogicalKeyboardKey.shiftRight);
 }
@@ -70,7 +70,7 @@ bool isShiftKeyPressed() {
 /// key on other platforms.
 bool isPlatformCommandKeyPressed([TargetPlatform? platform]) {
   platform ??= defaultTargetPlatform;
-  final Set<LogicalKeyboardKey> keys = RawKeyboard.instance.keysPressed;
+  final Set<LogicalKeyboardKey> keys = HardwareKeyboard.instance.logicalKeysPressed;
   switch (platform) {
     case TargetPlatform.macOS:
       return keys.contains(LogicalKeyboardKey.metaLeft) ||

@@ -1,3 +1,7 @@
+#### 0.4.3-dev
+
+* Update to Flutter 3.18
+
 #### 0.4.2-dev
 
 * Added ListViewSelectionController.selectedItems=
